@@ -25,4 +25,4 @@ Each extension should keep:
 - Language queries, grammars, or runtime assets required by that extension.
 - A short README when the extension is not self-explanatory.
 
-Do not add registry publishing automation unless this private repo starts publishing extensions externally.
+Do not add registry publishing automation unless this repository starts publishing extensions externally.

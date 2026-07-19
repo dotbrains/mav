@@ -1,6 +1,6 @@
 # Getting Started
 
-`mav` is a private dotbrains workspace for building and maintaining a Mav-based editor distribution. The repository keeps the editor source, extension host, bundled extension examples, assets, Nix packaging, and development tooling. Public website content, community automation, hosted-service legal pages, and release machinery that is not needed for private development have been removed.
+`mav` is the public dotbrains workspace for building and maintaining a Mav-based editor distribution. The repository keeps the editor source, extension host, bundled extension examples, assets, Nix packaging, and development tooling. Website content, community automation, hosted-service legal pages, and release machinery that is not needed for development have been removed.
 
 ## Prerequisites
 

@@ -15,7 +15,6 @@ settings, packaging scripts, and reproducible developer environments in one
 repository.
 
 ```console
-$ gh auth login
 $ gh repo clone dotbrains/mav
 $ cd mav
 $ flox activate
@@ -32,11 +31,9 @@ See [docs/README.md](docs/README.md) for the full documentation index,
 
 ## Install
 
-Authenticate with GitHub before cloning or fetching
-release artifacts:
+Clone the public repository:
 
 ```sh
-gh auth login
 gh repo clone dotbrains/mav
 cd mav
 ```
