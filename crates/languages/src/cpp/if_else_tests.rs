@@ -1,4 +1,3 @@
-
 use gpui::{AppContext as _, BorrowAppContext, TestAppContext};
 use language::{AutoindentMode, Buffer};
 use settings::SettingsStore;
