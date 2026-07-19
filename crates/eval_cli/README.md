@@ -1,18 +1,18 @@
 # eval-cli
 
-Headless Rust binary for running Zed's agent in evaluation and benchmark
+Headless Rust binary for running Mav's agent in evaluation and benchmark
 environments. It is designed for containerized harnesses such as
 [Harbor](https://harborframework.com/) and Pier, where the repository is already
 checked out and model API keys are provided via environment variables.
 
 `eval-cli` uses the same `NativeAgent` + `AcpThread` pipeline as the production
-Zed editor: a full agentic loop with tool calls, subagents, and retries, without
+Mav editor: a full agentic loop with tool calls, subagents, and retries, without
 a GUI.
 
-This directory also contains `zed_eval/`, the Python `mav-eval` package used to
+This directory also contains `mav_eval/`, the Python `mav-eval` package used to
 build this binary, launch remote benchmark runs on Modal/Harbor/Pier, and fetch
 results. For normal benchmark orchestration, start with
-[`zed_eval/README.md`](zed_eval/README.md).
+[`mav_eval/README.md`](mav_eval/README.md).
 
 ## Building
 
@@ -76,6 +76,6 @@ mav-eval run rf --from local --n-tasks 2
 For one-off source runs without installing the tool globally, use
 `crates/eval_cli/script/mav-eval <args>`.
 
-See [`zed_eval/README.md`](zed_eval/README.md) for supported benchmarks, remote
+See [`mav_eval/README.md`](mav_eval/README.md) for supported benchmarks, remote
 builds, Modal setup, reporting, rejudging, baselines, and Harbor/Pier installed
 agent usage.

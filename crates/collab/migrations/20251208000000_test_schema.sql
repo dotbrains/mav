@@ -2,7 +2,7 @@
 -- To regenerate, dump the private collab schema from the application database.
 --
 -- WARNING: If you are modifying this file you MUST open a PR to the Cloud repository prior to merging any changes.
--- If you are not Zed staff you MUST coordinate with a staff member to apply the schema migrations before this PR is merged.
+-- If you are not Mav staff you MUST coordinate with a staff member to apply the schema migrations before this PR is merged.
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
 
@@ -123,7 +123,7 @@ CREATE TABLE public.channels (
     created_at timestamp without time zone DEFAULT now() NOT NULL,
     visibility text DEFAULT 'members'::text NOT NULL,
     parent_path text NOT NULL,
-    requires_zed_cla boolean DEFAULT false NOT NULL,
+    requires_mav_cla boolean DEFAULT false NOT NULL,
     channel_order integer DEFAULT 1 NOT NULL
 );
 

@@ -987,7 +987,7 @@ mod tests {
         smol::block_on(async {
             let output = Command::new("echo")
                 .args(["-n", "from-inherited-path"])
-                .env("ZED_TEST_VAR", "test")
+                .env("MAV_TEST_VAR", "test")
                 .output()
                 .await
                 .expect("failed to spawn with custom env but no PATH override");

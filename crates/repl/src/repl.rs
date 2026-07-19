@@ -29,21 +29,21 @@ pub use crate::session::Session;
 pub const KERNEL_DOCS_URL: &str = "https://mav.dev/docs/repl#changing-kernels";
 
 pub fn init(fs: Arc<dyn Fs>, cx: &mut App) {
-    set_dispatcher(zed_dispatcher(cx));
+    set_dispatcher(mav_dispatcher(cx));
     repl_sessions_ui::init(cx);
     ReplStore::init(fs, cx);
 }
 
-fn zed_dispatcher(cx: &mut App) -> impl Dispatcher {
-    struct ZedDispatcher {
+fn mav_dispatcher(cx: &mut App) -> impl Dispatcher {
+    struct MavDispatcher {
         dispatcher: Arc<dyn PlatformDispatcher>,
     }
 
     // PlatformDispatcher is _super_ close to the same interface we put in
     // async-dispatcher, except for the task label in dispatch. Later we should
     // just make that consistent so we have this dispatcher ready to go for
-    // other crates in Zed.
-    impl Dispatcher for ZedDispatcher {
+    // other crates in Mav.
+    impl Dispatcher for MavDispatcher {
         #[track_caller]
         fn dispatch(&self, runnable: Runnable) {
             let (wrapper, task) = async_task::Builder::new()
@@ -69,7 +69,7 @@ fn zed_dispatcher(cx: &mut App) -> impl Dispatcher {
         }
     }
 
-    ZedDispatcher {
+    MavDispatcher {
         dispatcher: cx.background_executor().dispatcher().clone(),
     }
 }

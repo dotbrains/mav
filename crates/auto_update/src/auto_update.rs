@@ -247,8 +247,8 @@ pub fn init(client: Arc<Client>, cx: &mut App) {
             .map(|channel| channel.poll_for_updates())
             .unwrap_or(false);
 
-        if option_env!("ZED_UPDATE_EXPLANATION").is_none()
-            && env::var("ZED_UPDATE_EXPLANATION").is_err()
+        if option_env!("MAV_UPDATE_EXPLANATION").is_none()
+            && env::var("MAV_UPDATE_EXPLANATION").is_err()
             && poll_for_updates
         {
             let mut update_subscription = AutoUpdateSetting::get_global(cx)
@@ -273,13 +273,13 @@ pub fn init(client: Arc<Client>, cx: &mut App) {
 }
 
 pub fn check(_: &Check, window: &mut Window, cx: &mut App) {
-    if let Some(message) = option_env!("ZED_UPDATE_EXPLANATION")
+    if let Some(message) = option_env!("MAV_UPDATE_EXPLANATION")
         .map(ToOwned::to_owned)
-        .or_else(|| env::var("ZED_UPDATE_EXPLANATION").ok())
+        .or_else(|| env::var("MAV_UPDATE_EXPLANATION").ok())
     {
         drop(window.prompt(
             gpui::PromptLevel::Info,
-            "Zed was installed via a package manager.",
+            "Mav was installed via a package manager.",
             Some(&message),
             &["OK"],
             cx,
@@ -360,7 +360,7 @@ impl InstallerDir {
     async fn new() -> Result<Self> {
         let installer_dir = std::env::current_exe()?
             .parent()
-            .context("No parent dir for Zed.exe")?
+            .context("No parent dir for Mav.exe")?
             .join("updates");
         if smol::fs::metadata(&installer_dir).await.is_ok() {
             smol::fs::remove_dir_all(&installer_dir).await?;
@@ -395,7 +395,7 @@ impl AutoUpdater {
         // On windows, executable files cannot be overwritten while they are
         // running, so we must wait to overwrite the application until quitting
         // or restarting. When quitting the app, we spawn the auto update helper
-        // to finish the auto update process after Zed exits. When restarting
+        // to finish the auto update process after Mav exits. When restarting
         // the app after an update, we use `set_restart_path` to run the auto
         // update helper instead of the app, so that it can overwrite the app
         // and then spawn the new binary.
@@ -510,7 +510,7 @@ impl AutoUpdater {
         true
     }
 
-    // If you are packaging Zed and need to override the place it downloads SSH remotes from,
+    // If you are packaging Mav and need to override the place it downloads SSH remotes from,
     // you can override this function. You should also update get_remote_server_release_url to return
     // Ok(None).
     pub async fn download_remote_server_release(
@@ -622,7 +622,7 @@ impl AutoUpdater {
         let http_client = client.http_client();
 
         let path = format!("/releases/{}/{}/asset", release_channel.dev_name(), version,);
-        let url = http_client.build_zed_cloud_url_with_query(
+        let url = http_client.build_mav_cloud_url_with_query(
             &path,
             AssetQuery {
                 os,
@@ -832,9 +832,9 @@ impl AutoUpdater {
 
     async fn target_path(installer_dir: &InstallerDir) -> Result<PathBuf> {
         let filename = match OS {
-            "macos" => anyhow::Ok("Zed.dmg"),
+            "macos" => anyhow::Ok("Mav.dmg"),
             "linux" => Ok("mav.tar.gz"),
-            "windows" => Ok("Zed.exe"),
+            "windows" => Ok("Mav.exe"),
             unsupported_os => anyhow::bail!("not supported: {unsupported_os}"),
         }?;
 
@@ -1063,7 +1063,7 @@ async fn install_release_linux(
 
     anyhow::ensure!(
         output.status.success(),
-        "failed to copy Zed update from {:?} to {:?}: {:?}",
+        "failed to copy Mav update from {:?} to {:?}: {:?}",
         from,
         to,
         String::from_utf8_lossy(&output.stderr)
@@ -1082,7 +1082,7 @@ async fn install_release_macos(
         .file_name()
         .with_context(|| format!("invalid running app path {running_app_path:?}"))?;
 
-    let mount_path = temp_dir.path().join("Zed");
+    let mount_path = temp_dir.path().join("Mav");
     let mut mounted_app_path: OsString = mount_path.join(running_app_filename).into();
 
     mounted_app_path.push("/");
@@ -1129,7 +1129,7 @@ async fn install_release_macos(
 async fn cleanup_windows() -> Result<()> {
     let parent = std::env::current_exe()?
         .parent()
-        .context("No parent dir for Zed.exe")?
+        .context("No parent dir for Mav.exe")?
         .to_owned();
 
     // keep in sync with crates/auto_update_helper/src/updater.rs
@@ -1156,7 +1156,7 @@ async fn install_release_windows(downloaded_installer: &Path) -> Result<Option<P
     // deleting the old one, and launching the new binary.
     let helper_path = std::env::current_exe()?
         .parent()
-        .context("No parent dir for Zed.exe")?
+        .context("No parent dir for Mav.exe")?
         .join("tools")
         .join("auto_update_helper.exe");
     Ok(Some(helper_path))

@@ -1042,7 +1042,7 @@ impl Render for ManageProfilesModal {
                         .pb_1()
                         .child(ProfileModalHeader::new(
                             format!("{profile_name} — Configure Default Model"),
-                            Some(IconName::ZedAgent),
+                            Some(IconName::MavAgent),
                         ))
                         .child(ListSeparator)
                         .child(v_flex().w(rems(34.)).child(model_picker.clone()))

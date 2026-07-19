@@ -731,7 +731,7 @@ mod tests {
 
     #[test]
     fn test_duplicate_untracked_entries() {
-        // Regression test for ZED-2XA: git can produce duplicate untracked entries
+        // Regression test for MAV-2XA: git can produce duplicate untracked entries
         // for the same path. This should deduplicate them instead of panicking.
         let input = "?? file.txt\0?? file.txt";
         let status: GitStatus = input.parse().unwrap();

@@ -127,12 +127,12 @@ impl std::fmt::Display for FeatureOptionValue {
 }
 
 #[derive(Clone, Debug, Serialize, Eq, PartialEq, Default)]
-pub(crate) struct ZedCustomizationsWrapper {
-    pub(crate) mav: ZedCustomization,
+pub(crate) struct MavCustomizationsWrapper {
+    pub(crate) mav: MavCustomization,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, Eq, PartialEq, Default)]
-pub(crate) struct ZedCustomization {
+pub(crate) struct MavCustomization {
     #[serde(default)]
     pub(crate) extensions: Vec<String>,
 }
@@ -221,7 +221,7 @@ pub(crate) struct DevContainer {
     pub(crate) mounts: Option<Vec<MountDefinition>>,
     pub(crate) features: Option<HashMap<String, FeatureOptions>>,
     pub(crate) override_feature_install_order: Option<Vec<String>>,
-    pub(crate) customizations: Option<ZedCustomizationsWrapper>,
+    pub(crate) customizations: Option<MavCustomizationsWrapper>,
     pub(crate) build: Option<ContainerBuild>,
     #[serde(default, deserialize_with = "deserialize_app_port")]
     pub(crate) app_port: Vec<String>,
@@ -309,7 +309,7 @@ impl DevContainer {
 // serde_json_lenient::Value first, then extracts the "mav" portion.
 // This avoids a bug in serde_json_lenient's `ignore_value` codepath which
 // does not handle trailing commas in skipped values.
-impl<'de> Deserialize<'de> for ZedCustomizationsWrapper {
+impl<'de> Deserialize<'de> for MavCustomizationsWrapper {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -317,11 +317,11 @@ impl<'de> Deserialize<'de> for ZedCustomizationsWrapper {
         let value = Value::deserialize(deserializer)?;
         let mav = value
             .get("mav")
-            .map(|zed_value| serde_json_lenient::from_value::<ZedCustomization>(zed_value.clone()))
+            .map(|mav_value| serde_json_lenient::from_value::<MavCustomization>(mav_value.clone()))
             .transpose()
             .map_err(serde::de::Error::custom)?
             .unwrap_or_default();
-        Ok(ZedCustomizationsWrapper { mav })
+        Ok(MavCustomizationsWrapper { mav })
     }
 }
 
@@ -628,9 +628,9 @@ mod test {
         devcontainer_api::DevContainerError,
         devcontainer_json::{
             ContainerBuild, DevContainer, DevContainerBuildType, FeatureOptions, ForwardPort,
-            HostRequirements, LifecycleCommand, LifecycleScript, MountDefinition, OnAutoForward,
-            PortAttributeProtocol, PortAttributes, ShutdownAction, UserEnvProbe, ZedCustomization,
-            ZedCustomizationsWrapper, deserialize_devcontainer_json,
+            HostRequirements, LifecycleCommand, LifecycleScript, MavCustomization,
+            MavCustomizationsWrapper, MountDefinition, OnAutoForward, PortAttributeProtocol,
+            PortAttributes, ShutdownAction, UserEnvProbe, deserialize_devcontainer_json,
         },
     };
 
@@ -673,8 +673,8 @@ mod test {
         let devcontainer = result.expect("ok");
         assert_eq!(
             devcontainer.customizations,
-            Some(ZedCustomizationsWrapper {
-                mav: ZedCustomization {
+            Some(MavCustomizationsWrapper {
+                mav: MavCustomization {
                     extensions: vec!["vue".to_string(), "ruby".to_string()]
                 }
             })
@@ -682,8 +682,8 @@ mod test {
     }
 
     #[test]
-    fn should_deserialize_customizations_without_zed_key() {
-        let json_without_zed = r#"
+    fn should_deserialize_customizations_without_mav_key() {
+        let json_without_mav = r#"
             {
                 "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
                 "customizations": {
@@ -694,7 +694,7 @@ mod test {
             }
         "#;
 
-        let result = deserialize_devcontainer_json(json_without_zed);
+        let result = deserialize_devcontainer_json(json_without_mav);
 
         assert!(
             result.is_ok(),
@@ -704,8 +704,8 @@ mod test {
         let devcontainer = result.expect("ok");
         assert_eq!(
             devcontainer.customizations,
-            Some(ZedCustomizationsWrapper {
-                mav: ZedCustomization { extensions: vec![] }
+            Some(MavCustomizationsWrapper {
+                mav: MavCustomization { extensions: vec![] }
             })
         );
     }
@@ -947,8 +947,8 @@ mod test {
                     target: "/workspaces/app".to_string(),
                     mount_type: Some("bind".to_string())
                 }),
-                customizations: Some(ZedCustomizationsWrapper {
-                    mav: ZedCustomization {
+                customizations: Some(MavCustomizationsWrapper {
+                    mav: MavCustomization {
                         extensions: vec!["html".to_string()]
                     }
                 }),

@@ -1801,7 +1801,7 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn test_prepare_script_like_task() {
-        let user_command = r#"REPO_URL=$(git remote get-url origin | sed -e \"s/^git@\\(.*\\):\\(.*\\)\\.git$/https:\\/\\/\\1\\/\\2/\"); COMMIT_SHA=$(git log -1 --format=\"%H\" -- \"${ZED_RELATIVE_FILE}\"); echo \"${REPO_URL}/blob/${COMMIT_SHA}/${ZED_RELATIVE_FILE}#L${ZED_ROW}-$(echo $(($(wc -l <<< \"$ZED_SELECTED_TEXT\") + $ZED_ROW - 1)))\" | xclip -selection clipboard"#.to_string();
+        let user_command = r#"REPO_URL=$(git remote get-url origin | sed -e \"s/^git@\\(.*\\):\\(.*\\)\\.git$/https:\\/\\/\\1\\/\\2/\"); COMMIT_SHA=$(git log -1 --format=\"%H\" -- \"${MAV_RELATIVE_FILE}\"); echo \"${REPO_URL}/blob/${COMMIT_SHA}/${MAV_RELATIVE_FILE}#L${MAV_ROW}-$(echo $(($(wc -l <<< \"$MAV_SELECTED_TEXT\") + $MAV_ROW - 1)))\" | xclip -selection clipboard"#.to_string();
         let expected_cwd = PathBuf::from("/some/work");
 
         let input = SpawnInTerminal {

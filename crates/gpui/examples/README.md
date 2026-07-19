@@ -1,6 +1,6 @@
 # GPUI Examples
 
-Examples can be run from the Zed repository root:
+Examples can be run from the Mav repository root:
 
 ```sh
 cargo run -p gpui --example hello_world

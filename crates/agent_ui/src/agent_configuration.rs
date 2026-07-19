@@ -23,7 +23,7 @@ use itertools::Itertools;
 use language::LanguageRegistry;
 use language_model::{
     IconOrSvg, LanguageModelProvider, LanguageModelProviderId, LanguageModelRegistry,
-    ZED_CLOUD_PROVIDER_ID,
+    MAV_CLOUD_PROVIDER_ID,
 };
 use language_models::AllLanguageModelSettings;
 use mav_actions::{ExtensionCategoryFilter, OpenBrowser};
@@ -140,7 +140,7 @@ impl AgentConfiguration {
         cx: &mut Context<Self>,
     ) {
         let configuration_view = provider.configuration_view(
-            language_model::ConfigurationViewTargetAgent::ZedAgent,
+            language_model::ConfigurationViewTargetAgent::MavAgent,
             window,
             cx,
         );
@@ -217,8 +217,8 @@ impl AgentConfiguration {
             .copied()
             .unwrap_or(false);
 
-        let is_zed_provider = provider.id() == ZED_CLOUD_PROVIDER_ID;
-        let current_plan = if is_zed_provider {
+        let is_mav_provider = provider.id() == MAV_CLOUD_PROVIDER_ID;
+        let current_plan = if is_mav_provider {
             self.workspace
                 .upgrade()
                 .and_then(|workspace| workspace.read(cx).user_store().read(cx).plan())
@@ -280,9 +280,9 @@ impl AgentConfiguration {
                                             .gap_1()
                                             .child(Label::new(provider_name.clone()))
                                             .map(|this| {
-                                                if is_zed_provider && is_signed_in {
+                                                if is_mav_provider && is_signed_in {
                                                     this.child(
-                                                        self.render_zed_plan_info(current_plan, cx),
+                                                        self.render_mav_plan_info(current_plan, cx),
                                                     )
                                                 } else {
                                                     this.when(
@@ -469,7 +469,7 @@ impl AgentConfiguration {
             .w_full()
             .child(self.render_section_title(
                 "LLM Providers",
-                "Add at least one provider to use AI-powered features with Zed's native agent.",
+                "Add at least one provider to use AI-powered features with Mav's native agent.",
                 popover_menu.into_any_element(),
             ))
             .child(
@@ -485,7 +485,7 @@ impl AgentConfiguration {
             )
     }
 
-    fn render_zed_plan_info(&self, plan: Option<Plan>, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_mav_plan_info(&self, plan: Option<Plan>, cx: &mut Context<Self>) -> impl IntoElement {
         if let Some(plan) = plan {
             let free_chip_bg = cx
                 .theme()
@@ -502,12 +502,12 @@ impl AgentConfiguration {
                 .blend(cx.theme().colors().text_accent.opacity(0.2));
 
             let (plan_name, label_color, bg_color) = match plan {
-                Plan::ZedFree => ("Free", Color::Default, free_chip_bg),
-                Plan::ZedProTrial => ("Pro Trial", Color::Accent, pro_chip_bg),
-                Plan::ZedPro => ("Pro", Color::Accent, pro_chip_bg),
-                Plan::ZedBusiness => ("Business", Color::Accent, pro_chip_bg),
-                Plan::ZedVip => ("VIP", Color::Accent, pro_chip_bg),
-                Plan::ZedStudent => ("Student", Color::Accent, pro_chip_bg),
+                Plan::MavFree => ("Free", Color::Default, free_chip_bg),
+                Plan::MavProTrial => ("Pro Trial", Color::Accent, pro_chip_bg),
+                Plan::MavPro => ("Pro", Color::Accent, pro_chip_bg),
+                Plan::MavBusiness => ("Business", Color::Accent, pro_chip_bg),
+                Plan::MavVip => ("VIP", Color::Accent, pro_chip_bg),
+                Plan::MavStudent => ("Student", Color::Accent, pro_chip_bg),
             };
 
             Chip::new(plan_name.to_string())
@@ -581,7 +581,7 @@ impl AgentConfiguration {
             .border_color(cx.theme().colors().border)
             .child(self.render_section_title(
                 "Model Context Protocol (MCP) Servers",
-                "All MCP servers connected directly or via a Zed extension.",
+                "All MCP servers connected directly or via a Mav extension.",
                 add_server_popover.into_any_element(),
             ))
             .child(

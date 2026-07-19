@@ -479,12 +479,12 @@ async fn test_edit_prediction_invalidation_range(cx: &mut gpui::TestAppContext) 
 }
 
 #[gpui::test]
-async fn test_edit_prediction_jump_disabled_for_non_zed_providers(cx: &mut gpui::TestAppContext) {
+async fn test_edit_prediction_jump_disabled_for_non_mav_providers(cx: &mut gpui::TestAppContext) {
     init_test(cx, |_| {});
 
     let mut cx = EditorTestContext::new(cx).await;
     let provider = cx.new(|_| FakeNonMavEditPredictionDelegate::default());
-    assign_editor_completion_provider_non_zed(provider.clone(), &mut cx);
+    assign_editor_completion_provider_non_mav(provider.clone(), &mut cx);
 
     // Cursor is 2+ lines above the proposed edit
     cx.set_state(indoc! {"
@@ -495,7 +495,7 @@ async fn test_edit_prediction_jump_disabled_for_non_zed_providers(cx: &mut gpui:
         line
     "});
 
-    propose_edits_non_zed(
+    propose_edits_non_mav(
         &provider,
         vec![(Point::new(4, 3)..Point::new(4, 3), " 4")],
         &mut cx,
@@ -503,17 +503,17 @@ async fn test_edit_prediction_jump_disabled_for_non_zed_providers(cx: &mut gpui:
 
     cx.update_editor(|editor, window, cx| editor.update_visible_edit_prediction(window, cx));
 
-    // For non-Zed providers, there should be no move completion (jump functionality disabled)
+    // For non-Mav providers, there should be no move completion (jump functionality disabled)
     cx.editor(|editor, _, _| {
         if let Some(completion_state) = &editor.active_edit_prediction {
             // Should be an Edit prediction, not a Move prediction
             match &completion_state.completion {
                 EditPrediction::Edit { .. } => {
-                    // This is expected for non-Zed providers
+                    // This is expected for non-Mav providers
                 }
                 EditPrediction::MoveWithin { .. } | EditPrediction::MoveOutside { .. } => {
                     panic!(
-                        "Non-Zed providers should not show Move predictions (jump functionality)"
+                        "Non-Mav providers should not show Move predictions (jump functionality)"
                     );
                 }
             }
@@ -1644,7 +1644,7 @@ fn assign_editor_completion_menu_provider(cx: &mut EditorTestContext) {
     });
 }
 
-fn propose_edits_non_zed<T: ToOffset>(
+fn propose_edits_non_mav<T: ToOffset>(
     provider: &Entity<FakeNonMavEditPredictionDelegate>,
     edits: Vec<(Range<T>, &str)>,
     cx: &mut EditorTestContext,
@@ -1667,7 +1667,7 @@ fn propose_edits_non_zed<T: ToOffset>(
     });
 }
 
-fn assign_editor_completion_provider_non_zed(
+fn assign_editor_completion_provider_non_mav(
     provider: Entity<FakeNonMavEditPredictionDelegate>,
     cx: &mut EditorTestContext,
 ) {
@@ -1762,7 +1762,7 @@ impl EditPredictionDelegate for FakeEditPredictionDelegate {
     }
 
     fn icons(&self, _cx: &gpui::App) -> EditPredictionIconSet {
-        EditPredictionIconSet::new(IconName::ZedPredict)
+        EditPredictionIconSet::new(IconName::MavPredict)
     }
 
     fn is_enabled(
@@ -1829,7 +1829,7 @@ impl EditPredictionDelegate for FakeNonMavEditPredictionDelegate {
     }
 
     fn display_name() -> &'static str {
-        "Fake Non-Zed Provider"
+        "Fake Non-Mav Provider"
     }
 
     fn show_predictions_in_menu() -> bool {
@@ -1841,7 +1841,7 @@ impl EditPredictionDelegate for FakeNonMavEditPredictionDelegate {
     }
 
     fn icons(&self, _cx: &gpui::App) -> EditPredictionIconSet {
-        EditPredictionIconSet::new(IconName::ZedPredict)
+        EditPredictionIconSet::new(IconName::MavPredict)
     }
 
     fn is_enabled(

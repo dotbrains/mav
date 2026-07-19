@@ -982,7 +982,7 @@ pub struct CreateThreadOptions {
     /// Agent to use. Defaults to the panel's selected agent.
     pub agent: Option<Agent>,
     /// Model override, as `provider/model-id`. Only applied when the thread
-    /// uses the native Zed agent.
+    /// uses the native Mav agent.
     pub model: Option<String>,
     /// Working directories to attach to the new thread (e.g., the path of a
     /// freshly-created sibling worktree). When `None`, the thread inherits
@@ -4837,7 +4837,7 @@ impl agent::SiblingThreadHost for AgentPanelSiblingHost {
         cx.spawn(async move |cx| {
             let agent_choice = match request.agent_id.as_deref() {
                 None => None,
-                Some(id) if id == agent::ZED_AGENT_ID.as_ref() => Some(Agent::NativeAgent),
+                Some(id) if id == agent::MAV_AGENT_ID.as_ref() => Some(Agent::NativeAgent),
                 Some(id) => {
                     // Reject unknown agent ids up front so the model gets a
                     // structured error pointing at `list_agents_and_models`,
@@ -4986,7 +4986,7 @@ impl agent::SiblingThreadHost for AgentPanelSiblingHost {
 
         let mut agents = Vec::new();
 
-        // Native Zed agent — always available, and we can enumerate models
+        // Native Mav agent — always available, and we can enumerate models
         // directly from the language model registry.
         let native_models = {
             let registry = LanguageModelRegistry::read_global(cx);
@@ -5013,7 +5013,7 @@ impl agent::SiblingThreadHost for AgentPanelSiblingHost {
             models
         };
         agents.push(agent::AvailableAgent {
-            id: agent::ZED_AGENT_ID.to_string(),
+            id: agent::MAV_AGENT_ID.to_string(),
             name: Agent::NativeAgent.label(),
             is_native: true,
             models: native_models,
@@ -5914,12 +5914,12 @@ impl AgentPanel {
                 Some(ContextMenu::build(window, cx, |menu, _window, cx| {
                     menu.context(focus_handle.clone())
                         .item(
-                            ContextMenuEntry::new("Zed Agent")
+                            ContextMenuEntry::new("Mav Agent")
                                 .when(
                                     !showing_terminal && is_agent_selected(Agent::NativeAgent),
                                     |this| this.action(Box::new(NewThread)),
                                 )
-                                .icon(IconName::ZedAgent)
+                                .icon(IconName::MavAgent)
                                 .icon_color(Color::Muted)
                                 .handler({
                                     let workspace = workspace.clone();
@@ -6289,7 +6289,7 @@ impl AgentPanel {
                     .read(cx)
                     .default_model()
                     .is_some_and(|model| {
-                        model.provider.id() != language_model::ZED_CLOUD_PROVIDER_ID
+                        model.provider.id() != language_model::MAV_CLOUD_PROVIDER_ID
                     })
                 {
                     return false;
@@ -6303,7 +6303,7 @@ impl AgentPanel {
         let plan = self.user_store.read(cx).plan();
         let has_previous_trial = self.user_store.read(cx).trial_started_at().is_some();
 
-        plan.is_some_and(|plan| plan == Plan::ZedFree) && has_previous_trial
+        plan.is_some_and(|plan| plan == Plan::MavFree) && has_previous_trial
     }
 
     fn dismiss_ai_onboarding(&mut self, cx: &mut Context<Self>) {
@@ -6323,7 +6323,7 @@ impl AgentPanel {
 
         let user_store = self.user_store.read(cx);
 
-        if user_store.plan().is_some_and(|plan| plan == Plan::ZedPro)
+        if user_store.plan().is_some_and(|plan| plan == Plan::MavPro)
             && user_store
                 .subscription_period()
                 .and_then(|period| period.0.checked_add_days(chrono::Days::new(1)))
@@ -6338,12 +6338,12 @@ impl AgentPanel {
             return false;
         }
 
-        let has_configured_non_zed_providers = LanguageModelRegistry::read_global(cx)
+        let has_configured_non_mav_providers = LanguageModelRegistry::read_global(cx)
             .visible_providers()
             .iter()
             .any(|provider| {
                 provider.is_authenticated(cx)
-                    && provider.id() != language_model::ZED_CLOUD_PROVIDER_ID
+                    && provider.id() != language_model::MAV_CLOUD_PROVIDER_ID
             });
 
         match &self.base_view {
@@ -6351,7 +6351,7 @@ impl AgentPanel {
             BaseView::AgentThread { conversation_view } => {
                 if conversation_view.read(cx).as_native_thread(cx).is_some() {
                     let history_is_empty = ThreadStore::global(cx).read(cx).is_empty();
-                    history_is_empty || !has_configured_non_zed_providers
+                    history_is_empty || !has_configured_non_mav_providers
                 } else {
                     false
                 }
@@ -7030,7 +7030,7 @@ mod tests {
 
     impl AgentConnection for SessionTrackingConnection {
         fn agent_id(&self) -> AgentId {
-            agent::ZED_AGENT_ID.clone()
+            agent::MAV_AGENT_ID.clone()
         }
 
         fn telemetry_id(&self) -> SharedString {
@@ -12809,7 +12809,7 @@ mod tests {
 
     impl AgentConnection for DisassociationTrackingConnection {
         fn agent_id(&self) -> AgentId {
-            agent::ZED_AGENT_ID.clone()
+            agent::MAV_AGENT_ID.clone()
         }
 
         fn telemetry_id(&self) -> SharedString {

@@ -194,7 +194,7 @@ impl<S: ApiCompatibleProviderSettings> Render for ApiCompatibleProviderConfigura
             v_flex()
                 .on_action(cx.listener(Self::save_api_key))
                 .child(Label::new(format!(
-                    "To use Zed's agent with an {provider_name}-compatible provider, you need to add an API key."
+                    "To use Mav's agent with an {provider_name}-compatible provider, you need to add an API key."
                 )))
                 .child(
                     div()
@@ -203,7 +203,7 @@ impl<S: ApiCompatibleProviderSettings> Render for ApiCompatibleProviderConfigura
                 )
                 .child(
                     Label::new(format!(
-                        "You can also set the {env_var_name} environment variable and restart Zed.",
+                        "You can also set the {env_var_name} environment variable and restart Mav.",
                     ))
                     .size(LabelSize::Small)
                     .color(Color::Muted),

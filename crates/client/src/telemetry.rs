@@ -79,20 +79,20 @@ const FLUSH_INTERVAL: Duration = Duration::from_secs(1);
 
 #[cfg(not(debug_assertions))]
 const FLUSH_INTERVAL: Duration = Duration::from_secs(60 * 5);
-static ZED_CLIENT_CHECKSUM_SEED: LazyLock<Option<Vec<u8>>> = LazyLock::new(|| {
-    option_env!("ZED_CLIENT_CHECKSUM_SEED")
+static MAV_CLIENT_CHECKSUM_SEED: LazyLock<Option<Vec<u8>>> = LazyLock::new(|| {
+    option_env!("MAV_CLIENT_CHECKSUM_SEED")
         .map(|s| s.as_bytes().into())
         .or_else(|| {
-            env::var("ZED_CLIENT_CHECKSUM_SEED")
+            env::var("MAV_CLIENT_CHECKSUM_SEED")
                 .ok()
                 .map(|s| s.as_bytes().into())
         })
 });
 
 pub static MINIDUMP_ENDPOINT: LazyLock<Option<String>> = LazyLock::new(|| {
-    option_env!("ZED_MINIDUMP_ENDPOINT")
+    option_env!("MAV_MINIDUMP_ENDPOINT")
         .map(str::to_string)
-        .or_else(|| env::var("ZED_MINIDUMP_ENDPOINT").ok())
+        .or_else(|| env::var("MAV_MINIDUMP_ENDPOINT").ok())
 });
 
 static DOTNET_PROJECT_FILES_REGEX: LazyLock<Regex> = LazyLock::new(|| {
@@ -343,7 +343,7 @@ impl Telemetry {
     }
 
     pub fn has_checksum_seed(&self) -> bool {
-        ZED_CLIENT_CHECKSUM_SEED.is_some()
+        MAV_CLIENT_CHECKSUM_SEED.is_some()
     }
 
     pub fn start(
@@ -642,7 +642,7 @@ impl Telemetry {
             .method(Method::POST)
             .uri(
                 self.http_client
-                    .build_zed_api_url("/telemetry/events", &[])?
+                    .build_mav_api_url("/telemetry/events", &[])?
                     .as_ref(),
             )
             .header("Content-Type", "application/json")
@@ -710,7 +710,7 @@ impl Telemetry {
 }
 
 pub fn calculate_json_checksum(json: &impl AsRef<[u8]>) -> Option<String> {
-    let checksum_seed = ZED_CLIENT_CHECKSUM_SEED.as_ref()?;
+    let checksum_seed = MAV_CLIENT_CHECKSUM_SEED.as_ref()?;
 
     let mut summer = Sha256::new();
     summer.update(checksum_seed);

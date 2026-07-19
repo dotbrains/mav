@@ -44,7 +44,7 @@ use terminal::terminal_settings::{AlternateScroll, CursorShape};
 use crate::{CURSOR_ID, GEMINI_ID};
 
 pub const GEMINI_TERMINAL_AUTH_METHOD_ID: &str = "spawn-gemini-cli";
-const PARAMETERIZED_MODEL_PICKER_META_KEY: &str = "parameterizedModelPicker";
+const PARAMETERIMAV_MODEL_PICKER_META_KEY: &str = "parameterizedModelPicker";
 const MAX_DEBUG_BACKLOG_MESSAGES: usize = 2000;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -652,7 +652,7 @@ pub async fn connect(
 
 const MINIMUM_SUPPORTED_VERSION: ProtocolVersion = ProtocolVersion::V1;
 
-/// Build a `Client` connection over `transport` with Zed's full
+/// Build a `Client` connection over `transport` with Mav's full
 /// agent→client handler set wired up.
 ///
 /// All incoming requests and notifications are forwarded to the foreground
@@ -753,7 +753,7 @@ fn client_capabilities_for_agent(
     ]);
 
     if agent_id.as_ref() == CURSOR_ID {
-        meta.insert(PARAMETERIZED_MODEL_PICKER_META_KEY.into(), true.into());
+        meta.insert(PARAMETERIMAV_MODEL_PICKER_META_KEY.into(), true.into());
     }
 
     let mut capabilities = acp::ClientCapabilities::new()
@@ -2109,7 +2109,7 @@ pub mod test_support {
 
     impl crate::AgentServer for FakeAcpAgentServer {
         fn logo(&self) -> ui::IconName {
-            ui::IconName::ZedAgent
+            ui::IconName::MavAgent
         }
 
         fn agent_id(&self) -> AgentId {
@@ -2550,7 +2550,7 @@ mod tests {
             .expect("expected client capabilities meta");
 
         assert_eq!(
-            meta.get(PARAMETERIZED_MODEL_PICKER_META_KEY),
+            meta.get(PARAMETERIMAV_MODEL_PICKER_META_KEY),
             Some(&serde_json::json!(true))
         );
         assert_eq!(meta.get("terminal_output"), Some(&serde_json::json!(true)));
@@ -2564,7 +2564,7 @@ mod tests {
             .meta
             .expect("expected client capabilities meta");
 
-        assert!(!meta.contains_key(PARAMETERIZED_MODEL_PICKER_META_KEY));
+        assert!(!meta.contains_key(PARAMETERIMAV_MODEL_PICKER_META_KEY));
     }
 
     #[test]

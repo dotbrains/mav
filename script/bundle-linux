@@ -11,7 +11,7 @@ Build a release .tar.gz for Linux.
 
 Options:
   -h, --help     Display this help and exit.
-  --flatpak      Set ZED_BUNDLE_TYPE=flatpak so that this can be included in system info
+  --flatpak      Set MAV_BUNDLE_TYPE=flatpak so that this can be included in system info
   "
 }
 
@@ -23,7 +23,7 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         --flatpak)
-            export ZED_BUNDLE_TYPE=flatpak
+            export MAV_BUNDLE_TYPE=flatpak
             shift
             ;;
         --)
@@ -43,12 +43,12 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-export ZED_BUNDLE=true
+export MAV_BUNDLE=true
 
-channel=$(<crates/zed/RELEASE_CHANNEL)
+channel=$(<crates/mav/RELEASE_CHANNEL)
 target_dir="${CARGO_TARGET_DIR:-target}"
 
-version="$(script/get-crate-version zed)"
+version="$(script/get-crate-version mav)"
 # Set RELEASE_VERSION so it's compiled into GPUI and it knows about the version.
 export RELEASE_VERSION="${version}"
 
@@ -83,7 +83,7 @@ if [[ "$(uname -m)" == "aarch64" ]]; then
 else
     export RUSTFLAGS="${RUSTFLAGS:-} -C link-args=-Wl,--disable-new-dtags,-rpath,\$ORIGIN/../lib"
 fi
-cargo build --release --target "${target_triple}" --package zed --package cli
+cargo build --release --target "${target_triple}" --package mav --package cli
 # Build remote_server in separate invocation to prevent feature unification from other crates
 # from influencing dynamic libraries required by it.
 if [[ "$remote_server_triple" == "$musl_triple" ]]; then
@@ -97,13 +97,13 @@ if ! command -v sentry-cli >/dev/null 2>&1; then
     echo "install with: 'curl -sL https://sentry.io/get-cli | bash'"
 else
     if [[ -n "${SENTRY_AUTH_TOKEN:-}" ]]; then
-        echo "Uploading zed debug symbols to sentry..."
+        echo "Uploading mav debug symbols to sentry..."
         # note: this uploads the unstripped binary which is needed because it contains
         # .eh_frame data for stack unwinding. see https://github.com/getsentry/symbolic/issues/783
         for attempt in 1 2 3; do
             echo "Attempting sentry upload (attempt $attempt/3)..."
-            if sentry-cli debug-files upload --include-sources --wait -p zed -o zed-dev \
-                "${target_dir}/${target_triple}"/release/zed \
+            if sentry-cli debug-files upload --include-sources --wait -p mav -o mav-dev \
+                "${target_dir}/${target_triple}"/release/mav \
                 "${target_dir}/${remote_server_triple}"/release/remote_server; then
                 echo "Sentry upload successful on attempt $attempt"
                 break
@@ -122,7 +122,7 @@ fi
 # Strip debug symbols and save them for upload to DigitalOcean.
 # We use llvm-objcopy because GNU objcopy on older distros (e.g. Ubuntu 20.04)
 # doesn't understand CREL sections produced by newer LLVM.
-llvm-objcopy --strip-debug "${target_dir}/${target_triple}/release/zed"
+llvm-objcopy --strip-debug "${target_dir}/${target_triple}/release/mav"
 llvm-objcopy --strip-debug "${target_dir}/${target_triple}/release/cli"
 llvm-objcopy --strip-debug "${target_dir}/${remote_server_triple}/release/remote_server"
 
@@ -143,65 +143,65 @@ fi
 # Move everything that should end up in the final package
 # into a temp directory.
 temp_dir=$(mktemp -d)
-zed_dir="${temp_dir}/zed$suffix.app"
+mav_dir="${temp_dir}/mav$suffix.app"
 
 # Binary
-mkdir -p "${zed_dir}/bin" "${zed_dir}/libexec"
-cp "${target_dir}/${target_triple}/release/zed" "${zed_dir}/libexec/zed-editor"
-cp "${target_dir}/${target_triple}/release/cli" "${zed_dir}/bin/zed"
+mkdir -p "${mav_dir}/bin" "${mav_dir}/libexec"
+cp "${target_dir}/${target_triple}/release/mav" "${mav_dir}/libexec/mav-editor"
+cp "${target_dir}/${target_triple}/release/cli" "${mav_dir}/bin/mav"
 
 # Libs
 # Bundle libstdc++ so older supported systems can run binaries built with our
 # toolchain even when their system libstdc++.so.6 lacks required GLIBCXX symbols.
 find_libs() {
-    ldd ${target_dir}/${target_triple}/release/zed |\
+    ldd ${target_dir}/${target_triple}/release/mav |\
         cut -d' ' -f3 |\
         grep -v '\<\(libc.so\|libgcc_s.so\|libm.so\|libpthread.so\|libdl.so\|libasound.so\)'
 }
 
-mkdir -p "${zed_dir}/lib"
-rm -rf "${zed_dir}/lib/*"
-cp $(find_libs) "${zed_dir}/lib"
+mkdir -p "${mav_dir}/lib"
+rm -rf "${mav_dir}/lib/*"
+cp $(find_libs) "${mav_dir}/lib"
 
 # Icons
-mkdir -p "${zed_dir}/share/icons/hicolor/512x512/apps"
-cp "crates/zed/resources/app-icon$suffix.png" "${zed_dir}/share/icons/hicolor/512x512/apps/zed.png"
-mkdir -p "${zed_dir}/share/icons/hicolor/1024x1024/apps"
-cp "crates/zed/resources/app-icon$suffix@2x.png" "${zed_dir}/share/icons/hicolor/1024x1024/apps/zed.png"
+mkdir -p "${mav_dir}/share/icons/hicolor/512x512/apps"
+cp "crates/mav/resources/app-icon$suffix.png" "${mav_dir}/share/icons/hicolor/512x512/apps/mav.png"
+mkdir -p "${mav_dir}/share/icons/hicolor/1024x1024/apps"
+cp "crates/mav/resources/app-icon$suffix@2x.png" "${mav_dir}/share/icons/hicolor/1024x1024/apps/mav.png"
 
 # .desktop
 export DO_STARTUP_NOTIFY="true"
-export APP_CLI="zed"
-export APP_ICON="zed"
+export APP_CLI="mav"
+export APP_ICON="mav"
 export APP_ARGS="%U"
 if [[ "$channel" == "preview" ]]; then
-  export APP_NAME="Zed Preview"
-  APP_ID="dev.zed.Zed-Preview"
+  export APP_NAME="Mav Preview"
+  APP_ID="dev.mav.Mav-Preview"
 elif [[ "$channel" == "nightly" ]]; then
-  export APP_NAME="Zed Nightly"
-  APP_ID="dev.zed.Zed-Nightly"
+  export APP_NAME="Mav Nightly"
+  APP_ID="dev.mav.Mav-Nightly"
 elif [[ "$channel" == "dev" ]]; then
-  export APP_NAME="Zed Devel"
-  APP_ID="dev.zed.Zed-Dev"
+  export APP_NAME="Mav Devel"
+  APP_ID="dev.mav.Mav-Dev"
 else
-  export APP_NAME="Zed"
-  APP_ID="dev.zed.Zed"
+  export APP_NAME="Mav"
+  APP_ID="dev.mav.Mav"
 fi
 
-mkdir -p "${zed_dir}/share/applications"
-envsubst < "crates/zed/resources/zed.desktop.in" > "${zed_dir}/share/applications/$APP_ID.desktop"
-chmod +x "${zed_dir}/share/applications/$APP_ID.desktop"
+mkdir -p "${mav_dir}/share/applications"
+envsubst < "crates/mav/resources/mav.desktop.in" > "${mav_dir}/share/applications/$APP_ID.desktop"
+chmod +x "${mav_dir}/share/applications/$APP_ID.desktop"
 
 # Copy generated licenses so they'll end up in archive too
-cp "assets/licenses.md" "${zed_dir}/licenses.md"
+cp "assets/licenses.md" "${mav_dir}/licenses.md"
 
 # Create archive out of everything that's in the temp directory
 arch=$(uname -m)
-archive="zed-linux-${arch}.tar.gz"
+archive="mav-linux-${arch}.tar.gz"
 
 rm -rf "${archive}"
-remove_match="zed(-[a-zA-Z0-9]+)?-linux-$(uname -m)\.tar\.gz"
+remove_match="mav(-[a-zA-Z0-9]+)?-linux-$(uname -m)\.tar\.gz"
 ls "${target_dir}/release" | grep -E ${remove_match} | xargs -d "\n" -I {} rm -f "${target_dir}/release/{}" || true
-tar -czvf "${target_dir}/release/$archive" -C ${temp_dir} "zed$suffix.app"
+tar -czvf "${target_dir}/release/$archive" -C ${temp_dir} "mav$suffix.app"
 
-gzip -f --stdout --best "${target_dir}/${remote_server_triple}/release/remote_server" > "${target_dir}/zed-remote-server-linux-${arch}.gz"
+gzip -f --stdout --best "${target_dir}/${remote_server_triple}/release/remote_server" > "${target_dir}/mav-remote-server-linux-${arch}.gz"

@@ -226,8 +226,8 @@ fn main() {
 
     #[cfg(target_os = "windows")]
     if args.record_etw_trace {
-        let zed_pid = args
-            .etw_zed_pid
+        let mav_pid = args
+            .etw_mav_pid
             .and_then(|pid| if pid >= 0 { Some(pid as u32) } else { None });
         let Some(output_path) = args.etw_output else {
             eprintln!("--etw-output is required for --record-etw-trace");
@@ -240,7 +240,7 @@ fn main() {
         };
 
         if let Err(error) =
-            etw_tracing::record_etw_trace(zed_pid, &output_path, etw_socket.as_str())
+            etw_tracing::record_etw_trace(mav_pid, &output_path, etw_socket.as_str())
         {
             eprintln!("ETW trace recording failed: {error:#}");
             process::exit(1);
@@ -274,7 +274,7 @@ fn main() {
     }
 
     #[cfg(target_os = "windows")]
-    match util::get_zed_cli_path() {
+    match util::get_mav_cli_path() {
         Ok(path) => askpass::set_askpass_program(path),
         Err(err) => {
             eprintln!("Error: {}", err);
@@ -394,7 +394,7 @@ fn main() {
                 InitCrashHandler {
                     session_id,
                     // strip the build and channel information from the version string, we send them separately
-                    zed_version: semver::Version::new(
+                    mav_version: semver::Version::new(
                         app_version.major,
                         app_version.minor,
                         app_version.patch,
@@ -1760,7 +1760,7 @@ struct Args {
     /// The PID of the Mav process to trace for heap analysis.
     #[cfg(target_os = "windows")]
     #[arg(long, hide = true, allow_hyphen_values = true)]
-    etw_zed_pid: Option<i64>,
+    etw_mav_pid: Option<i64>,
 
     /// Output path for the ETW trace file.
     #[cfg(target_os = "windows")]

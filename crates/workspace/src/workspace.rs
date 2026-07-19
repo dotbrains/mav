@@ -182,15 +182,15 @@ use crate::{
 
 pub const SERIALIZATION_THROTTLE_TIME: Duration = Duration::from_millis(200);
 
-static ZED_WINDOW_SIZE: LazyLock<Option<Size<Pixels>>> = LazyLock::new(|| {
-    env::var("ZED_WINDOW_SIZE")
+static MAV_WINDOW_SIZE: LazyLock<Option<Size<Pixels>>> = LazyLock::new(|| {
+    env::var("MAV_WINDOW_SIZE")
         .ok()
         .as_deref()
         .and_then(parse_pixel_size_env_var)
 });
 
-static ZED_WINDOW_POSITION: LazyLock<Option<Point<Pixels>>> = LazyLock::new(|| {
-    env::var("ZED_WINDOW_POSITION")
+static MAV_WINDOW_POSITION: LazyLock<Option<Point<Pixels>>> = LazyLock::new(|| {
+    env::var("MAV_WINDOW_POSITION")
         .ok()
         .as_deref()
         .and_then(parse_pixel_position_env_var)
@@ -8734,8 +8734,8 @@ pub enum ActiveCallEvent {
 }
 
 fn window_bounds_env_override() -> Option<Bounds<Pixels>> {
-    ZED_WINDOW_POSITION
-        .zip(*ZED_WINDOW_SIZE)
+    MAV_WINDOW_POSITION
+        .zip(*MAV_WINDOW_SIZE)
         .map(|(position, size)| Bounds {
             origin: position,
             size,
@@ -9482,9 +9482,9 @@ pub struct OpenChannelNotesById {
 actions!(
     mav,
     [
-        /// Opens the Zed log file.
+        /// Opens the Mav log file.
         OpenLog,
-        /// Reveals the Zed log file in the system file manager.
+        /// Reveals the Mav log file in the system file manager.
         RevealLogInFileManager
     ]
 );
@@ -9698,7 +9698,7 @@ pub fn join_channel(
                         let detail: SharedString = match err.error_code() {
                             ErrorCode::SignedOut => "Please sign in to continue.".into(),
                             ErrorCode::UpgradeRequired => concat!(
-                                "Your are running an unsupported version of Zed. ",
+                                "Your are running an unsupported version of Mav. ",
                                 "Please update to continue."
                             )
                             .into(),

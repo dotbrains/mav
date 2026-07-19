@@ -17,7 +17,7 @@ pub use crate::known_or_unknown::*;
 pub use crate::plan::*;
 pub use crate::timestamp::Timestamp;
 
-pub const ZED_SYSTEM_ID_HEADER_NAME: &str = "x-mav-system-id";
+pub const MAV_SYSTEM_ID_HEADER_NAME: &str = "x-mav-system-id";
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetAuthenticatedUserResponse {
@@ -59,7 +59,7 @@ pub struct Organization {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrganizationConfiguration {
-    pub is_zed_model_provider_enabled: bool,
+    pub is_mav_model_provider_enabled: bool,
     pub is_agent_thread_feedback_enabled: bool,
     pub is_collaboration_enabled: bool,
     pub edit_prediction: OrganizationEditPredictionConfiguration,

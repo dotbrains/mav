@@ -262,8 +262,8 @@ impl HttpClientWithUrl {
         format!("{}{}", self.base_url(), path)
     }
 
-    /// Builds a Zed API URL using the given path.
-    pub fn build_zed_api_url(&self, path: &str, query: &[(&str, &str)]) -> Result<Url> {
+    /// Builds a Mav API URL using the given path.
+    pub fn build_mav_api_url(&self, path: &str, query: &[(&str, &str)]) -> Result<Url> {
         let base_url = self.base_url();
         let base_api_url = match base_url.as_ref() {
             "https://mav.dev" => "https://api.mav.dev",
@@ -278,8 +278,8 @@ impl HttpClientWithUrl {
         )?)
     }
 
-    /// Builds a Zed Cloud URL using the given path.
-    pub fn build_zed_cloud_url(&self, path: &str) -> Result<Url> {
+    /// Builds a Mav Cloud URL using the given path.
+    pub fn build_mav_cloud_url(&self, path: &str) -> Result<Url> {
         let base_url = self.base_url();
         let base_api_url = match base_url.as_ref() {
             "https://mav.dev" => "https://cloud.mav.dev",
@@ -291,8 +291,8 @@ impl HttpClientWithUrl {
         Ok(Url::parse(&format!("{}{}", base_api_url, path))?)
     }
 
-    /// Builds a Zed Cloud URL using the given path and query params.
-    pub fn build_zed_cloud_url_with_query(&self, path: &str, query: impl Serialize) -> Result<Url> {
+    /// Builds a Mav Cloud URL using the given path and query params.
+    pub fn build_mav_cloud_url_with_query(&self, path: &str, query: impl Serialize) -> Result<Url> {
         let base_url = self.base_url();
         let base_api_url = match base_url.as_ref() {
             "https://mav.dev" => "https://cloud.mav.dev",
@@ -304,8 +304,8 @@ impl HttpClientWithUrl {
         Ok(Url::parse(&format!("{}{}?{}", base_api_url, path, query))?)
     }
 
-    /// Builds a Zed LLM URL using the given path.
-    pub fn build_zed_llm_url(&self, path: &str, query: &[(&str, &str)]) -> Result<Url> {
+    /// Builds a Mav LLM URL using the given path.
+    pub fn build_mav_llm_url(&self, path: &str, query: &[(&str, &str)]) -> Result<Url> {
         let base_url = self.base_url();
         let base_api_url = match base_url.as_ref() {
             "https://mav.dev" => "https://cloud.mav.dev",

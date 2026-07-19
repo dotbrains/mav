@@ -12,7 +12,7 @@ pub const LLAMA_CPP_API_URL: &str = "http://localhost:8080";
 
 const DEFAULT_CONTEXT_LENGTH: u64 = 4096;
 
-/// A model exposed to the rest of Zed, after merging API discovery with
+/// A model exposed to the rest of Mav, after merging API discovery with
 /// user-configured overrides.
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]

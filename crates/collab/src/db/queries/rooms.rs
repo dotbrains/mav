@@ -1182,24 +1182,24 @@ impl Database {
             .await?;
 
         if let Some(channel) = channel {
-            let requires_zed_cla = channel.requires_zed_cla
+            let requires_mav_cla = channel.requires_mav_cla
                 || channel::Entity::find()
                     .filter(
                         channel::Column::Id
                             .is_in(channel.ancestors())
-                            .and(channel::Column::RequiresZedCla.eq(true)),
+                            .and(channel::Column::RequiresMavCla.eq(true)),
                     )
                     .count(tx)
                     .await?
                     > 0;
-            if requires_zed_cla
+            if requires_mav_cla
                 && contributor::Entity::find()
                     .filter(contributor::Column::UserId.eq(user_id))
                     .one(tx)
                     .await?
                     .is_none()
             {
-                Err(anyhow!("user has not signed the Zed CLA"))?;
+                Err(anyhow!("user has not signed the Mav CLA"))?;
             }
         }
         Ok(())

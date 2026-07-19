@@ -15,7 +15,7 @@ pub use young_account_banner::YoungAccountBanner;
 
 use std::sync::Arc;
 
-use client::{Client, UserStore, zed_urls};
+use client::{Client, UserStore, mav_urls};
 use gpui::{AnyElement, Entity, IntoElement, ParentElement, TaskExt};
 use ui::{Divider, RegisterComponent, Tooltip, Vector, VectorName, prelude::*};
 
@@ -39,20 +39,20 @@ impl From<client::Status> for SignInStatus {
 }
 
 #[derive(RegisterComponent, IntoElement)]
-pub struct ZedAiOnboarding {
+pub struct MavAiOnboarding {
     pub sign_in_status: SignInStatus,
     pub plan: Option<Plan>,
     pub account_too_young: bool,
-    pub continue_with_zed_ai: Arc<dyn Fn(&mut Window, &mut App)>,
+    pub continue_with_mav_ai: Arc<dyn Fn(&mut Window, &mut App)>,
     pub sign_in: Arc<dyn Fn(&mut Window, &mut App)>,
     pub dismiss_onboarding: Option<Arc<dyn Fn(&mut Window, &mut App)>>,
 }
 
-impl ZedAiOnboarding {
+impl MavAiOnboarding {
     pub fn new(
         client: Arc<Client>,
         user_store: &Entity<UserStore>,
-        continue_with_zed_ai: Arc<dyn Fn(&mut Window, &mut App)>,
+        continue_with_mav_ai: Arc<dyn Fn(&mut Window, &mut App)>,
         cx: &mut App,
     ) -> Self {
         let store = user_store.read(cx);
@@ -62,7 +62,7 @@ impl ZedAiOnboarding {
             sign_in_status: status.into(),
             plan: store.plan(),
             account_too_young: store.account_too_young(),
-            continue_with_zed_ai,
+            continue_with_mav_ai,
             sign_in: Arc::new(move |_window, cx| {
                 cx.spawn({
                     let client = client.clone();
@@ -163,13 +163,13 @@ impl ZedAiOnboarding {
             .gap_1()
             .child(Headline::new("Welcome to Mav AI"))
             .child(
-                Label::new("Sign in to try Zed Pro free for 14 days.")
+                Label::new("Sign in to try Mav Pro free for 14 days.")
                     .color(Color::Muted)
                     .mb_2(),
             )
             .child(PlanDefinitions.sign_in_upsell())
             .child(
-                Button::new("sign_in", "Try Zed Pro for Free")
+                Button::new("sign_in", "Try Mav Pro for Free")
                     .disabled(signing_in)
                     .full_width()
                     .style(ButtonStyle::Tinted(ui::TintColor::Accent))
@@ -218,7 +218,7 @@ impl ZedAiOnboarding {
                                         "Upgrade To Pro Clicked",
                                         state = "young-account"
                                     );
-                                    cx.open_url(&zed_urls::upgrade_to_zed_pro_url(cx))
+                                    cx.open_url(&mav_urls::upgrade_to_mav_pro_url(cx))
                                 }),
                         ),
                 )
@@ -280,7 +280,7 @@ impl ZedAiOnboarding {
                                         "Start Trial Clicked",
                                         state = "post-sign-in"
                                     );
-                                    cx.open_url(&zed_urls::start_trial_url(cx))
+                                    cx.open_url(&mav_urls::start_trial_url(cx))
                                 }),
                         ),
                 )
@@ -294,7 +294,7 @@ impl ZedAiOnboarding {
             .relative()
             .gap_1()
             .child(Self::pro_trial_stamp(cx))
-            .child(Headline::new("Welcome to the Zed Pro Trial"))
+            .child(Headline::new("Welcome to the Mav Pro Trial"))
             .child(
                 Label::new("Here's what you get for the next 14 days:")
                     .color(Color::Muted)
@@ -311,7 +311,7 @@ impl ZedAiOnboarding {
             .relative()
             .gap_1()
             .child(Self::certified_user_stamp(cx))
-            .child(Headline::new("Welcome to Zed Pro"))
+            .child(Headline::new("Welcome to Mav Pro"))
             .child(
                 Label::new("Here's what you get:")
                     .color(Color::Muted)
@@ -328,7 +328,7 @@ impl ZedAiOnboarding {
             .relative()
             .gap_1()
             .child(Self::business_stamp(cx))
-            .child(Headline::new("Welcome to Zed Business"))
+            .child(Headline::new("Welcome to Mav Business"))
             .child(
                 Label::new("Here's what you get:")
                     .color(Color::Muted)
@@ -345,7 +345,7 @@ impl ZedAiOnboarding {
             .relative()
             .gap_1()
             .child(Self::vip_stamp(cx))
-            .child(Headline::new("Welcome to Zed VIP"))
+            .child(Headline::new("Welcome to Mav VIP"))
             .child(
                 Label::new("Here's what you get:")
                     .color(Color::Muted)
@@ -362,7 +362,7 @@ impl ZedAiOnboarding {
             .relative()
             .gap_1()
             .child(Self::student_stamp(cx))
-            .child(Headline::new("Welcome to Zed Student"))
+            .child(Headline::new("Welcome to Mav Student"))
             .child(
                 Label::new("Here's what you get:")
                     .color(Color::Muted)
@@ -374,17 +374,17 @@ impl ZedAiOnboarding {
     }
 }
 
-impl RenderOnce for ZedAiOnboarding {
+impl RenderOnce for MavAiOnboarding {
     fn render(self, _window: &mut ui::Window, cx: &mut App) -> impl IntoElement {
         if matches!(self.sign_in_status, SignInStatus::SignedIn) {
             match self.plan {
                 None => self.render_free_plan_state(cx),
-                Some(Plan::ZedFree) => self.render_free_plan_state(cx),
-                Some(Plan::ZedProTrial) => self.render_trial_state(cx),
-                Some(Plan::ZedPro) => self.render_pro_plan_state(cx),
-                Some(Plan::ZedBusiness) => self.render_business_plan_state(cx),
-                Some(Plan::ZedVip) => self.render_vip_plan_state(cx),
-                Some(Plan::ZedStudent) => self.render_student_plan_state(cx),
+                Some(Plan::MavFree) => self.render_free_plan_state(cx),
+                Some(Plan::MavProTrial) => self.render_trial_state(cx),
+                Some(Plan::MavPro) => self.render_pro_plan_state(cx),
+                Some(Plan::MavBusiness) => self.render_business_plan_state(cx),
+                Some(Plan::MavVip) => self.render_vip_plan_state(cx),
+                Some(Plan::MavStudent) => self.render_student_plan_state(cx),
             }
         } else {
             self.render_sign_in_disclaimer(cx)
@@ -392,7 +392,7 @@ impl RenderOnce for ZedAiOnboarding {
     }
 }
 
-impl Component for ZedAiOnboarding {
+impl Component for MavAiOnboarding {
     fn scope() -> ComponentScope {
         ComponentScope::Onboarding
     }
@@ -403,7 +403,7 @@ impl Component for ZedAiOnboarding {
 
     fn description() -> &'static str {
         "The onboarding surface shown to new agent panel users, \
-        guiding them through signing in to Zed and selecting a plan \
+        guiding them through signing in to Mav and selecting a plan \
         before they can start using the agent."
     }
 
@@ -419,11 +419,11 @@ impl Component for ZedAiOnboarding {
                 .max_w(px(1100.))
                 .child(
                     AgentPanelOnboardingCard::new().child(
-                        ZedAiOnboarding {
+                        MavAiOnboarding {
                             sign_in_status,
                             plan,
                             account_too_young,
-                            continue_with_zed_ai: Arc::new(|_, _| {}),
+                            continue_with_mav_ai: Arc::new(|_, _| {}),
                             sign_in: Arc::new(|_, _| {}),
                             dismiss_onboarding: None,
                         }
@@ -447,27 +447,27 @@ impl Component for ZedAiOnboarding {
                 ),
                 single_example(
                     "Free Plan",
-                    onboarding(SignInStatus::SignedIn, Some(Plan::ZedFree), false),
+                    onboarding(SignInStatus::SignedIn, Some(Plan::MavFree), false),
                 ),
                 single_example(
                     "Pro Trial",
-                    onboarding(SignInStatus::SignedIn, Some(Plan::ZedProTrial), false),
+                    onboarding(SignInStatus::SignedIn, Some(Plan::MavProTrial), false),
                 ),
                 single_example(
                     "Pro Plan",
-                    onboarding(SignInStatus::SignedIn, Some(Plan::ZedPro), false),
+                    onboarding(SignInStatus::SignedIn, Some(Plan::MavPro), false),
                 ),
                 single_example(
                     "Business Plan",
-                    onboarding(SignInStatus::SignedIn, Some(Plan::ZedBusiness), false),
+                    onboarding(SignInStatus::SignedIn, Some(Plan::MavBusiness), false),
                 ),
                 single_example(
                     "VIP Plan",
-                    onboarding(SignInStatus::SignedIn, Some(Plan::ZedVip), false),
+                    onboarding(SignInStatus::SignedIn, Some(Plan::MavVip), false),
                 ),
                 single_example(
                     "Student Plan",
-                    onboarding(SignInStatus::SignedIn, Some(Plan::ZedStudent), false),
+                    onboarding(SignInStatus::SignedIn, Some(Plan::MavStudent), false),
                 ),
             ])
             .into_any_element()

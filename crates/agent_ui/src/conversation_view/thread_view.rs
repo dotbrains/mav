@@ -1813,7 +1813,7 @@ impl ThreadView {
                 ThreadError::PaymentRequired => (
                     "payment_required",
                     None,
-                    "You reached your free usage limit. Upgrade to Zed Pro for more prompts."
+                    "You reached your free usage limit. Upgrade to Mav Pro for more prompts."
                         .into(),
                 ),
                 ThreadError::Refusal => {
@@ -4313,8 +4313,8 @@ impl ThreadView {
 
                 Some(ContextMenu::build(window, cx, |mut menu, _window, _cx| {
                     menu = menu.item(
-                        ContextMenuEntry::new("Zed Agent")
-                            .icon(IconName::ZedAgent)
+                        ContextMenuEntry::new("Mav Agent")
+                            .icon(IconName::MavAgent)
                             .icon_color(Color::Muted)
                             .handler({
                                 let server_view = server_view.clone();
@@ -5596,13 +5596,13 @@ impl ThreadView {
         let following = self.is_following(cx);
 
         let tooltip_label = if following {
-            if self.agent_id.as_ref() == agent::ZED_AGENT_ID.as_ref() {
+            if self.agent_id.as_ref() == agent::MAV_AGENT_ID.as_ref() {
                 format!("Stop Following the {}", self.agent_id)
             } else {
                 format!("Stop Following {}", self.agent_id)
             }
         } else {
-            if self.agent_id.as_ref() == agent::ZED_AGENT_ID.as_ref() {
+            if self.agent_id.as_ref() == agent::MAV_AGENT_ID.as_ref() {
                 format!("Follow the {}", self.agent_id)
             } else {
                 format!("Follow {}", self.agent_id)
@@ -6553,7 +6553,7 @@ impl ThreadView {
 
             let tooltip_meta = || {
                 SharedString::new(
-                    "Rating the thread sends all of your current conversation to the Zed team.",
+                    "Rating the thread sends all of your current conversation to the Mav team.",
                 )
             };
 
@@ -10418,7 +10418,7 @@ impl ThreadView {
             ThreadError::RateLimitExceeded { provider } => self.render_error_callout(
                 "Rate Limit Reached",
                 format!(
-                    "{provider}'s rate limit was reached. Zed will retry automatically. \
+                    "{provider}'s rate limit was reached. Mav will retry automatically. \
                     You can also wait a moment and try again."
                 )
                 .into(),
@@ -10429,7 +10429,7 @@ impl ThreadView {
             ThreadError::ServerOverloaded { provider } => self.render_error_callout(
                 "Provider Unavailable",
                 format!(
-                    "{provider}'s servers are temporarily unavailable. Zed will retry \
+                    "{provider}'s servers are temporarily unavailable. Mav will retry \
                     automatically. If the problem persists, check the provider's status page."
                 )
                 .into(),
@@ -10449,7 +10449,7 @@ impl ThreadView {
             ThreadError::StreamError { provider } => self.render_error_callout(
                 "Connection Interrupted",
                 format!(
-                    "The connection to {provider}'s API was interrupted. Zed will retry \
+                    "The connection to {provider}'s API was interrupted. Mav will retry \
                     automatically. If the problem persists, check your network connection."
                 )
                 .into(),
@@ -10500,7 +10500,7 @@ impl ThreadView {
                 "API Error",
                 format!(
                     "{provider}'s API returned an unexpected error. \
-                    If the problem persists, try switching models or restarting Zed."
+                    If the problem persists, try switching models or restarting Mav."
                 )
                 .into(),
                 true,
@@ -10551,7 +10551,7 @@ impl ThreadView {
 
     fn render_payment_required_error(&self, cx: &mut Context<Self>) -> Callout {
         const ERROR_MESSAGE: &str =
-            "You reached your free usage limit. Upgrade to Zed Pro for more prompts.";
+            "You reached your free usage limit. Upgrade to Mav Pro for more prompts.";
 
         Callout::new()
             .severity(Severity::Error)
@@ -10640,7 +10640,7 @@ impl ThreadView {
             .on_click(cx.listener({
                 move |this, _, _, cx| {
                     this.clear_thread_error(cx);
-                    cx.open_url(&zed_urls::upgrade_to_zed_pro_url(cx));
+                    cx.open_url(&mav_urls::upgrade_to_mav_pro_url(cx));
                 }
             }))
     }
@@ -10676,7 +10676,7 @@ impl ThreadView {
     }
 
     fn current_model_name(&self, cx: &App) -> SharedString {
-        // For native agent (Zed Agent), use the specific model name (e.g., "Claude 3.5 Sonnet")
+        // For native agent (Mav Agent), use the specific model name (e.g., "Claude 3.5 Sonnet")
         // For ACP agents, use the agent name (e.g., "Claude Agent", "Gemini CLI")
         // This provides better clarity about what refused the request
         if self.as_native_connection(cx).is_some() {

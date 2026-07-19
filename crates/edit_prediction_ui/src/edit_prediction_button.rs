@@ -1,5 +1,5 @@
 use anyhow::Result;
-use client::{Client, UserStore, zed_urls};
+use client::{Client, UserStore, mav_urls};
 use cloud_llm_client::UsageLimit;
 use codestral::{self, CodestralEditPredictionDelegate};
 use copilot::Status;
@@ -335,7 +335,7 @@ impl Render for EditPredictionButton {
                     .as_ref()
                     .map(|p| p.icons(cx))
                     .unwrap_or_else(|| {
-                        edit_prediction_types::EditPredictionIconSet::new(IconName::ZedPredict)
+                        edit_prediction_types::EditPredictionIconSet::new(IconName::MavPredict)
                     });
 
                 let ep_icon;
@@ -423,10 +423,10 @@ impl Render for EditPredictionButton {
                     None
                 };
 
-                let zed_cloud_needs_sign_in =
+                let mav_cloud_needs_sign_in =
                     matches!(provider, EditPredictionProvider::Mav) && user.is_none();
                 let provider_unavailable =
-                    missing_token || mercury_has_error || zed_cloud_needs_sign_in;
+                    missing_token || mercury_has_error || mav_cloud_needs_sign_in;
 
                 let icon_button = IconButton::new("mav-predict-pending-button", ep_icon)
                     .shape(IconButtonShape::Square)
@@ -438,7 +438,7 @@ impl Render for EditPredictionButton {
                         element.tooltip(move |_window, cx| {
                             let description = if !enabled {
                                 "Disabled For This File"
-                            } else if zed_cloud_needs_sign_in {
+                            } else if mav_cloud_needs_sign_in {
                                 "Sign In Or Configure a Provider"
                             } else if provider_unavailable || show_editor_predictions {
                                 tooltip_meta
@@ -574,7 +574,7 @@ impl EditPredictionButton {
             .read(cx)
             .current_organization_configuration();
 
-        let is_zed_provider_disabled = organization_configuration
+        let is_mav_provider_disabled = organization_configuration
             .is_some_and(|configuration| !configuration.edit_prediction.is_enabled);
 
         let available_providers = get_available_providers(cx);
@@ -592,15 +592,15 @@ impl EditPredictionButton {
                     continue;
                 };
                 let is_current = provider == current_provider;
-                let is_disabled_zed_provider =
-                    provider == EditPredictionProvider::Mav && is_zed_provider_disabled;
+                let is_disabled_mav_provider =
+                    provider == EditPredictionProvider::Mav && is_mav_provider_disabled;
                 let fs = self.fs.clone();
 
                 menu = menu.item(
                     ContextMenuEntry::new(name)
-                        .toggleable(IconPosition::Start, is_current && !is_disabled_zed_provider)
-                        .disabled(is_disabled_zed_provider)
-                        .when(is_disabled_zed_provider, |item| {
+                        .toggleable(IconPosition::Start, is_current && !is_disabled_mav_provider)
+                        .disabled(is_disabled_mav_provider)
+                        .when(is_disabled_mav_provider, |item| {
                             item.documentation_aside(DocumentationSide::Left, move |_cx| {
                                 Label::new("Edit predictions are disabled for this organization.")
                                     .into_any_element()
@@ -860,7 +860,7 @@ impl EditPredictionButton {
                                     .child(
                                         Label::new(indoc!{
                                             "Help us improve our open dataset model by sharing data from open source repositories. \
-                                            Zed must detect a license file in your repo for this setting to take effect. \
+                                            Mav must detect a license file in your repo for this setting to take effect. \
                                             Files with sensitive data and secrets are excluded by default."
                                         })
                                     )
@@ -914,7 +914,7 @@ impl EditPredictionButton {
                 .icon_color(Color::Muted)
                 .documentation_aside(DocumentationSide::Left, |_| {
                     Label::new(indoc!{"
-                        Open your settings to add sensitive paths for which Zed will never predict edits."}).into_any_element()
+                        Open your settings to add sensitive paths for which Mav will never predict edits."}).into_any_element()
                 })
                 .handler(move |window, cx| {
                     telemetry::event!(
@@ -952,7 +952,7 @@ impl EditPredictionButton {
                 .as_ref()
                 .map(|p| p.icons(cx))
                 .unwrap_or_else(|| {
-                    edit_prediction_types::EditPredictionIconSet::new(IconName::ZedPredict)
+                    edit_prediction_types::EditPredictionIconSet::new(IconName::MavPredict)
                 });
             menu = menu.item(
                 ContextMenuEntry::new("This file is excluded.")
@@ -1118,7 +1118,7 @@ impl EditPredictionButton {
                     .link_with_handler(
                         "Learn More",
                         OpenBrowser {
-                            url: zed_urls::edit_prediction_docs(cx).into(),
+                            url: mav_urls::edit_prediction_docs(cx).into(),
                         }
                         .boxed_clone(),
                         |_window, _cx| {
@@ -1185,7 +1185,7 @@ impl EditPredictionButton {
                                     )
                                     .into_any_element()
                             },
-                            move |_, cx| cx.open_url(&zed_urls::account_url(cx)),
+                            move |_, cx| cx.open_url(&mav_urls::account_url(cx)),
                         )
                         .when(usage.over_limit(), |menu| -> ContextMenu {
                             menu.entry("Subscribe to increase your limit", None, |_window, cx| {
@@ -1194,7 +1194,7 @@ impl EditPredictionButton {
                                     action = "upsell_clicked",
                                     reason = "usage_limit",
                                 );
-                                cx.open_url(&zed_urls::account_url(cx))
+                                cx.open_url(&mav_urls::account_url(cx))
                             })
                         })
                         .separator();
@@ -1207,15 +1207,15 @@ impl EditPredictionButton {
                                     .color(Color::Warning)
                                     .into_any_element()
                             },
-                            |_window, cx| cx.open_url(&zed_urls::account_url(cx)),
+                            |_window, cx| cx.open_url(&mav_urls::account_url(cx)),
                         )
-                        .entry("Upgrade to Zed Pro or contact us.", None, |_window, cx| {
+                        .entry("Upgrade to Mav Pro or contact us.", None, |_window, cx| {
                             telemetry::event!(
                                 "Edit Prediction Menu Action",
                                 action = "upsell_clicked",
                                 reason = "account_age",
                             );
-                            cx.open_url(&zed_urls::account_url(cx))
+                            cx.open_url(&mav_urls::account_url(cx))
                         })
                         .separator();
                 } else if self.user_store.read(cx).has_overdue_invoices() {
@@ -1228,14 +1228,14 @@ impl EditPredictionButton {
                                     .into_any_element()
                             },
                             |_window, cx| {
-                                cx.open_url(&zed_urls::account_url(cx))
+                                cx.open_url(&mav_urls::account_url(cx))
                             },
                         )
                         .entry(
                             "Check your payment status or contact us at billing-support@mav.dev to continue using this feature.",
                             None,
                             |_window, cx| {
-                                cx.open_url(&zed_urls::account_url(cx))
+                                cx.open_url(&mav_urls::account_url(cx))
                             },
                         )
                         .separator();
@@ -1595,7 +1595,7 @@ fn render_zeta_tab_animation(cx: &App) -> impl IntoElement {
             8.,
         ))
         .child(tab_sequence(true))
-        .child(Icon::new(IconName::ZedPredict))
+        .child(Icon::new(IconName::MavPredict))
         .child(tab_sequence(false))
 }
 

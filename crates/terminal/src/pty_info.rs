@@ -71,7 +71,7 @@ pub(crate) struct ProcessInfo {
     pub(crate) argv: Vec<String>,
 }
 
-/// Fetches Zed-relevant Pseudo-Terminal (PTY) process information
+/// Fetches Mav-relevant Pseudo-Terminal (PTY) process information
 pub(crate) struct PtyProcessInfo {
     system: RwLock<System>,
     refresh_kind: ProcessRefreshKind,

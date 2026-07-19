@@ -84,7 +84,7 @@ impl LauncherStatus {
         match self {
             LauncherStatus::BwrapNotFound => "no usable `bwrap` binary was found on PATH",
             LauncherStatus::SetuidRejected => {
-                "the only available `bwrap` is setuid-root, which Zed refuses to run"
+                "the only available `bwrap` is setuid-root, which Mav refuses to run"
             }
             LauncherStatus::SandboxProbeFailed => {
                 "`bwrap` is present but failed to create a sandbox (unprivileged user \
@@ -349,7 +349,7 @@ pub fn check_can_create_sandbox(
 
 /// Build the final command line that runs `program` inside Bubblewrap.
 ///
-/// `bridge_program` should be the current Zed executable. It is only used for
+/// `bridge_program` should be the current Mav executable. It is only used for
 /// [`NetworkAccess::LocalhostPort`], where it runs in bridge mode inside the
 /// sandbox before spawning the real command.
 ///

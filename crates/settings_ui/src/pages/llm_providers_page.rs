@@ -193,7 +193,7 @@ fn get_or_create_configuration_view(
         return view.clone();
     }
 
-    let view = provider.configuration_view_v2(ConfigurationViewTargetAgent::ZedAgent, window, cx);
+    let view = provider.configuration_view_v2(ConfigurationViewTargetAgent::MavAgent, window, cx);
 
     // Store the view for future renders by deferring a mutation
     let provider_id = provider_id.clone();

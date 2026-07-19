@@ -25,7 +25,7 @@ impl DapLocator for PythonLocator {
         if adapter.0.as_ref() != "Debugpy" {
             return None;
         }
-        let valid_program = build_config.command.starts_with("$ZED_")
+        let valid_program = build_config.command.starts_with("$MAV_")
             || Path::new(&build_config.command)
                 .file_name()
                 .is_some_and(|name| name.to_str().is_some_and(|path| path.starts_with("python")));
@@ -51,8 +51,8 @@ impl DapLocator for PythonLocator {
         let program_position = mod_name
             .is_none()
             .then(|| {
-                let zed_file = VariableName::File.template_value_with_whitespace();
-                build_config.args.iter().position(|arg| *arg == zed_file)
+                let mav_file = VariableName::File.template_value_with_whitespace();
+                build_config.args.iter().position(|arg| *arg == mav_file)
             })
             .flatten();
         let args = if let Some(position) = program_position {

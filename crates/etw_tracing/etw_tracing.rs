@@ -230,7 +230,7 @@ fn start_etw_recording(cx: &mut App, heap_pid: Option<u32>) {
 
 const RECORDING_TIMEOUT: Duration = Duration::from_secs(60);
 
-const INSTANCE_NAME: &str = "Zed";
+const INSTANCE_NAME: &str = "Mav";
 
 const BUILTIN_PROFILES: &[&str] = &[
     "CPU.Verbose.Memory",
@@ -244,7 +244,7 @@ fn heap_tracing_profile(heap_pid: Option<u32>) -> String {
         Some(pid) => (
             format!(
                 r#"
-    <HeapEventProvider Id="ZedHeapProvider">
+    <HeapEventProvider Id="MavHeapProvider">
       <HeapProcessIds Operation="Set">
         <HeapProcessId Value="{pid}"/>
       </HeapProcessIds>
@@ -254,7 +254,7 @@ fn heap_tracing_profile(heap_pid: Option<u32>) -> String {
       <Collectors Operation="Add">
         <HeapEventCollectorId Value="HeapCollector_WPRHeapCollector">
           <HeapEventProviders Operation="Set">
-            <HeapEventProviderId Value="ZedHeapProvider"/>
+            <HeapEventProviderId Value="MavHeapProvider"/>
           </HeapEventProviders>
         </HeapEventCollectorId>
       </Collectors>"#
@@ -265,11 +265,11 @@ fn heap_tracing_profile(heap_pid: Option<u32>) -> String {
 
     format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
-<WindowsPerformanceRecorder Version="1.0" Author="Zed Industries">
+<WindowsPerformanceRecorder Version="1.0" Author="Mav Industries">
   <Profiles>
     {heap_provider}
 
-    <Profile Id="ZedHeap.Verbose.Memory" Base="Heap.Verbose.Memory" Name="ZedHeap" DetailLevel="Verbose" LoggingMode="Memory" Description="Heap tracing">
+    <Profile Id="MavHeap.Verbose.Memory" Base="Heap.Verbose.Memory" Name="MavHeap" DetailLevel="Verbose" LoggingMode="Memory" Description="Heap tracing">
       {heap_collector}
     </Profile>
   </Profiles>
@@ -432,7 +432,7 @@ fn build_profile_collection(heap_pid: Option<u32>) -> Result<IProfileCollection>
         collection
             .Add(&heap_profile, VARIANT_BOOL(0))
             .wpr_context(&collection)
-            .context("Add ZedHeap profile to collection")?;
+            .context("Add MavHeap profile to collection")?;
     }
 
     Ok(collection)

@@ -1,5 +1,5 @@
 use gpui::{Action, IntoElement, ParentElement, RenderOnce};
-use language_model::{IconOrSvg, LanguageModelRegistry, ZED_CLOUD_PROVIDER_ID};
+use language_model::{IconOrSvg, LanguageModelRegistry, MAV_CLOUD_PROVIDER_ID};
 use ui::{Divider, List, ListBulletItem, prelude::*};
 
 pub struct ApiKeysWithProviders {
@@ -32,7 +32,7 @@ impl ApiKeysWithProviders {
             .visible_providers()
             .iter()
             .filter(|provider| {
-                provider.is_authenticated(cx) && provider.id() != ZED_CLOUD_PROVIDER_ID
+                provider.is_authenticated(cx) && provider.id() != MAV_CLOUD_PROVIDER_ID
             })
             .map(|provider| (provider.icon(), provider.name().0))
             .collect()

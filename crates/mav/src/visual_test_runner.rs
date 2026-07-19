@@ -3505,14 +3505,14 @@ fn run_sidebar_duplicate_project_names_visual_tests(
     //
     // No two projects share a worktree path, so ProjectGroupBuilder will
     // place each in its own group.
-    let code_zed = canonical_temp.join("code").join("mav");
-    let foo_zed = canonical_temp.join("code").join("foo").join("mav");
-    let bar_zed = canonical_temp.join("code").join("bar").join("mav");
-    let baz_zed = canonical_temp.join("code").join("baz").join("mav");
-    std::fs::create_dir_all(&code_zed)?;
-    std::fs::create_dir_all(&foo_zed)?;
-    std::fs::create_dir_all(&bar_zed)?;
-    std::fs::create_dir_all(&baz_zed)?;
+    let code_mav = canonical_temp.join("code").join("mav");
+    let foo_mav = canonical_temp.join("code").join("foo").join("mav");
+    let bar_mav = canonical_temp.join("code").join("bar").join("mav");
+    let baz_mav = canonical_temp.join("code").join("baz").join("mav");
+    std::fs::create_dir_all(&code_mav)?;
+    std::fs::create_dir_all(&foo_mav)?;
+    std::fs::create_dir_all(&bar_mav)?;
+    std::fs::create_dir_all(&baz_mav)?;
 
     cx.update(|cx| {
         cx.update_flags(true, vec!["agent-v2".to_string()]);
@@ -3522,8 +3522,8 @@ fn run_sidebar_duplicate_project_names_visual_tests(
 
     // Two single-worktree projects whose leaf name is "mav"
     {
-        let project1 = create_project_with_worktree(&code_zed, &app_state, cx)?;
-        let project2 = create_project_with_worktree(&foo_zed, &app_state, cx)?;
+        let project1 = create_project_with_worktree(&code_mav, &app_state, cx)?;
+        let project2 = create_project_with_worktree(&foo_mav, &app_state, cx)?;
 
         let window = open_sidebar_test_window(vec![project1, project2], &app_state, cx)?;
 
@@ -3552,13 +3552,13 @@ fn run_sidebar_duplicate_project_names_visual_tests(
     // Each project has a unique set of worktree paths, so they form
     // separate groups. The sidebar must disambiguate all three.
     {
-        let project1 = create_project_with_worktree(&code_zed, &app_state, cx)?;
-        let project2 = create_project_with_worktree(&foo_zed, &app_state, cx)?;
+        let project1 = create_project_with_worktree(&code_mav, &app_state, cx)?;
+        let project2 = create_project_with_worktree(&foo_mav, &app_state, cx)?;
 
-        let project3 = create_project_with_worktree(&bar_zed, &app_state, cx)?;
+        let project3 = create_project_with_worktree(&bar_mav, &app_state, cx)?;
         let add_second_worktree = cx.update(|cx| {
             project3.update(cx, |project, cx| {
-                project.find_or_create_worktree(&baz_zed, true, cx)
+                project.find_or_create_worktree(&baz_mav, true, cx)
             })
         });
         cx.background_executor.allow_parking();

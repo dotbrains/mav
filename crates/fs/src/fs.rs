@@ -472,14 +472,14 @@ impl FileHandle for std::fs::File {
 
         use windows::Win32::Foundation::HANDLE;
         use windows::Win32::Storage::FileSystem::{
-            FILE_NAME_NORMALIZED, GetFinalPathNameByHandleW,
+            FILE_NAME_NORMALIMAV, GetFinalPathNameByHandleW,
         };
 
         let handle = HANDLE(self.as_raw_handle() as _);
 
         // Query required buffer size (in wide chars)
         let required_len =
-            unsafe { GetFinalPathNameByHandleW(handle, &mut [], FILE_NAME_NORMALIZED) };
+            unsafe { GetFinalPathNameByHandleW(handle, &mut [], FILE_NAME_NORMALIMAV) };
         anyhow::ensure!(
             required_len != 0,
             "GetFinalPathNameByHandleW returned 0 length"
@@ -487,7 +487,7 @@ impl FileHandle for std::fs::File {
 
         // Allocate buffer and retrieve the path
         let mut buf: Vec<u16> = vec![0u16; required_len as usize + 1];
-        let written = unsafe { GetFinalPathNameByHandleW(handle, &mut buf, FILE_NAME_NORMALIZED) };
+        let written = unsafe { GetFinalPathNameByHandleW(handle, &mut buf, FILE_NAME_NORMALIMAV) };
         anyhow::ensure!(
             written != 0,
             "GetFinalPathNameByHandleW failed to write path"
@@ -1224,13 +1224,13 @@ impl Fs for RealFs {
     ///
     /// It creates both files in a temporary directory it removes at the end.
     async fn is_case_sensitive(&self) -> bool {
-        const UNINITIALIZED: u8 = 0;
+        const UNINITIALIMAV: u8 = 0;
         const CASE_SENSITIVE: u8 = 1;
         const NOT_CASE_SENSITIVE: u8 = 2;
 
         // Note we could CAS here, but really, if we race we do this work twice at worst which isn't a big deal.
         let load = self.is_case_sensitive.load(Ordering::Acquire);
-        if load != UNINITIALIZED {
+        if load != UNINITIALIMAV {
             return load == CASE_SENSITIVE;
         }
         let temp_dir = self.executor.spawn(async { TempDir::new() });

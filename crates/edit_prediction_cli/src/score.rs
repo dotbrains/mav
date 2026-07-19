@@ -907,7 +907,7 @@ mod tests {
             predictions: Vec::new(),
             score: vec![PredictionScore::zero(); score_count],
             qa: Vec::new(),
-            zed_version: None,
+            mav_version: None,
             state: None,
         }
     }

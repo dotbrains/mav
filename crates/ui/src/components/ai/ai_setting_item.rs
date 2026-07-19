@@ -52,8 +52,8 @@ pub enum AiSettingItemSource {
 impl AiSettingItemSource {
     fn icon_name(&self) -> IconName {
         match self {
-            Self::Extension => IconName::ZedSrcExtension,
-            Self::Custom => IconName::ZedSrcCustom,
+            Self::Extension => IconName::MavSrcExtension,
+            Self::Custom => IconName::MavSrcCustom,
             Self::Registry => IconName::AcpRegistry,
         }
     }

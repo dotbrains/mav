@@ -1,10 +1,10 @@
-// Zed settings
+// Mav settings
 //
-// For information on how to configure Zed, see the Zed
-// documentation: https://zed.dev/docs/configuring-zed
+// For information on how to configure Mav, see the Mav
+// documentation: https://mav.dev/docs/configuring-mav
 //
-// To see all of Zed's default settings without changing your
-// custom settings, run `zed: open default settings` from the
+// To see all of Mav's default settings without changing your
+// custom settings, run `mav: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
   "ui_font_size": 16,

@@ -2072,7 +2072,7 @@ pub mod evals {
                 prompt.clone(),
                 |cx| {
                     // Reconfigure to use a real model instead of the fake one
-                    let model_name = std::env::var("ZED_AGENT_MODEL")
+                    let model_name = std::env::var("MAV_AGENT_MODEL")
                         .unwrap_or("anthropic/claude-sonnet-4-latest".into());
 
                     let selected_model = SelectedModel::from_str(&model_name)

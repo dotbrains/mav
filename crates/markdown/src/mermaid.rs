@@ -635,16 +635,16 @@ mod tests {
     }
 
     #[test]
-    fn test_mermaid_font_family_resolves_zed_virtual_fonts() {
+    fn test_mermaid_font_family_resolves_mav_virtual_fonts() {
         assert_eq!(
-            super::mermaid_font_family(".ZedSans"),
+            super::mermaid_font_family(".MavSans"),
             "IBM Plex Sans, sans-serif"
         );
         assert_eq!(
-            super::mermaid_font_family("Zed Plex Sans"),
+            super::mermaid_font_family("Mav Plex Sans"),
             "IBM Plex Sans, sans-serif"
         );
-        assert_eq!(super::mermaid_font_family(".ZedMono"), "Lilex, sans-serif");
+        assert_eq!(super::mermaid_font_family(".MavMono"), "Lilex, sans-serif");
         assert_eq!(
             super::mermaid_font_family(".SystemUIFont"),
             "system-ui, sans-serif"

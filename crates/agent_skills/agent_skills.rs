@@ -95,7 +95,7 @@ pub struct Skill {
 /// Indicates where a skill was loaded from.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SkillSource {
-    /// Compiled into the Zed binary. These are always available and have
+    /// Compiled into the Mav binary. These are always available and have
     /// the lowest override priority (global and project-local skills can
     /// shadow them).
     BuiltIn,
@@ -697,7 +697,7 @@ pub fn read_skill_body_from_content(
 /// Content of the built-in `create-skill` SKILL.md, embedded at compile time.
 const CREATE_SKILL_CONTENT: &str = include_str!("builtin/create-skill/SKILL.md");
 
-/// Returns the set of skills that are compiled into the Zed binary.
+/// Returns the set of skills that are compiled into the Mav binary.
 pub fn builtin_skills() -> Vec<Skill> {
     let mut skills = Vec::new();
     if let Ok(skill) = parse_builtin_skill("create-skill", CREATE_SKILL_CONTENT) {
@@ -745,8 +745,8 @@ pub fn builtin_skill_content(skill_file_path: &Path) -> Option<&'static str> {
 /// Returns the global skills directory: `~/.agents/skills`.
 ///
 /// Other agents (e.g. Claude Code) already write skill files into this
-/// location, so a Zed installation may have skills here even before the
-/// rest of Zed's skills support ships.
+/// location, so a Mav installation may have skills here even before the
+/// rest of Mav's skills support ships.
 ///
 /// In test builds, `paths::home_dir()` is hardcoded to a fixed path
 /// (e.g. `/Users/mav`), so all tests using this function operate on the

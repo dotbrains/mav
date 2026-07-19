@@ -308,7 +308,7 @@ fn seed_thread_metadata(metadata: ThreadMetadata, cx: &mut TestAppContext) {
 /// alive for the duration of the test) and the `RemoteConnectionOptions`
 /// used for the fake server. Passing those options back into
 /// `reuse_opts` on a subsequent call makes the new project share the
-/// same `RemoteConnectionIdentity`, matching how Zed treats multiple
+/// same `RemoteConnectionIdentity`, matching how Mav treats multiple
 /// projects on the same SSH host.
 async fn start_remote_project(
     server_fs: &Arc<FakeFs>,
@@ -407,7 +407,7 @@ fn save_thread_metadata(
         let metadata = ThreadMetadata {
             thread_id,
             session_id: Some(session_id),
-            agent_id: agent::ZED_AGENT_ID.clone(),
+            agent_id: agent::MAV_AGENT_ID.clone(),
             title,
             title_override: None,
             updated_at,
@@ -443,7 +443,7 @@ fn save_thread_metadata_with_main_paths(
     let metadata = ThreadMetadata {
         thread_id,
         session_id: Some(session_id),
-        agent_id: agent::ZED_AGENT_ID.clone(),
+        agent_id: agent::MAV_AGENT_ID.clone(),
         title: Some(title),
         title_override: None,
         updated_at,
@@ -470,7 +470,7 @@ fn save_draft_metadata_with_main_paths(
     let metadata = ThreadMetadata {
         thread_id,
         session_id: None,
-        agent_id: agent::ZED_AGENT_ID.clone(),
+        agent_id: agent::MAV_AGENT_ID.clone(),
         title,
         title_override: None,
         updated_at,
@@ -1108,7 +1108,7 @@ async fn test_visible_entries_as_strings(cx: &mut TestAppContext) {
                     archived: false,
                     remote_connection: None,
                 },
-                icon: IconName::ZedAgent,
+                icon: IconName::MavAgent,
                 icon_from_external_svg: None,
                 status: AgentThreadStatus::Completed,
                 workspace: ThreadEntryWorkspace::Open(workspace.clone()),
@@ -1135,7 +1135,7 @@ async fn test_visible_entries_as_strings(cx: &mut TestAppContext) {
                     archived: false,
                     remote_connection: None,
                 },
-                icon: IconName::ZedAgent,
+                icon: IconName::MavAgent,
                 icon_from_external_svg: None,
                 status: AgentThreadStatus::Running,
                 workspace: ThreadEntryWorkspace::Open(workspace.clone()),
@@ -1162,7 +1162,7 @@ async fn test_visible_entries_as_strings(cx: &mut TestAppContext) {
                     archived: false,
                     remote_connection: None,
                 },
-                icon: IconName::ZedAgent,
+                icon: IconName::MavAgent,
                 icon_from_external_svg: None,
                 status: AgentThreadStatus::Error,
                 workspace: ThreadEntryWorkspace::Open(workspace.clone()),
@@ -1190,7 +1190,7 @@ async fn test_visible_entries_as_strings(cx: &mut TestAppContext) {
                     archived: false,
                     remote_connection: None,
                 },
-                icon: IconName::ZedAgent,
+                icon: IconName::MavAgent,
                 icon_from_external_svg: None,
                 status: AgentThreadStatus::WaitingForConfirmation,
                 workspace: ThreadEntryWorkspace::Open(workspace.clone()),
@@ -1218,7 +1218,7 @@ async fn test_visible_entries_as_strings(cx: &mut TestAppContext) {
                     archived: false,
                     remote_connection: None,
                 },
-                icon: IconName::ZedAgent,
+                icon: IconName::MavAgent,
                 icon_from_external_svg: None,
                 status: AgentThreadStatus::Completed,
                 workspace: ThreadEntryWorkspace::Open(workspace.clone()),
@@ -1803,7 +1803,7 @@ async fn test_closing_last_agent_panel_terminal_restores_empty_header(cx: &mut T
     // placeholder row, so the header reports having threads.
     assert_eq!(
         visible_entries_as_strings(&sidebar, cx),
-        vec!["v [my-project]", "  New Zed Agent Thread"]
+        vec!["v [my-project]", "  New Mav Agent Thread"]
     );
     assert_project_header_has_threads(&sidebar, "my-project", true, cx);
 
@@ -2052,7 +2052,7 @@ async fn test_terminal_close_event_on_archived_linked_worktree_removes_workspace
         },
     )
     .await;
-    agent_ui::test_support::record_zed_created_worktree(
+    agent_ui::test_support::record_mav_created_worktree(
         fs.as_ref(),
         Path::new("/worktrees/project/feature-a/project"),
         None,
@@ -2545,7 +2545,7 @@ async fn test_archive_selected_draft_archives_linked_worktree_after_last_draft(
         },
     )
     .await;
-    agent_ui::test_support::record_zed_created_worktree(
+    agent_ui::test_support::record_mav_created_worktree(
         fs.as_ref(),
         Path::new("/worktrees/project/feature-a/project"),
         None,
@@ -2770,7 +2770,7 @@ async fn test_archive_selected_draft_archives_closed_linked_worktree(cx: &mut Te
         },
     )
     .await;
-    agent_ui::test_support::record_zed_created_worktree(
+    agent_ui::test_support::record_mav_created_worktree(
         fs.as_ref(),
         Path::new("/worktrees/project/feature-a/project"),
         None,
@@ -3322,7 +3322,7 @@ async fn test_archive_selected_terminal_archives_closed_linked_worktree(cx: &mut
         },
     )
     .await;
-    agent_ui::test_support::record_zed_created_worktree(
+    agent_ui::test_support::record_mav_created_worktree(
         fs.as_ref(),
         Path::new("/worktrees/project/feature-a/project"),
         None,
@@ -3497,7 +3497,7 @@ async fn test_archive_selected_thread_archives_closed_linked_worktree(cx: &mut T
         },
     )
     .await;
-    agent_ui::test_support::record_zed_created_worktree(
+    agent_ui::test_support::record_mav_created_worktree(
         fs.as_ref(),
         Path::new("/worktrees/project/feature-a/project"),
         None,
@@ -7418,7 +7418,7 @@ async fn test_sidebar_keeps_multi_root_thread_with_stale_main_paths(cx: &mut Tes
                 ThreadMetadata {
                     thread_id,
                     session_id: Some(session_id.clone()),
-                    agent_id: agent::ZED_AGENT_ID.clone(),
+                    agent_id: agent::MAV_AGENT_ID.clone(),
                     title: Some("Stale Multi-Root Thread".into()),
                     title_override: None,
                     updated_at: Utc::now(),
@@ -7499,7 +7499,7 @@ async fn test_activate_archived_thread_with_saved_paths_activates_matching_works
             ThreadMetadata {
                 thread_id: ThreadId::new(),
                 session_id: Some(session_id.clone()),
-                agent_id: agent::ZED_AGENT_ID.clone(),
+                agent_id: agent::MAV_AGENT_ID.clone(),
                 title: Some("Archived Thread".into()),
                 title_override: None,
                 updated_at: Utc::now(),
@@ -7569,7 +7569,7 @@ async fn test_activate_archived_thread_cwd_fallback_with_matching_workspace(
             ThreadMetadata {
                 thread_id: ThreadId::new(),
                 session_id: Some(acp::SessionId::new(Arc::from("unknown-session"))),
-                agent_id: agent::ZED_AGENT_ID.clone(),
+                agent_id: agent::MAV_AGENT_ID.clone(),
                 title: Some("CWD Thread".into()),
                 title_override: None,
                 updated_at: Utc::now(),
@@ -7637,7 +7637,7 @@ async fn test_activate_archived_thread_no_paths_no_cwd_uses_active_workspace(
             ThreadMetadata {
                 thread_id: ThreadId::new(),
                 session_id: Some(acp::SessionId::new(Arc::from("no-context-session"))),
-                agent_id: agent::ZED_AGENT_ID.clone(),
+                agent_id: agent::MAV_AGENT_ID.clone(),
                 title: Some("Contextless Thread".into()),
                 title_override: None,
                 updated_at: Utc::now(),
@@ -7695,7 +7695,7 @@ async fn test_activate_archived_thread_saved_paths_opens_new_workspace(cx: &mut 
             ThreadMetadata {
                 thread_id: ThreadId::new(),
                 session_id: Some(session_id.clone()),
-                agent_id: agent::ZED_AGENT_ID.clone(),
+                agent_id: agent::MAV_AGENT_ID.clone(),
                 title: Some("New WS Thread".into()),
                 title_override: None,
                 updated_at: Utc::now(),
@@ -7752,7 +7752,7 @@ async fn test_activate_archived_thread_reuses_workspace_in_another_window(cx: &m
             ThreadMetadata {
                 thread_id: ThreadId::new(),
                 session_id: Some(session_id.clone()),
-                agent_id: agent::ZED_AGENT_ID.clone(),
+                agent_id: agent::MAV_AGENT_ID.clone(),
                 title: Some("Cross Window Thread".into()),
                 title_override: None,
                 updated_at: Utc::now(),
@@ -7831,7 +7831,7 @@ async fn test_activate_archived_thread_reuses_workspace_in_another_window_with_t
     let metadata = ThreadMetadata {
         thread_id: ThreadId::new(),
         session_id: Some(session_id.clone()),
-        agent_id: agent::ZED_AGENT_ID.clone(),
+        agent_id: agent::MAV_AGENT_ID.clone(),
         title: Some("Cross Window Thread".into()),
         title_override: None,
         updated_at: Utc::now(),
@@ -7914,7 +7914,7 @@ async fn test_activate_archived_thread_prefers_current_window_for_matching_paths
     let metadata = ThreadMetadata {
         thread_id: ThreadId::new(),
         session_id: Some(session_id.clone()),
-        agent_id: agent::ZED_AGENT_ID.clone(),
+        agent_id: agent::MAV_AGENT_ID.clone(),
         title: Some("Current Window Thread".into()),
         title_override: None,
         updated_at: Utc::now(),
@@ -8170,7 +8170,7 @@ async fn test_archive_last_worktree_thread_removes_workspace(cx: &mut TestAppCon
         },
     )
     .await;
-    agent_ui::test_support::record_zed_created_worktree(
+    agent_ui::test_support::record_mav_created_worktree(
         fs.as_ref(),
         Path::new("/worktrees/project/feature-a/project"),
         None,
@@ -8859,7 +8859,7 @@ async fn test_archive_last_worktree_thread_not_blocked_by_remote_thread_at_same_
         let metadata = ThreadMetadata {
             thread_id: ThreadId::new(),
             session_id: Some(acp::SessionId::new(Arc::from("remote-wt-thread"))),
-            agent_id: agent::ZED_AGENT_ID.clone(),
+            agent_id: agent::MAV_AGENT_ID.clone(),
             title: Some("Remote Worktree Thread".into()),
             title_override: None,
             updated_at: chrono::TimeZone::with_ymd_and_hms(&Utc, 2024, 1, 1, 0, 0, 0).unwrap(),
@@ -9674,7 +9674,7 @@ async fn test_unarchive_first_thread_in_group_does_not_create_spurious_draft(
                 ThreadMetadata {
                     thread_id,
                     session_id: Some(session_id.clone()),
-                    agent_id: agent::ZED_AGENT_ID.clone(),
+                    agent_id: agent::MAV_AGENT_ID.clone(),
                     title: Some("Unarchived Thread".into()),
                     title_override: None,
                     updated_at: Utc::now(),
@@ -9768,7 +9768,7 @@ async fn test_unarchive_into_new_workspace_does_not_create_duplicate_real_thread
                 ThreadMetadata {
                     thread_id: original_thread_id,
                     session_id: Some(session_id.clone()),
-                    agent_id: agent::ZED_AGENT_ID.clone(),
+                    agent_id: agent::MAV_AGENT_ID.clone(),
                     title: Some("Unarchived Thread".into()),
                     title_override: None,
                     updated_at: Utc::now(),
@@ -9995,7 +9995,7 @@ async fn test_unarchive_into_inactive_existing_workspace_does_not_leave_active_d
                 ThreadMetadata {
                     thread_id,
                     session_id: Some(session_id.clone()),
-                    agent_id: agent::ZED_AGENT_ID.clone(),
+                    agent_id: agent::MAV_AGENT_ID.clone(),
                     title: Some("Restored In Inactive Workspace".into()),
                     title_override: None,
                     updated_at: Utc::now(),
@@ -10846,7 +10846,7 @@ async fn test_unarchive_linked_worktree_thread_into_project_group_shows_only_res
                 ThreadMetadata {
                     thread_id: original_thread_id,
                     session_id: Some(session_id.clone()),
-                    agent_id: agent::ZED_AGENT_ID.clone(),
+                    agent_id: agent::MAV_AGENT_ID.clone(),
                     title: Some("Unarchived Linked Thread".into()),
                     title_override: None,
                     updated_at: Utc::now(),
@@ -11397,7 +11397,7 @@ async fn test_legacy_thread_with_canonical_path_opens_main_repo_workspace(cx: &m
         let metadata = ThreadMetadata {
             thread_id: ThreadId::new(),
             session_id: Some(legacy_session.clone()),
-            agent_id: agent::ZED_AGENT_ID.clone(),
+            agent_id: agent::MAV_AGENT_ID.clone(),
             title: Some("Legacy Main Thread".into()),
             title_override: None,
             updated_at: chrono::TimeZone::with_ymd_and_hms(&Utc, 2024, 1, 1, 0, 0, 0).unwrap(),
@@ -12387,7 +12387,7 @@ mod property_test {
         let metadata = ThreadMetadata {
             thread_id: ThreadId::new(),
             session_id: Some(session_id),
-            agent_id: agent::ZED_AGENT_ID.clone(),
+            agent_id: agent::MAV_AGENT_ID.clone(),
             title: Some(title),
             title_override: None,
             updated_at,
@@ -13323,7 +13323,7 @@ async fn test_remote_project_integration_does_not_briefly_render_as_separate_pro
         let metadata = ThreadMetadata {
             thread_id: ThreadId::new(),
             session_id: Some(remote_thread_id.clone()),
-            agent_id: agent::ZED_AGENT_ID.clone(),
+            agent_id: agent::MAV_AGENT_ID.clone(),
             title: Some("Worktree Thread".into()),
             title_override: None,
             updated_at: chrono::TimeZone::with_ymd_and_hms(&Utc, 2024, 1, 1, 0, 0, 1).unwrap(),
@@ -13535,7 +13535,7 @@ async fn test_archive_removes_worktree_even_when_workspace_paths_diverge(cx: &mu
         },
     )
     .await;
-    agent_ui::test_support::record_zed_created_worktree(
+    agent_ui::test_support::record_mav_created_worktree(
         fs.as_ref(),
         Path::new("/worktrees/project/feature-a/project"),
         None,
@@ -13694,7 +13694,7 @@ async fn test_archive_mixed_workspace_closes_only_archived_worktree_items(cx: &m
         },
     )
     .await;
-    agent_ui::test_support::record_zed_created_worktree(
+    agent_ui::test_support::record_mav_created_worktree(
         fs.as_ref(),
         Path::new("/worktrees/main-repo/feature-b/main-repo"),
         None,
@@ -13922,7 +13922,7 @@ async fn test_discard_mixed_workspace_draft_closes_only_archived_worktree_items(
         },
     )
     .await;
-    agent_ui::test_support::record_zed_created_worktree(
+    agent_ui::test_support::record_mav_created_worktree(
         fs.as_ref(),
         Path::new("/worktrees/main-repo/feature-b/main-repo"),
         None,
@@ -14160,7 +14160,7 @@ async fn test_remote_archive_thread_with_active_connection(
     // The mock remote transport only supports one live `RemoteClient` per
     // connection at a time (each client's `start_proxy` replaces the
     // previous server channel), so we can't split the main repo and the
-    // linked worktree across two remote projects the way Zed does in
+    // linked worktree across two remote projects the way Mav does in
     // production. Opening both as visible worktrees of a single remote
     // project still exercises every interesting path of the archive flow
     // while staying within the mock's multiplexing limits.
@@ -14271,10 +14271,10 @@ async fn test_remote_archive_thread_with_active_connection(
     // specifically and knows which main repo owns it.
     let remote_connection = project.read_with(cx, |p, cx| p.remote_connection_options(cx));
 
-    // Record the worktree as Zed-created on the client, keyed by the remote
+    // Record the worktree as Mav-created on the client, keyed by the remote
     // connection identity, with the creation time of the gitdir on the
     // *remote* filesystem (where the archive flow will re-stat it).
-    agent_ui::test_support::record_zed_created_worktree(
+    agent_ui::test_support::record_mav_created_worktree(
         server_fs.as_ref(),
         Path::new("/worktrees/project/feature-a/project"),
         remote_connection.as_ref(),
@@ -14287,7 +14287,7 @@ async fn test_remote_archive_thread_with_active_connection(
         let metadata = ThreadMetadata {
             thread_id: ThreadId::new(),
             session_id: Some(wt_thread_id.clone()),
-            agent_id: agent::ZED_AGENT_ID.clone(),
+            agent_id: agent::MAV_AGENT_ID.clone(),
             title: Some("Worktree Thread".into()),
             title_override: None,
             updated_at: chrono::TimeZone::with_ymd_and_hms(&chrono::Utc, 2024, 1, 1, 0, 0, 0)
@@ -14429,7 +14429,7 @@ async fn test_remote_linked_worktree_workspace_to_remove_uses_remote_connection(
         let metadata = ThreadMetadata {
             thread_id: worktree_thread_id,
             session_id: Some(worktree_session_id.clone()),
-            agent_id: agent::ZED_AGENT_ID.clone(),
+            agent_id: agent::MAV_AGENT_ID.clone(),
             title: Some("Remote Worktree Thread".into()),
             title_override: None,
             updated_at: chrono::TimeZone::with_ymd_and_hms(&Utc, 2024, 1, 1, 0, 0, 0).unwrap(),

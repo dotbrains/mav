@@ -1345,7 +1345,7 @@ impl ConfigurationView {
                             .child(Label::new("llama serve").inline_code(cx)),
                     )
                     .child(ListBulletItem::new(
-                        "Click 'Connect' below to start using llama.cpp in Zed",
+                        "Click 'Connect' below to start using llama.cpp in Mav",
                     )),
             )
             .child(Label::new(
@@ -1369,7 +1369,7 @@ impl ConfigurationView {
                 .child(self.api_key_editor.clone())
                 .child(
                     Label::new(format!(
-                        "You can also set the {API_KEY_ENV_VAR_NAME} environment variable and restart Zed."
+                        "You can also set the {API_KEY_ENV_VAR_NAME} environment variable and restart Mav."
                     ))
                     .size(LabelSize::Small)
                     .color(Color::Muted),

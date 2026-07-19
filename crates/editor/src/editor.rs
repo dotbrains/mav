@@ -1,6 +1,6 @@
 #![allow(rustdoc::private_intra_doc_links)]
 //! This is the place where everything editor-related is stored (data-wise) and displayed (ui-wise).
-//! The main point of interest in this crate is [`Editor`] type, which is used in every other Zed part as a user input element.
+//! The main point of interest in this crate is [`Editor`] type, which is used in every other Mav part as a user input element.
 //! It comes in different flavors: single line, multiline and a fixed height one.
 //!
 //! Editor contains of multiple large submodules:
@@ -915,7 +915,7 @@ struct ActionFetchReady {
     actions: Rc<[AvailableCodeAction]>,
 }
 
-/// Zed's primary implementation of text input, allowing users to edit a [`MultiBuffer`].
+/// Mav's primary implementation of text input, allowing users to edit a [`MultiBuffer`].
 ///
 /// See the [module level documentation](self) for more information.
 pub struct Editor {
@@ -2750,7 +2750,7 @@ impl Editor {
             cx,
             |e, _, _| match e.error_code() {
                 ErrorCode::RemoteUpgradeRequired => Some(format!(
-                "The remote instance of Zed does not support this yet. It must be upgraded to {}",
+                "The remote instance of Mav does not support this yet. It must be upgraded to {}",
                 e.error_tag("required").unwrap_or("the latest version")
             )),
                 _ => None,
@@ -2830,7 +2830,7 @@ impl Editor {
         .detach_and_prompt_err("Failed to create buffer", window, cx, |e, _, _| {
             match e.error_code() {
                 ErrorCode::RemoteUpgradeRequired => Some(format!(
-                "The remote instance of Zed does not support this yet. It must be upgraded to {}",
+                "The remote instance of Mav does not support this yet. It must be upgraded to {}",
                 e.error_tag("required").unwrap_or("the latest version")
             )),
                 _ => None,
@@ -8449,7 +8449,7 @@ impl Editor {
         cx: &mut Context<Self>,
     ) -> Entity<Self> {
         const MINIMAP_FONT_WEIGHT: gpui::FontWeight = gpui::FontWeight::BLACK;
-        const MINIMAP_FONT_FAMILY: SharedString = SharedString::new_static(".ZedMono");
+        const MINIMAP_FONT_FAMILY: SharedString = SharedString::new_static(".MavMono");
 
         let mut minimap = Editor::new_internal(
             EditorMode::Minimap {

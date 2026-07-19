@@ -495,10 +495,10 @@ fn is_forbidden_ip(ip: IpAddr) -> bool {
     // servers live on the VM's private network, which this filter would
     // otherwise reject. It is compiled in ONLY under the
     // `nixos-integration-tests` feature (enabled via `sandbox/nixos-test` when
-    // building `bwrap_test_helper`), so in a real Zed build the env var has no
+    // building `bwrap_test_helper`), so in a real Mav build the env var has no
     // effect and cannot disable DNS-rebinding/SSRF protection.
     #[cfg(feature = "nixos-integration-tests")]
-    if std::env::var_os("ZED_SANDBOX_PROXY_ALLOW_LOCAL_IPS").is_some() {
+    if std::env::var_os("MAV_SANDBOX_PROXY_ALLOW_LOCAL_IPS").is_some() {
         return false;
     }
     match ip {
@@ -844,7 +844,7 @@ fn deny_request(
     );
 
     let body = format!(
-        "Request blocked by the Zed sandbox network policy.\n\n  \
+        "Request blocked by the Mav sandbox network policy.\n\n  \
          Reason: {}\n\n  \
          This is not a network or server failure — it's a policy decision.\n  \
          To proceed, ask the user to approve the host on the next terminal call.\n",

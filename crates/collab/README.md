@@ -1,8 +1,8 @@
-# Zed Server
+# Mav Server
 
 This crate is what we run at https://collab.mav.dev.
 
-It contains our back-end logic for collaboration, to which we connect from the Zed client via a websocket after authenticating via https://mav.dev, which is a separate repo running on Vercel.
+It contains our back-end logic for collaboration, to which we connect from the Mav client via a websocket after authenticating via https://mav.dev, which is a separate repo running on Vercel.
 
 # Local Development
 
@@ -34,19 +34,19 @@ To use a different set of admin users, create `crates/collab/seed.json`.
 
 ## Testing collaborative features locally
 
-In one terminal, run Zed's collaboration server and the livekit dev server:
+In one terminal, run Mav's collaboration server and the livekit dev server:
 
 ```sh
 foreman start
 ```
 
-In a second terminal, run two or more instances of Zed.
+In a second terminal, run two or more instances of Mav.
 
 ```sh
 script/mav-local -2
 ```
 
-This script starts one to four instances of Zed, depending on the `-2`, `-3` or `-4` flags. Each instance will be connected to the local `collab` server, signed in as a different user from `seed.json` or `seed.default.json`.
+This script starts one to four instances of Mav, depending on the `-2`, `-3` or `-4` flags. Each instance will be connected to the local `collab` server, signed in as a different user from `seed.json` or `seed.default.json`.
 
 # Deployment
 

@@ -1772,7 +1772,7 @@ mod resolve_worktree_tests {
                 "/home/bob/worktrees/olivetti/mav",
                 Some("olivetti".into()),
             ),
-            ("/home/bob/mav", "/home/bob/zed2", Some("zed2".into())),
+            ("/home/bob/mav", "/home/bob/mav2", Some("mav2".into())),
             (
                 "/home/bob/mav",
                 "/home/bob/worktrees/mav/selectric",

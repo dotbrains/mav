@@ -180,21 +180,21 @@ async fn test_channel_guest_promotion(cx_a: &mut TestAppContext, cx_b: &mut Test
 }
 
 #[gpui::test]
-async fn test_channel_requires_zed_cla(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext) {
+async fn test_channel_requires_mav_cla(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext) {
     let mut server = TestServer::start(cx_a.executor()).await;
     let client_a = server.create_client(cx_a, "user_a").await;
     let client_b = server.create_client(cx_b, "user_b").await;
     let active_call_a = cx_a.read(ActiveCall::global);
     let active_call_b = cx_b.read(ActiveCall::global);
 
-    // Create a parent channel that requires the Zed CLA
+    // Create a parent channel that requires the Mav CLA
     let parent_channel_id = server
         .make_channel("the-channel", None, (&client_a, cx_a), &mut [])
         .await;
     server
         .app_state
         .db
-        .set_channel_requires_zed_cla(ChannelId::from_proto(parent_channel_id.0), true)
+        .set_channel_requires_mav_cla(ChannelId::from_proto(parent_channel_id.0), true)
         .await
         .unwrap();
 

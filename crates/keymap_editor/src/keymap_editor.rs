@@ -232,7 +232,7 @@ impl FilterState {
 #[derive(Default, PartialEq, Eq, Copy, Clone)]
 struct SourceFilters {
     user: bool,
-    zed_defaults: bool,
+    mav_defaults: bool,
     vim_defaults: bool,
 }
 
@@ -242,7 +242,7 @@ impl SourceFilters {
             Some(KeybindSource::User) => self.user,
             Some(KeybindSource::Vim) => self.vim_defaults,
             Some(KeybindSource::Base | KeybindSource::Default | KeybindSource::Unknown) | None => {
-                self.zed_defaults
+                self.mav_defaults
             }
         }
     }
@@ -602,7 +602,7 @@ impl KeymapEditor {
             filter_state: FilterState::default(),
             source_filters: SourceFilters {
                 user: true,
-                zed_defaults: true,
+                mav_defaults: true,
                 vim_defaults: true,
             },
             show_no_action_bindings: true,
@@ -815,7 +815,7 @@ impl KeymapEditor {
 
     fn process_bindings(
         json_language: Arc<Language>,
-        zed_keybind_context_language: Arc<Language>,
+        mav_keybind_context_language: Arc<Language>,
         humanized_action_names: &HumanizedActionNameCache,
         cx: &mut App,
     ) -> (
@@ -859,7 +859,7 @@ impl KeymapEditor {
                 .map(|predicate| {
                     KeybindContextString::Local(
                         predicate.to_string().into(),
-                        zed_keybind_context_language.clone(),
+                        mav_keybind_context_language.clone(),
                     )
                 })
                 .unwrap_or(KeybindContextString::Global);
@@ -919,14 +919,14 @@ impl KeymapEditor {
         let workspace = self.workspace.clone();
         cx.spawn_in(window, async move |this, cx| {
             let json_language = load_json_language(workspace.clone(), cx).await;
-            let zed_keybind_context_language =
+            let mav_keybind_context_language =
                 load_keybind_context_language(workspace.clone(), cx).await;
 
             let (action_query, keystroke_query) = this.update(cx, |this, cx| {
                 let (key_bindings, string_match_candidates, actions_with_schemas) =
                     Self::process_bindings(
                         json_language,
-                        zed_keybind_context_language,
+                        mav_keybind_context_language,
                         &this.humanized_action_names,
                         cx,
                     );
@@ -1502,8 +1502,8 @@ impl KeymapEditor {
         self.on_query_changed(cx);
     }
 
-    fn toggle_zed_defaults_filter(&mut self, cx: &mut Context<Self>) {
-        self.source_filters.zed_defaults = !self.source_filters.zed_defaults;
+    fn toggle_mav_defaults_filter(&mut self, cx: &mut Context<Self>) {
+        self.source_filters.mav_defaults = !self.source_filters.mav_defaults;
         self.on_query_changed(cx);
     }
 
@@ -1643,12 +1643,12 @@ impl KeymapEditor {
                             ))
                             .map(add_filter(
                                 "Default",
-                                source_filters.zed_defaults,
+                                source_filters.mav_defaults,
                                 None,
                                 &focus_handle,
                                 &keymap_editor,
                                 Some(|editor, cx| {
-                                    editor.toggle_zed_defaults_filter(cx);
+                                    editor.toggle_mav_defaults_filter(cx);
                                 }),
                             ))
                             .map(add_filter(
@@ -3578,21 +3578,21 @@ async fn load_keybind_context_language(
                 .project()
                 .read(cx)
                 .languages()
-                .language_for_name("Zed Keybind Context")
+                .language_for_name("Mav Keybind Context")
         })
-        .context("Failed to load Zed Keybind Context language")
+        .context("Failed to load Mav Keybind Context language")
         .log_err();
     let language = match language_task {
         Some(task) => task
             .await
-            .context("Failed to load Zed Keybind Context language")
+            .context("Failed to load Mav Keybind Context language")
             .log_err(),
         None => None,
     };
     language.unwrap_or_else(|| {
         Arc::new(Language::new(
             LanguageConfig {
-                name: "Zed Keybind Context".into(),
+                name: "Mav Keybind Context".into(),
                 ..Default::default()
             },
             Some(tree_sitter_rust::LANGUAGE.into()),

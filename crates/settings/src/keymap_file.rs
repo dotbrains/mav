@@ -1901,7 +1901,7 @@ mod tests {
             KeybindUpdateOperation::add(KeybindUpdateTarget {
                 keystrokes: &parse_keystrokes("ctrl-b"),
                 action_name: "mav::SomeOtherAction",
-                context: Some("Zed > Editor && some_condition = true"),
+                context: Some("Mav > Editor && some_condition = true"),
                 action_arguments: Some(r#"{"foo": "bar"}"#),
             }),
             r#"[
@@ -1911,7 +1911,7 @@ mod tests {
                     }
                 },
                 {
-                    "context": "Zed > Editor && some_condition = true",
+                    "context": "Mav > Editor && some_condition = true",
                     "bindings": {
                         "ctrl-b": [
                             "mav::SomeOtherAction",

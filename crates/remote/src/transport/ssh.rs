@@ -201,7 +201,7 @@ impl MasterProcess {
 
 #[cfg(windows)]
 impl MasterProcess {
-    const CONNECTION_ESTABLISHED_MAGIC: &str = "ZED_SSH_CONNECTION_ESTABLISHED";
+    const CONNECTION_ESTABLISHED_MAGIC: &str = "MAV_SSH_CONNECTION_ESTABLISHED";
 
     pub fn new(
         askpass_script_path: &std::ffi::OsStr,
@@ -228,7 +228,7 @@ impl MasterProcess {
             .stderr(Stdio::piped())
             .env("SSH_ASKPASS_REQUIRE", "force")
             .env("SSH_ASKPASS", askpass_script_path)
-            .env("ZED_ASKPASS_SOCKET", askpass_socket_path)
+            .env("MAV_ASKPASS_SOCKET", askpass_socket_path)
             .args(additional_args)
             .arg(destination)
             .args(args);
@@ -446,7 +446,7 @@ impl RemoteConnection for SshRemoteConnection {
         delegate: Arc<dyn RemoteClientDelegate>,
         cx: &mut AsyncApp,
     ) -> Task<Result<i32>> {
-        const VARS: [&str; 3] = ["RUST_LOG", "RUST_BACKTRACE", "ZED_GENERATE_MINIDUMPS"];
+        const VARS: [&str; 3] = ["RUST_LOG", "RUST_BACKTRACE", "MAV_GENERATE_MINIDUMPS"];
         delegate.set_status(Some("Starting proxy"), cx);
 
         let Some(remote_binary_path) = self.remote_binary_path.clone() else {
@@ -865,7 +865,7 @@ impl SshRemoteConnection {
             ReleaseChannel::Nightly => Ok(None),
             ReleaseChannel::Dev => {
                 anyhow::bail!(
-                    "ZED_BUILD_REMOTE_SERVER is not set and no remote server exists at ({:?})",
+                    "MAV_BUILD_REMOTE_SERVER is not set and no remote server exists at ({:?})",
                     dst_path
                 )
             }
@@ -1287,7 +1287,7 @@ impl SshSocket {
             _proxy.script_path().as_ref().display().to_string(),
         );
         envs.insert(
-            "ZED_ASKPASS_SOCKET".into(),
+            "MAV_ASKPASS_SOCKET".into(),
             _proxy.socket_path().as_ref().display().to_string(),
         );
 
@@ -2125,7 +2125,7 @@ mod tests {
     #[test]
     fn test_build_command_quotes_env_assignment() -> Result<()> {
         let mut input_env = HashMap::default();
-        input_env.insert("ZED$(echo foo)".to_string(), "value".to_string());
+        input_env.insert("MAV$(echo foo)".to_string(), "value".to_string());
 
         let command = build_command_posix(
             Some("remote_program".to_string()),
@@ -2147,7 +2147,7 @@ mod tests {
             .last()
             .context("missing remote command argument")?;
         assert!(
-            remote_command.contains("exec env 'ZED$(echo foo)=value' remote_program"),
+            remote_command.contains("exec env 'MAV$(echo foo)=value' remote_program"),
             "expected env assignment to be quoted, got: {remote_command}"
         );
 

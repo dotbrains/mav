@@ -3,8 +3,8 @@ use anyhow::{Context as _, Result};
 use cloud_llm_client::{
     CLIENT_SUPPORTS_STATUS_MESSAGES_HEADER_NAME, CLIENT_SUPPORTS_STATUS_STREAM_ENDED_HEADER_NAME,
     CLIENT_SUPPORTS_X_AI_HEADER_NAME, CompletionBody, CompletionEvent, CompletionRequestStatus,
-    EXPIRED_LLM_TOKEN_HEADER_NAME, ListModelsResponse, OUTDATED_LLM_TOKEN_HEADER_NAME,
-    SERVER_SUPPORTS_STATUS_MESSAGES_HEADER_NAME, ZED_VERSION_HEADER_NAME,
+    EXPIRED_LLM_TOKEN_HEADER_NAME, ListModelsResponse, MAV_VERSION_HEADER_NAME,
+    OUTDATED_LLM_TOKEN_HEADER_NAME, SERVER_SUPPORTS_STATUS_MESSAGES_HEADER_NAME,
 };
 use futures::{
     AsyncBufReadExt, AsyncReadExt as _, FutureExt, Stream, StreamExt,
@@ -23,9 +23,9 @@ use language_model::{
     GOOGLE_PROVIDER_NAME, LanguageModel, LanguageModelCompletionError,
     LanguageModelCompletionEvent, LanguageModelEffortLevel, LanguageModelId, LanguageModelName,
     LanguageModelProviderId, LanguageModelProviderName, LanguageModelRequest,
-    LanguageModelToolChoice, LanguageModelToolSchemaFormat, OPEN_AI_PROVIDER_ID,
-    OPEN_AI_PROVIDER_NAME, RateLimiter, X_AI_PROVIDER_ID, X_AI_PROVIDER_NAME,
-    ZED_CLOUD_PROVIDER_ID, ZED_CLOUD_PROVIDER_NAME,
+    LanguageModelToolChoice, LanguageModelToolSchemaFormat, MAV_CLOUD_PROVIDER_ID,
+    MAV_CLOUD_PROVIDER_NAME, OPEN_AI_PROVIDER_ID, OPEN_AI_PROVIDER_NAME, RateLimiter,
+    X_AI_PROVIDER_ID, X_AI_PROVIDER_NAME,
 };
 
 use schemars::JsonSchema;
@@ -46,8 +46,8 @@ use open_ai::completion::{
     into_open_ai_response,
 };
 
-const PROVIDER_ID: LanguageModelProviderId = ZED_CLOUD_PROVIDER_ID;
-const PROVIDER_NAME: LanguageModelProviderName = ZED_CLOUD_PROVIDER_NAME;
+const PROVIDER_ID: LanguageModelProviderId = MAV_CLOUD_PROVIDER_ID;
+const PROVIDER_NAME: LanguageModelProviderName = MAV_CLOUD_PROVIDER_NAME;
 
 /// Trait for acquiring and refreshing LLM authentication tokens.
 pub trait CloudLlmTokenProvider: Send + Sync {
@@ -63,7 +63,7 @@ pub trait CloudLlmTokenProvider: Send + Sync {
     fn has_data_retention_consent(&self, cx: &impl AppContext) -> bool;
 }
 
-/// Sends an authenticated request to the Zed LLM service, retrying once with
+/// Sends an authenticated request to the Mav LLM service, retrying once with
 /// a refreshed token if the server signals that the cached LLM token is
 /// expired or otherwise rejected. Returns the raw response so callers can
 /// inspect headers and stream the body.
@@ -126,7 +126,7 @@ impl<TP: CloudLlmTokenProvider> CloudLanguageModel<TP> {
         body: CompletionBody,
     ) -> Result<PerformLlmCompletionResponse, LanguageModelCompletionError> {
         let url = http_client
-            .build_zed_llm_url("/completions", &[])
+            .build_mav_llm_url("/completions", &[])
             .map_err(LanguageModelCompletionError::Other)?;
         let body = serde_json::to_string(&body).map_err(|error| {
             LanguageModelCompletionError::SerializeRequest {
@@ -140,7 +140,7 @@ impl<TP: CloudLlmTokenProvider> CloudLanguageModel<TP> {
                     .method(Method::POST)
                     .uri(url.as_ref())
                     .when_some(app_version.as_ref(), |builder, app_version| {
-                        builder.header(ZED_VERSION_HEADER_NAME, app_version.to_string())
+                        builder.header(MAV_VERSION_HEADER_NAME, app_version.to_string())
                     })
                     .header("Content-Type", "application/json")
                     .header("Authorization", format!("Bearer {token}"))
@@ -209,7 +209,7 @@ struct ApiError {
     headers: HeaderMap<HeaderValue>,
 }
 
-/// Represents error responses from Zed's cloud API.
+/// Represents error responses from Mav's cloud API.
 ///
 /// Example JSON for an upstream HTTP error:
 /// ```json
@@ -725,7 +725,7 @@ impl<TP: CloudLlmTokenProvider + 'static> CloudModelProvider<TP> {
         token_provider: &TP,
         auth_context: TP::AuthContext,
     ) -> Result<ListModelsResponse> {
-        let url = http_client.build_zed_llm_url("/models", &[])?;
+        let url = http_client.build_mav_llm_url("/models", &[])?;
         let mut response =
             authenticated_llm_request(http_client, token_provider, auth_context, |token| {
                 Ok(http_client::Request::builder()
@@ -1036,7 +1036,7 @@ mod tests {
             ),
         }
 
-        // Regular 500 error without upstream_http_error should remain ApiInternalServerError for Zed
+        // Regular 500 error without upstream_http_error should remain ApiInternalServerError for Mav
         let error_body = "Regular internal server error";
 
         let api_error = ApiError {

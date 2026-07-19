@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use agent_skills::GLOBAL_SKILLS_DIR_DISPLAY;
 use auto_update::{AutoUpdater, release_notes_url};
-use client::zed_urls;
+use client::mav_urls;
 use db::kvp::Dismissable;
 use editor::{Editor, MultiBuffer};
 use gpui::{
@@ -243,7 +243,7 @@ fn announcement_for_version(version: &Version, cx: &App) -> Option<AnnouncementC
                 window.dispatch_action(Box::new(mav_actions::assistant::FocusAgent), cx);
             })),
             on_dismiss: Some(Arc::new(|cx| SkillsAnnouncement::set_dismissed(true, cx))),
-            secondary_action_url: Some(zed_urls::skills_docs(cx).into()),
+            secondary_action_url: Some(mav_urls::skills_docs(cx).into()),
         })
     } else {
         None

@@ -71,7 +71,7 @@ pub use extension_settings::ExtensionSettings;
 pub const RELOAD_DEBOUNCE_DURATION: Duration = Duration::from_millis(200);
 const FS_WATCH_LATENCY: Duration = Duration::from_millis(100);
 
-/// The current extension [`SchemaVersion`] supported by Zed.
+/// The current extension [`SchemaVersion`] supported by Mav.
 const CURRENT_SCHEMA_VERSION: SchemaVersion = SchemaVersion(1);
 
 /// Extensions that should no longer be loaded or downloaded.
@@ -98,12 +98,12 @@ static SUPPRESSED_EXTENSIONS: LazyLock<FxHashSet<&str>> = LazyLock::new(|| {
     ])
 });
 
-/// Returns the [`SchemaVersion`] range that is compatible with this version of Zed.
+/// Returns the [`SchemaVersion`] range that is compatible with this version of Mav.
 pub fn schema_version_range() -> RangeInclusive<SchemaVersion> {
     SchemaVersion::ZERO..=CURRENT_SCHEMA_VERSION
 }
 
-/// Returns whether the given extension version is compatible with this version of Zed.
+/// Returns whether the given extension version is compatible with this version of Mav.
 pub fn is_version_compatible(
     release_channel: ReleaseChannel,
     extension_version: &ExtensionMetadata,
@@ -652,7 +652,7 @@ impl ExtensionStore {
         self.fetch_extensions_from_api(&format!("/extensions/{extension_id}"), &[], cx)
     }
 
-    /// Installs any extensions that should be included with Zed by default.
+    /// Installs any extensions that should be included with Mav by default.
     ///
     /// This can be used to make certain functionality provided by extensions
     /// available out-of-the-box.
@@ -729,7 +729,7 @@ impl ExtensionStore {
         query: &[(&str, &str)],
         cx: &mut Context<ExtensionStore>,
     ) -> Task<Result<Vec<ExtensionMetadata>>> {
-        let url = self.http_client.build_zed_api_url(path, query);
+        let url = self.http_client.build_mav_api_url(path, query);
         let http_client = self.http_client.clone();
         cx.spawn(async move |_, _| {
             let mut response = http_client
@@ -893,7 +893,7 @@ impl ExtensionStore {
 
         let Some(url) = self
             .http_client
-            .build_zed_api_url(
+            .build_mav_api_url(
                 &format!("/extensions/{extension_id}/download"),
                 &[
                     ("min_schema_version", &schema_versions.start().to_string()),
@@ -938,7 +938,7 @@ impl ExtensionStore {
         log::info!("installing extension {extension_id} {version}");
         let Some(url) = self
             .http_client
-            .build_zed_api_url(
+            .build_mav_api_url(
                 &format!("/extensions/{extension_id}/{version}/download"),
                 &[],
             )

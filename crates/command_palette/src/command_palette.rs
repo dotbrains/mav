@@ -455,7 +455,7 @@ impl PickerDelegate for CommandPaletteDelegate {
         let (mut tx, mut rx) = postage::dispatch::channel(1);
 
         let query_str = query.as_str();
-        let is_zed_link = parse_mav_link(query_str, cx).is_some();
+        let is_mav_link = parse_mav_link(query_str, cx).is_some();
 
         let task = cx.background_spawn({
             let mut commands = self.all_commands.clone();
@@ -488,7 +488,7 @@ impl PickerDelegate for CommandPaletteDelegate {
                 )
                 .await;
 
-                let intercept_result = if is_zed_link {
+                let intercept_result = if is_mav_link {
                     CommandInterceptResult {
                         results: vec![CommandInterceptItem {
                             action: OpenMavUrl {

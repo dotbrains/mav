@@ -150,7 +150,7 @@ impl AgentThreadItem {
             .map(|thread_view| thread_view.read(cx).agent_icon)
             .unwrap_or_else(|| {
                 if self.conversation_view.read(cx).agent_key().is_native() {
-                    IconName::ZedAgent
+                    IconName::MavAgent
                 } else {
                     IconName::Sparkle
                 }
@@ -812,7 +812,7 @@ impl agent::SiblingThreadHost for AgentThreadSiblingHost {
             models
         };
         agents.push(agent::AvailableAgent {
-            id: agent::ZED_AGENT_ID.to_string(),
+            id: agent::MAV_AGENT_ID.to_string(),
             name: Agent::NativeAgent.label(),
             is_native: true,
             models: native_models,
@@ -843,7 +843,7 @@ fn resolve_requested_agent(
 ) -> Result<Agent> {
     match agent_id {
         None => Ok(Agent::NativeAgent),
-        Some(id) if id == agent::ZED_AGENT_ID.as_ref() => Ok(Agent::NativeAgent),
+        Some(id) if id == agent::MAV_AGENT_ID.as_ref() => Ok(Agent::NativeAgent),
         Some(id) => {
             let known = workspace
                 .read_with(cx, |workspace, cx| {

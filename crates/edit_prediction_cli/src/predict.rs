@@ -170,11 +170,11 @@ pub async fn run_prediction(
         store.set_edit_prediction_model(model);
 
         // If user specified a non-default Zeta2 version, configure raw endpoint.
-        // ZED_ZETA_MODEL env var is optional.
+        // MAV_ZETA_MODEL env var is optional.
         if let PredictionProvider::Zeta2(format) = provider {
             if format != ZetaFormat::default() {
-                let model_id = std::env::var("ZED_ZETA_MODEL").ok();
-                let environment = std::env::var("ZED_ZETA_ENVIRONMENT").ok();
+                let model_id = std::env::var("MAV_ZETA_MODEL").ok();
+                let environment = std::env::var("MAV_ZETA_ENVIRONMENT").ok();
                 store.set_zeta2_raw_config(Zeta2RawConfig {
                     model_id,
                     environment,
@@ -625,7 +625,7 @@ pub async fn predict_baseten(
     step_progress: &StepProgress,
 ) -> anyhow::Result<()> {
     let model_id =
-        std::env::var("ZED_ZETA_MODEL").context("ZED_ZETA_MODEL environment variable required")?;
+        std::env::var("MAV_ZETA_MODEL").context("MAV_ZETA_MODEL environment variable required")?;
 
     let api_key =
         std::env::var("BASETEN_API_KEY").context("BASETEN_API_KEY environment variable not set")?;

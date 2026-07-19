@@ -38,7 +38,7 @@ pub enum MentionUri {
     },
     /// Deprecated: kept so threads from before rules became skills still
     /// deserialize. `id` (an opaque `prompt_store::PromptId`) is preserved
-    /// verbatim so re-saved threads stay loadable by older Zed versions.
+    /// verbatim so re-saved threads stay loadable by older Mav versions.
     Rule {
         #[serde(default = "default_deprecated_rule_id")]
         id: serde_json::Value,
@@ -603,7 +603,7 @@ fn default_include_errors() -> bool {
     true
 }
 
-/// Placeholder rule `id` for legacy mentions missing one, shaped so older Zed
+/// Placeholder rule `id` for legacy mentions missing one, shaped so older Mav
 /// versions can still deserialize it as a `prompt_store::PromptId`.
 fn default_deprecated_rule_id() -> serde_json::Value {
     serde_json::json!({ "User": { "uuid": "00000000-0000-0000-0000-000000000000" } })
@@ -853,7 +853,7 @@ mod tests {
 
     #[test]
     fn test_legacy_rule_mention_preserves_id() {
-        // The `id` older Zed versions require must survive a load + save.
+        // The `id` older Mav versions require must survive a load + save.
         let json = r#"{"Rule":{"id":{"User":{"uuid":"d8694ff2-90d5-4b6f-be33-33c1763acd52"}},"name":"Some rule"}}"#;
         let parsed: MentionUri = serde_json::from_str(json).unwrap();
         match &parsed {
@@ -958,7 +958,7 @@ mod tests {
     }
 
     #[test]
-    fn test_invalid_zed_path() {
+    fn test_invalid_mav_path() {
         assert!(MentionUri::parse("mav:///invalid/path", PathStyle::local()).is_err());
         assert!(MentionUri::parse("mav:///agent/unknown/test", PathStyle::local()).is_err());
     }

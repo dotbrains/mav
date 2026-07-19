@@ -1192,7 +1192,7 @@ pub mod simple_message_notification {
             });
 
             let with_primary_action = cx.new(|cx| {
-                MessageNotification::new("A new version of Zed is available for download.", cx)
+                MessageNotification::new("A new version of Mav is available for download.", cx)
                     .with_title("Update Available")
                     .primary_message("Restart Now")
                     .primary_icon(IconName::ArrowCircle)
@@ -1295,7 +1295,7 @@ pub mod simple_message_notification {
                     "Linux desktop portal initialization failed.".into()
                 }
                 fn secondary_message(&self) -> Option<SharedString> {
-                    Some("Zed needs an xdg-desktop-portal implementation to open files.".into())
+                    Some("Mav needs an xdg-desktop-portal implementation to open files.".into())
                 }
                 fn severity(&self) -> ErrorSeverity {
                     ErrorSeverity::Critical
@@ -1319,7 +1319,7 @@ pub mod simple_message_notification {
                     ErrorSeverity::Critical
                 }
                 fn primary_action(&self) -> ErrorAction {
-                    ErrorAction::link("Update Zed", "https://mav.dev/releases")
+                    ErrorAction::link("Update Mav", "https://mav.dev/releases")
                 }
                 fn secondary_action(&self) -> Option<ErrorAction> {
                     Some(ErrorAction::dismiss())

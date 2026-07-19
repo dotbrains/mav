@@ -286,7 +286,7 @@ impl ApplicationMenu {
 
 pub(crate) fn show_menus(cx: &mut App) -> bool {
     SidebarChromeSettings::get_global(cx).show_menus
-        && (cfg!(not(target_os = "macos")) || option_env!("ZED_USE_CROSS_PLATFORM_MENU").is_some())
+        && (cfg!(not(target_os = "macos")) || option_env!("MAV_USE_CROSS_PLATFORM_MENU").is_some())
 }
 
 impl Render for ApplicationMenu {

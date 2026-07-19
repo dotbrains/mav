@@ -583,7 +583,7 @@ mod tests {
             }],
             score: Vec::new(),
             qa: Vec::new(),
-            zed_version: None,
+            mav_version: None,
             state: None,
         }
     }

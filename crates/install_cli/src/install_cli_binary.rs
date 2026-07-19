@@ -1,4 +1,4 @@
-use super::register_zed_scheme;
+use super::register_mav_scheme;
 use anyhow::Result;
 use gpui::{AppContext as _, AsyncApp, Context, PromptLevel, Window, actions};
 use release_channel::ReleaseChannel;
@@ -12,7 +12,7 @@ use workspace::{Toast, Workspace};
 actions!(
     cli,
     [
-        /// Installs the Zed CLI tool to the system PATH.
+        /// Installs the Mav CLI tool to the system PATH.
         InstallCliBinary,
     ]
 );
@@ -80,7 +80,7 @@ async fn install_script(cx: &AsyncApp) -> Result<Option<PathBuf>> {
 }
 
 pub fn install_cli_binary(window: &mut Window, cx: &mut Context<Workspace>) {
-    const LINUX_PROMPT_DETAIL: &str = "If you installed Zed from our official release add ~/.local/bin to your PATH.\n\nIf you installed Zed from a different source like your package manager, then you may need to create an alias/symlink manually.\n\nDepending on your package manager, the CLI might be named zeditor, zedit, mav-editor or something else.";
+    const LINUX_PROMPT_DETAIL: &str = "If you installed Mav from our official release add ~/.local/bin to your PATH.\n\nIf you installed Mav from a different source like your package manager, then you may need to create an alias/symlink manually.\n\nDepending on your package manager, the CLI might be named mavitor, mavit, mav-editor or something else.";
 
     cx.spawn_in(window, async move |workspace, cx| {
         if cfg!(any(target_os = "linux", target_os = "freebsd")) {
@@ -111,7 +111,7 @@ pub fn install_cli_binary(window: &mut Window, cx: &mut Context<Workspace>) {
                                     "You can add `mav` to your PATH manually.",
                                     cx,
                                 )
-                                .with_title("Couldn't install the Zed CLI")
+                                .with_title("Couldn't install the Mav CLI")
                                 .more_info_message("Show me how")
                                 .more_info_url(CANT_INSTALL_DOCS_URL)
                             })
@@ -123,11 +123,11 @@ pub fn install_cli_binary(window: &mut Window, cx: &mut Context<Workspace>) {
         };
 
         workspace.update_in(cx, |workspace, _, cx| {
-            struct InstalledZedCli;
+            struct InstalledMavCli;
 
             workspace.show_toast(
                 Toast::new(
-                    NotificationId::unique::<InstalledZedCli>(),
+                    NotificationId::unique::<InstalledMavCli>(),
                     format!(
                         "Installed `mav` to {}. You can launch {} from your terminal.",
                         path.to_string_lossy(),
@@ -137,8 +137,8 @@ pub fn install_cli_binary(window: &mut Window, cx: &mut Context<Workspace>) {
                 cx,
             )
         })?;
-        register_zed_scheme(cx).await.log_err();
+        register_mav_scheme(cx).await.log_err();
         Ok(())
     })
-    .detach_and_prompt_err("Cannot install the Zed CLI", window, cx, |_, _, _| None);
+    .detach_and_prompt_err("Cannot install the Mav CLI", window, cx, |_, _, _| None);
 }

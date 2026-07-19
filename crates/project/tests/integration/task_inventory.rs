@@ -561,7 +561,7 @@ async fn test_inventory_static_task_filters(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-async fn test_zed_tasks_take_precedence_over_vscode(cx: &mut TestAppContext) {
+async fn test_mav_tasks_take_precedence_over_vscode(cx: &mut TestAppContext) {
     init_test(cx);
     let inventory = cx.update(|cx| Inventory::new(cx));
     let worktree_id = WorktreeId::from_usize(0);
@@ -590,17 +590,17 @@ async fn test_zed_tasks_take_precedence_over_vscode(cx: &mut TestAppContext) {
                     worktree_id,
                     path: rel_path(".mav"),
                 }),
-                Some(&mock_tasks_from_names(["zed_task"])),
+                Some(&mock_tasks_from_names(["mav_task"])),
             )
             .unwrap();
     });
     assert_eq!(
         task_template_names(&inventory, Some(worktree_id), cx).await,
-        vec!["zed_task"],
+        vec!["mav_task"],
         "With both .mav and .vscode tasks, only .mav tasks should appear"
     );
 
-    register_worktree_task_used(&inventory, worktree_id, "zed_task", cx).await;
+    register_worktree_task_used(&inventory, worktree_id, "mav_task", cx).await;
     let resolved = resolved_task_names(&inventory, Some(worktree_id), cx).await;
     assert!(
         !resolved.iter().any(|name| name == "vscode_task"),

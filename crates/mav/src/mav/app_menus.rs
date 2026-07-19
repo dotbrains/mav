@@ -302,7 +302,7 @@ pub fn app_menus(cx: &mut App) -> Vec<Menu> {
                 MenuItem::action(
                     "Mav Twitter",
                     super::OpenBrowser {
-                        url: "https://twitter.com/zeddotdev".into(),
+                        url: "https://twitter.com/mavdotdev".into(),
                     },
                 ),
                 MenuItem::action(

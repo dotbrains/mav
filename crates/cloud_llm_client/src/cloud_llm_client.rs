@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter, EnumString};
 use uuid::Uuid;
 
-/// The name of the header used to indicate which version of Zed the client is running.
-pub const ZED_VERSION_HEADER_NAME: &str = "x-mav-version";
+/// The name of the header used to indicate which version of Mav the client is running.
+pub const MAV_VERSION_HEADER_NAME: &str = "x-mav-version";
 
 /// The name of the header used to indicate which edit prediction experiment should be used.
 pub const PREFERRED_EXPERIMENT_HEADER_NAME: &str = "x-mav-preferred-experiment";
@@ -39,9 +39,9 @@ pub const EDIT_PREDICTIONS_USAGE_AMOUNT_HEADER_NAME: &str = "x-mav-edit-predicti
 
 pub const EDIT_PREDICTIONS_RESOURCE_HEADER_VALUE: &str = "edit_predictions";
 
-/// The name of the header used to indicate the minimum required Zed version.
+/// The name of the header used to indicate the minimum required Mav version.
 ///
-/// This can be used to force a Zed upgrade in order to continue communicating
+/// This can be used to force a Mav upgrade in order to continue communicating
 /// with the LLM service.
 pub const MINIMUM_REQUIRED_VERSION_HEADER_NAME: &str = "x-mav-minimum-required-version";
 

@@ -158,7 +158,7 @@ impl ScrollableHandle for ViewStateHandle {
     }
 }
 
-static HEX_BYTES_MEMOIZED: LazyLock<[SharedString; 256]> =
+static HEX_BYTES_MEMOIMAV: LazyLock<[SharedString; 256]> =
     LazyLock::new(|| std::array::from_fn(|byte| SharedString::from(format!("{byte:02X}"))));
 static UNKNOWN_BYTE: SharedString = SharedString::new_static("??");
 
@@ -759,7 +759,7 @@ fn render_single_memory_view_line(
                         .child(
                             Label::new(
                                 cell.0
-                                    .map(|val| HEX_BYTES_MEMOIZED[val as usize].clone())
+                                    .map(|val| HEX_BYTES_MEMOIMAV[val as usize].clone())
                                     .unwrap_or_else(|| UNKNOWN_BYTE.clone()),
                             )
                             .buffer_font(cx)

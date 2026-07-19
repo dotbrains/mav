@@ -2,10 +2,10 @@
 pub mod test;
 
 mod llm_token;
+pub mod mav_urls;
 mod proxy;
 pub mod telemetry;
 pub mod user;
-pub mod zed_urls;
 
 use anyhow::{Context as _, Result, anyhow};
 use async_tungstenite::tungstenite::{
@@ -60,29 +60,29 @@ pub use rpc::*;
 pub use telemetry_events::Event;
 pub use user::*;
 
-static ZED_SERVER_URL: LazyLock<Option<String>> =
-    LazyLock::new(|| std::env::var("ZED_SERVER_URL").ok());
-static ZED_RPC_URL: LazyLock<Option<String>> = LazyLock::new(|| std::env::var("ZED_RPC_URL").ok());
+static MAV_SERVER_URL: LazyLock<Option<String>> =
+    LazyLock::new(|| std::env::var("MAV_SERVER_URL").ok());
+static MAV_RPC_URL: LazyLock<Option<String>> = LazyLock::new(|| std::env::var("MAV_RPC_URL").ok());
 
 pub static IMPERSONATE_LOGIN: LazyLock<Option<String>> = LazyLock::new(|| {
-    std::env::var("ZED_IMPERSONATE")
+    std::env::var("MAV_IMPERSONATE")
         .ok()
         .and_then(|s| if s.is_empty() { None } else { Some(s) })
 });
 
-pub static USE_WEB_LOGIN: LazyLock<bool> = LazyLock::new(|| std::env::var("ZED_WEB_LOGIN").is_ok());
+pub static USE_WEB_LOGIN: LazyLock<bool> = LazyLock::new(|| std::env::var("MAV_WEB_LOGIN").is_ok());
 
 pub static ADMIN_API_TOKEN: LazyLock<Option<String>> = LazyLock::new(|| {
-    std::env::var("ZED_ADMIN_API_TOKEN")
+    std::env::var("MAV_ADMIN_API_TOKEN")
         .ok()
         .and_then(|s| if s.is_empty() { None } else { Some(s) })
 });
 
-pub static ZED_APP_PATH: LazyLock<Option<PathBuf>> =
-    LazyLock::new(|| std::env::var("ZED_APP_PATH").ok().map(PathBuf::from));
+pub static MAV_APP_PATH: LazyLock<Option<PathBuf>> =
+    LazyLock::new(|| std::env::var("MAV_APP_PATH").ok().map(PathBuf::from));
 
-pub static ZED_ALWAYS_ACTIVE: LazyLock<bool> =
-    LazyLock::new(|| std::env::var("ZED_ALWAYS_ACTIVE").is_ok_and(|e| !e.is_empty()));
+pub static MAV_ALWAYS_ACTIVE: LazyLock<bool> =
+    LazyLock::new(|| std::env::var("MAV_ALWAYS_ACTIVE").is_ok_and(|e| !e.is_empty()));
 
 pub const INITIAL_RECONNECTION_DELAY: Duration = Duration::from_millis(500);
 pub const MAX_RECONNECTION_DELAY: Duration = Duration::from_secs(30);
@@ -91,9 +91,9 @@ pub const CONNECTION_TIMEOUT: Duration = Duration::from_secs(20);
 actions!(
     client,
     [
-        /// Signs in to Zed account.
+        /// Signs in to Mav account.
         SignIn,
-        /// Signs out of Zed account.
+        /// Signs out of Mav account.
         SignOut,
         /// Reconnects to the collaboration server.
         Reconnect
@@ -106,7 +106,7 @@ pub struct ClientSettings {
     /// Overrides the key used to store credentials in the system keychain.
     /// Defaults to `server_url` when unset.
     ///
-    /// Useful when running multiple Zed instances side by side without them
+    /// Useful when running multiple Mav instances side by side without them
     /// overwriting each other's keychain entries.
     ///
     /// Note: changing this after signing in will require signing in again, as
@@ -116,7 +116,7 @@ pub struct ClientSettings {
 
 impl Settings for ClientSettings {
     fn from_settings(content: &settings::SettingsContent) -> Self {
-        if let Some(server_url) = &*ZED_SERVER_URL {
+        if let Some(server_url) = &*MAV_SERVER_URL {
             return Self {
                 server_url: server_url.clone(),
                 credentials_url: content.credentials_url.clone(),
@@ -1038,7 +1038,7 @@ impl Client {
 
     /// Performs a sign-in and also (optionally) connects to Collab.
     ///
-    /// Only Zed staff automatically connect to Collab.
+    /// Only Mav staff automatically connect to Collab.
     pub async fn sign_in_with_optional_connect(
         self: &Arc<Self>,
         try_provider: bool,
@@ -1294,7 +1294,7 @@ impl Client {
                 return Ok(url);
             }
 
-            if let Some(url) = &*ZED_RPC_URL {
+            if let Some(url) = &*MAV_RPC_URL {
                 return Url::parse(url).context("invalid rpc url");
             }
 
@@ -1464,7 +1464,7 @@ impl Client {
                         }
                     }
 
-                    // Start an HTTP server to receive the redirect from Zed's sign-in page.
+                    // Start an HTTP server to receive the redirect from Mav's sign-in page.
                     let server = tiny_http::Server::http("127.0.0.1:0")
                         .map_err(|e| anyhow!(e).context("failed to bind callback port"))?;
                     let port = server
@@ -1480,8 +1480,8 @@ impl Client {
                         system_id: Option<Arc<str>>,
                     }
 
-                    // Open the Zed sign-in page in the user's browser, with query parameters that indicate
-                    // that the user is signing in from a Zed app running on the same device.
+                    // Open the Mav sign-in page in the user's browser, with query parameters that indicate
+                    // that the user is signing in from a Mav app running on the same device.
                     let url = http.build_url(&format!(
                         "/native_app_signin?{}",
                         serde_urlencoded::to_string(&NativeAppSignInQueryParams {
@@ -1575,7 +1575,7 @@ impl Client {
 
         let url = self
             .http
-            .build_zed_cloud_url("/internal/users/impersonate")?;
+            .build_mav_cloud_url("/internal/users/impersonate")?;
         let request = Request::post(url.as_str())
             .header("Content-Type", "application/json")
             .header("Authorization", format!("Bearer {api_token}"))
@@ -1623,7 +1623,7 @@ impl Client {
         }
     }
 
-    /// Sends an authenticated request to the Zed LLM service, retrying once
+    /// Sends an authenticated request to the Mav LLM service, retrying once
     /// with a refreshed token if the server signals that the cached LLM
     /// token is expired or otherwise rejected. Returns the raw response so
     /// callers can inspect headers and stream the body.
@@ -1937,9 +1937,9 @@ impl ProtoClient for Client {
 }
 
 /// prefix for the mav:// url scheme
-pub const ZED_URL_SCHEME: &str = "mav";
+pub const MAV_URL_SCHEME: &str = "mav";
 
-/// A parsed Zed link that can be handled internally by the application.
+/// A parsed Mav link that can be handled internally by the application.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MavLink {
     /// Join a channel: `mav.dev/channel/channel-name-123` or `mav://channel/channel-name-123`
@@ -1951,9 +1951,9 @@ pub enum MavLink {
     },
 }
 
-/// Parses the given link into a Zed link.
+/// Parses the given link into a Mav link.
 ///
-/// Returns a [`Some`] containing the parsed link if the link is a recognized Zed link
+/// Returns a [`Some`] containing the parsed link if the link is a recognized Mav link
 /// that should be handled internally by the application.
 /// Returns [`None`] for links that should be opened in the browser.
 pub fn parse_mav_link(link: &str, cx: &App) -> Option<MavLink> {
@@ -1962,7 +1962,7 @@ pub fn parse_mav_link(link: &str, cx: &App) -> Option<MavLink> {
         .strip_prefix(server_url)
         .and_then(|result| result.strip_prefix('/'))
         .or_else(|| {
-            link.strip_prefix(ZED_URL_SCHEME)
+            link.strip_prefix(MAV_URL_SCHEME)
                 .and_then(|result| result.strip_prefix("://"))
         })?;
 

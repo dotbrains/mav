@@ -298,7 +298,7 @@ actions!(
         ScrollOutputToNextMessage,
         /// Toggles in-thread search over the current agent thread's contents.
         ToggleSearch,
-        /// Import agent threads from other Zed release channels (e.g. Preview, Nightly).
+        /// Import agent threads from other Mav release channels (e.g. Preview, Nightly).
         ImportThreadsFromOtherChannels,
         /// Starts a new terminal thread.
         NewTerminalThread,
@@ -456,7 +456,7 @@ pub enum Agent {
 
 impl From<AgentId> for Agent {
     fn from(id: AgentId) -> Self {
-        if id.as_ref() == agent::ZED_AGENT_ID.as_ref() {
+        if id.as_ref() == agent::MAV_AGENT_ID.as_ref() {
             return Self::NativeAgent;
         }
         #[cfg(any(test, feature = "test-support"))]
@@ -470,7 +470,7 @@ impl From<AgentId> for Agent {
 impl Agent {
     pub fn id(&self) -> AgentId {
         match self {
-            Self::NativeAgent => agent::ZED_AGENT_ID.clone(),
+            Self::NativeAgent => agent::MAV_AGENT_ID.clone(),
             Self::Custom { id } => id.clone(),
             #[cfg(any(test, feature = "test-support"))]
             Self::Stub => "stub".into(),
@@ -483,7 +483,7 @@ impl Agent {
 
     pub fn label(&self) -> SharedString {
         match self {
-            Self::NativeAgent => "Zed Agent".into(),
+            Self::NativeAgent => "Mav Agent".into(),
             Self::Custom { id, .. } => id.0.clone(),
             #[cfg(any(test, feature = "test-support"))]
             Self::Stub => "Stub Agent".into(),
@@ -492,7 +492,7 @@ impl Agent {
 
     pub fn icon(&self) -> Option<IconName> {
         match self {
-            Self::NativeAgent => Some(IconName::ZedAgent),
+            Self::NativeAgent => Some(IconName::MavAgent),
             Self::Custom { .. } => Some(IconName::Sparkle),
             #[cfg(any(test, feature = "test-support"))]
             Self::Stub => None,

@@ -2552,11 +2552,11 @@ fn model_id_to_selection(model_id: &AgentModelId, cx: &App) -> LanguageModelSele
     agent_settings::language_model_to_selection(&resolved, current_user_selection.as_ref())
 }
 
-pub static ZED_AGENT_ID: LazyLock<AgentId> = LazyLock::new(|| AgentId::new("Zed Agent"));
+pub static MAV_AGENT_ID: LazyLock<AgentId> = LazyLock::new(|| AgentId::new("Mav Agent"));
 
 impl acp_thread::AgentConnection for NativeAgentConnection {
     fn agent_id(&self) -> AgentId {
-        ZED_AGENT_ID.clone()
+        MAV_AGENT_ID.clone()
     }
 
     fn telemetry_id(&self) -> SharedString {
@@ -3148,7 +3148,7 @@ impl ThreadEnvironment for NativeThreadEnvironment {
         // Linux, and via WSL on Windows) already mounts a fresh, writable
         // `tmpfs` over `/tmp`, so the environment looks like a normal
         // filesystem with no special `$TMPDIR` (which would only make the
-        // sandbox more obviously Zed-specific). On Windows a per-thread
+        // sandbox more obviously Mav-specific). On Windows a per-thread
         // `$TMPDIR` would also be a Windows path that's meaningless inside
         // WSL, and adding it to the writable scope would bind a stray
         // `/mnt/<drive>/...` path.
@@ -4290,7 +4290,7 @@ mod internal_tests {
         };
 
         // Sanity-check the test setup: the third skill is small enough
-        // that a greedy packer would have squeezed it in alongside the
+        // that a greedy packer would have squeemav it in alongside the
         // first one.
         let leftover_after_first =
             MAX_SKILL_DESCRIPTIONS_SIZE - (first.name.len() + first.description.len());

@@ -22,7 +22,7 @@ pub use app_menus::*;
 use assets::Assets;
 
 use breadcrumbs::Breadcrumbs;
-use client::zed_urls;
+use client::mav_urls;
 use collections::VecDeque;
 use debugger_ui::debugger_panel::DebugPanel;
 use editor::{Editor, MultiBuffer};
@@ -245,7 +245,7 @@ pub fn init(cx: &mut App) {
     })
     .on_action(|_: &OpenAccountSettings, cx| {
         with_active_or_new_workspace(cx, |_, _, cx| {
-            cx.open_url(&zed_urls::account_url(cx));
+            cx.open_url(&mav_urls::account_url(cx));
         });
     })
     .on_action(|_: &OpenTasks, cx| {
@@ -1039,7 +1039,7 @@ fn register_actions(
         })
         .register_action(|_, _: &install_cli::RegisterMavScheme, window, cx| {
             cx.spawn_in(window, async move |workspace, cx| {
-                install_cli::register_zed_scheme(cx).await?;
+                install_cli::register_mav_scheme(cx).await?;
                 workspace.update_in(cx, |workspace, _, cx| {
                     struct RegisterMavScheme;
 
@@ -5625,18 +5625,18 @@ mod tests {
         // 5. Critical: Verify .mav is actually excluded from worktree
         let worktree = cx.update(|cx| project.read(cx).worktrees(cx).next().unwrap());
 
-        let has_zed_entry =
+        let has_mav_entry =
             cx.update(|cx| worktree.read(cx).entry_for_path(rel_path(".mav")).is_some());
 
         eprintln!(
             "Is .mav directory visible in worktree after exclusion: {}",
-            has_zed_entry
+            has_mav_entry
         );
 
         // This assertion verifies the test is set up correctly to show the bug
         // If .mav is not excluded, the test will fail here
         assert!(
-            !has_zed_entry,
+            !has_mav_entry,
             "Test precondition failed: .mav directory should be excluded but was found in worktree"
         );
 

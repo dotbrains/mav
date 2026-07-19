@@ -193,8 +193,8 @@ impl OpenRequest {
                 this.parse_git_commit_url(commit_path)?
             } else if url.starts_with("ssh://") {
                 this.parse_ssh_file_path(&url, cx)?
-            } else if let Some(zed_link) = parse_mav_link(&url, cx) {
-                match zed_link {
+            } else if let Some(mav_link) = parse_mav_link(&url, cx) {
+                match mav_link {
                     MavLink::Channel { channel_id } => {
                         this.join_channel = Some(channel_id);
                     }
@@ -2013,7 +2013,7 @@ mod tests {
             OpenRequest::parse(
                 RawOpenRequest {
                     urls: vec![
-                        "mav://git/clone/?repo=https%3A%2F%2Fgithub.com%2Fzed-industries%2Fzed.git"
+                        "mav://git/clone/?repo=https%3A%2F%2Fgithub.com%2Fmav-industries%2Fmav.git"
                             .into(),
                     ],
                     ..Default::default()
@@ -2358,7 +2358,7 @@ mod tests {
     /// wakeups.
     ///
     /// Returns `(exit_status, prompt_was_shown)`.
-    fn run_cli_with_zed_handler(
+    fn run_cli_with_mav_handler(
         cx: &mut TestAppContext,
         app_state: Arc<AppState>,
         open_request: CliRequest,
@@ -2428,7 +2428,7 @@ mod tests {
 
         assert_eq!(cx.windows().len(), 0);
 
-        let (status, prompt_shown) = run_cli_with_zed_handler(
+        let (status, prompt_shown) = run_cli_with_mav_handler(
             cx,
             app_state,
             make_cli_open_request(
@@ -2471,7 +2471,7 @@ mod tests {
         .await;
         assert_eq!(cx.windows().len(), 1);
 
-        let (status, prompt_shown) = run_cli_with_zed_handler(
+        let (status, prompt_shown) = run_cli_with_mav_handler(
             cx,
             app_state.clone(),
             make_cli_open_request(
@@ -2521,7 +2521,7 @@ mod tests {
         .await;
         assert_eq!(cx.windows().len(), 1);
 
-        let (status, prompt_shown) = run_cli_with_zed_handler(
+        let (status, prompt_shown) = run_cli_with_mav_handler(
             cx,
             app_state.clone(),
             make_cli_open_request(
@@ -2572,7 +2572,7 @@ mod tests {
         open_workspace_file(path!("/project"), Default::default(), app_state.clone(), cx).await;
         assert_eq!(cx.windows().len(), 1);
 
-        let (status, prompt_shown) = run_cli_with_zed_handler(
+        let (status, prompt_shown) = run_cli_with_mav_handler(
             cx,
             app_state,
             make_cli_open_request(
@@ -2603,7 +2603,7 @@ mod tests {
         open_workspace_file(path!("/project"), Default::default(), app_state.clone(), cx).await;
         assert_eq!(cx.windows().len(), 1);
 
-        let (status, prompt_shown) = run_cli_with_zed_handler(
+        let (status, prompt_shown) = run_cli_with_mav_handler(
             cx,
             app_state,
             make_cli_open_request(
@@ -2643,7 +2643,7 @@ mod tests {
         .await;
         assert_eq!(cx.windows().len(), 1);
 
-        let (status, prompt_shown) = run_cli_with_zed_handler(
+        let (status, prompt_shown) = run_cli_with_mav_handler(
             cx,
             app_state,
             make_cli_open_request(
@@ -2675,7 +2675,7 @@ mod tests {
             "file://{}",
             urlencoding::encode(path!("/project/file.txt")).into_owned()
         );
-        let (status, prompt_shown) = run_cli_with_zed_handler(
+        let (status, prompt_shown) = run_cli_with_mav_handler(
             cx,
             app_state,
             make_cli_url_open_request(vec![file_url], cli::OpenBehavior::AlwaysNew),
@@ -2709,7 +2709,7 @@ mod tests {
         assert_eq!(cx.windows().len(), 1);
 
         // Opening a file inside the already-open workspace should not prompt
-        let (status, prompt_shown) = run_cli_with_zed_handler(
+        let (status, prompt_shown) = run_cli_with_mav_handler(
             cx,
             app_state,
             make_cli_open_request(

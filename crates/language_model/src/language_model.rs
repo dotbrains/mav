@@ -294,7 +294,7 @@ impl std::fmt::Debug for dyn LanguageModel {
 /// Either a built-in icon name or a path to an external SVG.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IconOrSvg {
-    /// A built-in icon from Zed's icon set.
+    /// A built-in icon from Mav's icon set.
     Icon(IconName),
     /// Path to a custom SVG icon file.
     Svg(SharedString),
@@ -399,7 +399,7 @@ pub struct FastModeConfirmation {
 #[derive(Default, Clone, PartialEq, Eq)]
 pub enum ConfigurationViewTargetAgent {
     #[default]
-    ZedAgent,
+    MavAgent,
     Other(SharedString),
 }
 

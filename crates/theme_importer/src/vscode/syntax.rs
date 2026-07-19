@@ -25,7 +25,7 @@ pub struct VsCodeTokenColorSettings {
 }
 
 #[derive(Debug, PartialEq, Copy, Clone, EnumIter)]
-pub enum ZedSyntaxToken {
+pub enum MavSyntaxToken {
     Attribute,
     Boolean,
     Comment,
@@ -67,57 +67,57 @@ pub enum ZedSyntaxToken {
     Variant,
 }
 
-impl std::fmt::Display for ZedSyntaxToken {
+impl std::fmt::Display for MavSyntaxToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                ZedSyntaxToken::Attribute => "attribute",
-                ZedSyntaxToken::Boolean => "boolean",
-                ZedSyntaxToken::Comment => "comment",
-                ZedSyntaxToken::CommentDoc => "comment.doc",
-                ZedSyntaxToken::Constant => "constant",
-                ZedSyntaxToken::Constructor => "constructor",
-                ZedSyntaxToken::Embedded => "embedded",
-                ZedSyntaxToken::Emphasis => "emphasis",
-                ZedSyntaxToken::EmphasisStrong => "emphasis.strong",
-                ZedSyntaxToken::Enum => "enum",
-                ZedSyntaxToken::Function => "function",
-                ZedSyntaxToken::Hint => "hint",
-                ZedSyntaxToken::Keyword => "keyword",
-                ZedSyntaxToken::Label => "label",
-                ZedSyntaxToken::LinkText => "link_text",
-                ZedSyntaxToken::LinkUri => "link_uri",
-                ZedSyntaxToken::Number => "number",
-                ZedSyntaxToken::Operator => "operator",
-                ZedSyntaxToken::Predictive => "predictive",
-                ZedSyntaxToken::Preproc => "preproc",
-                ZedSyntaxToken::Primary => "primary",
-                ZedSyntaxToken::Property => "property",
-                ZedSyntaxToken::Punctuation => "punctuation",
-                ZedSyntaxToken::PunctuationBracket => "punctuation.bracket",
-                ZedSyntaxToken::PunctuationDelimiter => "punctuation.delimiter",
-                ZedSyntaxToken::PunctuationListMarker => "punctuation.list_marker",
-                ZedSyntaxToken::PunctuationSpecial => "punctuation.special",
-                ZedSyntaxToken::String => "string",
-                ZedSyntaxToken::StringEscape => "string.escape",
-                ZedSyntaxToken::StringRegex => "string.regex",
-                ZedSyntaxToken::StringSpecial => "string.special",
-                ZedSyntaxToken::StringSpecialSymbol => "string.special.symbol",
-                ZedSyntaxToken::Tag => "tag",
-                ZedSyntaxToken::TextLiteral => "text.literal",
-                ZedSyntaxToken::Title => "title",
-                ZedSyntaxToken::Type => "type",
-                ZedSyntaxToken::Variable => "variable",
-                ZedSyntaxToken::VariableSpecial => "variable.special",
-                ZedSyntaxToken::Variant => "variant",
+                MavSyntaxToken::Attribute => "attribute",
+                MavSyntaxToken::Boolean => "boolean",
+                MavSyntaxToken::Comment => "comment",
+                MavSyntaxToken::CommentDoc => "comment.doc",
+                MavSyntaxToken::Constant => "constant",
+                MavSyntaxToken::Constructor => "constructor",
+                MavSyntaxToken::Embedded => "embedded",
+                MavSyntaxToken::Emphasis => "emphasis",
+                MavSyntaxToken::EmphasisStrong => "emphasis.strong",
+                MavSyntaxToken::Enum => "enum",
+                MavSyntaxToken::Function => "function",
+                MavSyntaxToken::Hint => "hint",
+                MavSyntaxToken::Keyword => "keyword",
+                MavSyntaxToken::Label => "label",
+                MavSyntaxToken::LinkText => "link_text",
+                MavSyntaxToken::LinkUri => "link_uri",
+                MavSyntaxToken::Number => "number",
+                MavSyntaxToken::Operator => "operator",
+                MavSyntaxToken::Predictive => "predictive",
+                MavSyntaxToken::Preproc => "preproc",
+                MavSyntaxToken::Primary => "primary",
+                MavSyntaxToken::Property => "property",
+                MavSyntaxToken::Punctuation => "punctuation",
+                MavSyntaxToken::PunctuationBracket => "punctuation.bracket",
+                MavSyntaxToken::PunctuationDelimiter => "punctuation.delimiter",
+                MavSyntaxToken::PunctuationListMarker => "punctuation.list_marker",
+                MavSyntaxToken::PunctuationSpecial => "punctuation.special",
+                MavSyntaxToken::String => "string",
+                MavSyntaxToken::StringEscape => "string.escape",
+                MavSyntaxToken::StringRegex => "string.regex",
+                MavSyntaxToken::StringSpecial => "string.special",
+                MavSyntaxToken::StringSpecialSymbol => "string.special.symbol",
+                MavSyntaxToken::Tag => "tag",
+                MavSyntaxToken::TextLiteral => "text.literal",
+                MavSyntaxToken::Title => "title",
+                MavSyntaxToken::Type => "type",
+                MavSyntaxToken::Variable => "variable",
+                MavSyntaxToken::VariableSpecial => "variable.special",
+                MavSyntaxToken::Variant => "variant",
             }
         )
     }
 }
 
-impl ZedSyntaxToken {
+impl MavSyntaxToken {
     pub fn find_best_token_color_match<'a>(
         &self,
         token_colors: &'a [VsCodeTokenColor],
@@ -175,49 +175,49 @@ impl ZedSyntaxToken {
 
     pub fn fallbacks(&self) -> &[Self] {
         match self {
-            ZedSyntaxToken::CommentDoc => &[ZedSyntaxToken::Comment],
-            ZedSyntaxToken::Number => &[ZedSyntaxToken::Constant],
-            ZedSyntaxToken::VariableSpecial => &[ZedSyntaxToken::Variable],
-            ZedSyntaxToken::PunctuationBracket
-            | ZedSyntaxToken::PunctuationDelimiter
-            | ZedSyntaxToken::PunctuationListMarker
-            | ZedSyntaxToken::PunctuationSpecial => &[ZedSyntaxToken::Punctuation],
-            ZedSyntaxToken::StringEscape
-            | ZedSyntaxToken::StringRegex
-            | ZedSyntaxToken::StringSpecial
-            | ZedSyntaxToken::StringSpecialSymbol => &[ZedSyntaxToken::String],
+            MavSyntaxToken::CommentDoc => &[MavSyntaxToken::Comment],
+            MavSyntaxToken::Number => &[MavSyntaxToken::Constant],
+            MavSyntaxToken::VariableSpecial => &[MavSyntaxToken::Variable],
+            MavSyntaxToken::PunctuationBracket
+            | MavSyntaxToken::PunctuationDelimiter
+            | MavSyntaxToken::PunctuationListMarker
+            | MavSyntaxToken::PunctuationSpecial => &[MavSyntaxToken::Punctuation],
+            MavSyntaxToken::StringEscape
+            | MavSyntaxToken::StringRegex
+            | MavSyntaxToken::StringSpecial
+            | MavSyntaxToken::StringSpecialSymbol => &[MavSyntaxToken::String],
             _ => &[],
         }
     }
 
     fn to_vscode(self) -> Vec<&'static str> {
         match self {
-            ZedSyntaxToken::Attribute => vec!["entity.other.attribute-name"],
-            ZedSyntaxToken::Boolean => vec!["constant.language"],
-            ZedSyntaxToken::Comment => vec!["comment"],
-            ZedSyntaxToken::CommentDoc => vec!["comment.block.documentation"],
-            ZedSyntaxToken::Constant => vec!["constant", "constant.language", "constant.character"],
-            ZedSyntaxToken::Constructor => {
+            MavSyntaxToken::Attribute => vec!["entity.other.attribute-name"],
+            MavSyntaxToken::Boolean => vec!["constant.language"],
+            MavSyntaxToken::Comment => vec!["comment"],
+            MavSyntaxToken::CommentDoc => vec!["comment.block.documentation"],
+            MavSyntaxToken::Constant => vec!["constant", "constant.language", "constant.character"],
+            MavSyntaxToken::Constructor => {
                 vec![
                     "entity.name.tag",
                     "entity.name.function.definition.special.constructor",
                 ]
             }
-            ZedSyntaxToken::Embedded => vec!["meta.embedded"],
-            ZedSyntaxToken::Emphasis => vec!["markup.italic"],
-            ZedSyntaxToken::EmphasisStrong => vec![
+            MavSyntaxToken::Embedded => vec!["meta.embedded"],
+            MavSyntaxToken::Emphasis => vec!["markup.italic"],
+            MavSyntaxToken::EmphasisStrong => vec![
                 "markup.bold",
                 "markup.italic markup.bold",
                 "markup.bold markup.italic",
             ],
-            ZedSyntaxToken::Enum => vec!["support.type.enum"],
-            ZedSyntaxToken::Function => vec![
+            MavSyntaxToken::Enum => vec!["support.type.enum"],
+            MavSyntaxToken::Function => vec![
                 "entity.function",
                 "entity.name.function",
                 "variable.function",
             ],
-            ZedSyntaxToken::Hint => vec![],
-            ZedSyntaxToken::Keyword => vec![
+            MavSyntaxToken::Hint => vec![],
+            MavSyntaxToken::Keyword => vec![
                 "keyword",
                 "keyword.other.fn.rust",
                 "keyword.control",
@@ -226,63 +226,63 @@ impl ZedSyntaxToken {
                 "punctuation.accessor",
                 "entity.name.tag",
             ],
-            ZedSyntaxToken::Label => vec![
+            MavSyntaxToken::Label => vec![
                 "label",
                 "entity.name",
                 "entity.name.import",
                 "entity.name.package",
             ],
-            ZedSyntaxToken::LinkText => vec!["markup.underline.link", "string.other.link"],
-            ZedSyntaxToken::LinkUri => vec!["markup.underline.link", "string.other.link"],
-            ZedSyntaxToken::Number => vec!["constant.numeric", "number"],
-            ZedSyntaxToken::Operator => vec!["operator", "keyword.operator"],
-            ZedSyntaxToken::Predictive => vec![],
-            ZedSyntaxToken::Preproc => vec![
+            MavSyntaxToken::LinkText => vec!["markup.underline.link", "string.other.link"],
+            MavSyntaxToken::LinkUri => vec!["markup.underline.link", "string.other.link"],
+            MavSyntaxToken::Number => vec!["constant.numeric", "number"],
+            MavSyntaxToken::Operator => vec!["operator", "keyword.operator"],
+            MavSyntaxToken::Predictive => vec![],
+            MavSyntaxToken::Preproc => vec![
                 "preproc",
                 "meta.preprocessor",
                 "punctuation.definition.preprocessor",
             ],
-            ZedSyntaxToken::Primary => vec![],
-            ZedSyntaxToken::Property => vec![
+            MavSyntaxToken::Primary => vec![],
+            MavSyntaxToken::Property => vec![
                 "variable.member",
                 "support.type.property-name",
                 "variable.object.property",
                 "variable.other.field",
             ],
-            ZedSyntaxToken::Punctuation => vec![
+            MavSyntaxToken::Punctuation => vec![
                 "punctuation",
                 "punctuation.section",
                 "punctuation.accessor",
                 "punctuation.separator",
                 "punctuation.definition.tag",
             ],
-            ZedSyntaxToken::PunctuationBracket => vec![
+            MavSyntaxToken::PunctuationBracket => vec![
                 "punctuation.bracket",
                 "punctuation.definition.tag.begin",
                 "punctuation.definition.tag.end",
             ],
-            ZedSyntaxToken::PunctuationDelimiter => vec![
+            MavSyntaxToken::PunctuationDelimiter => vec![
                 "punctuation.delimiter",
                 "punctuation.separator",
                 "punctuation.terminator",
             ],
-            ZedSyntaxToken::PunctuationListMarker => {
+            MavSyntaxToken::PunctuationListMarker => {
                 vec!["markup.list punctuation.definition.list.begin"]
             }
-            ZedSyntaxToken::PunctuationSpecial => vec!["punctuation.special"],
-            ZedSyntaxToken::String => vec!["string"],
-            ZedSyntaxToken::StringEscape => {
+            MavSyntaxToken::PunctuationSpecial => vec!["punctuation.special"],
+            MavSyntaxToken::String => vec!["string"],
+            MavSyntaxToken::StringEscape => {
                 vec!["string.escape", "constant.character", "constant.other"]
             }
-            ZedSyntaxToken::StringRegex => vec!["string.regex"],
-            ZedSyntaxToken::StringSpecial => vec!["string.special", "constant.other.symbol"],
-            ZedSyntaxToken::StringSpecialSymbol => {
+            MavSyntaxToken::StringRegex => vec!["string.regex"],
+            MavSyntaxToken::StringSpecial => vec!["string.special", "constant.other.symbol"],
+            MavSyntaxToken::StringSpecialSymbol => {
                 vec!["string.special.symbol", "constant.other.symbol"]
             }
-            ZedSyntaxToken::Tag => vec!["tag", "entity.name.tag", "meta.tag.sgml"],
-            ZedSyntaxToken::TextLiteral => vec!["text.literal", "string"],
-            ZedSyntaxToken::Title => vec!["title", "entity.name"],
-            ZedSyntaxToken::Type => vec![
+            MavSyntaxToken::Tag => vec!["tag", "entity.name.tag", "meta.tag.sgml"],
+            MavSyntaxToken::TextLiteral => vec!["text.literal", "string"],
+            MavSyntaxToken::Title => vec!["title", "entity.name"],
+            MavSyntaxToken::Type => vec![
                 "entity.name.type",
                 "entity.name.type.primitive",
                 "entity.name.type.numeric",
@@ -291,20 +291,20 @@ impl ZedSyntaxToken {
                 "support.type.primitive",
                 "support.class",
             ],
-            ZedSyntaxToken::Variable => vec![
+            MavSyntaxToken::Variable => vec![
                 "variable",
                 "variable.language",
                 "variable.member",
                 "variable.parameter",
                 "variable.parameter.function-call",
             ],
-            ZedSyntaxToken::VariableSpecial => vec![
+            MavSyntaxToken::VariableSpecial => vec![
                 "variable.special",
                 "variable.member",
                 "variable.annotation",
                 "variable.language",
             ],
-            ZedSyntaxToken::Variant => vec!["variant"],
+            MavSyntaxToken::Variant => vec!["variant"],
         }
     }
 }

@@ -1208,7 +1208,7 @@ async fn test_invalid_local_tasks_shows_toast_with_doc_link(cx: &mut gpui::TestA
     // later assert that the `Event::Toast` even is emitted.
     fs.save(
         path!("/dir/.mav/tasks.json").as_ref(),
-        &r#"[{ "label": "test $ZED_FOO", "command": "echo" }]"#.into(),
+        &r#"[{ "label": "test $MAV_FOO", "command": "echo" }]"#.into(),
         Default::default(),
     )
     .await
@@ -1224,7 +1224,7 @@ async fn test_invalid_local_tasks_shows_toast_with_doc_link(cx: &mut gpui::TestA
                 link: Some(ToastLink { url, .. }),
             } => {
                 assert!(notification_id.starts_with("local-tasks-"));
-                assert!(message.contains("ZED_FOO"));
+                assert!(message.contains("MAV_FOO"));
                 assert_eq!(*url, "https://mav.dev/docs/tasks");
                 *saw_toast.borrow_mut() = true;
             }
@@ -1252,7 +1252,7 @@ async fn test_fallback_to_single_worktree_tasks(cx: &mut gpui::TestAppContext) {
             ".mav": {
                 "tasks.json": r#"[{
                     "label": "test worktree root",
-                    "command": "echo $ZED_WORKTREE_ROOT"
+                    "command": "echo $MAV_WORKTREE_ROOT"
                 }]"#,
             },
             "a": {
@@ -1289,7 +1289,7 @@ async fn test_fallback_to_single_worktree_tasks(cx: &mut gpui::TestAppContext) {
         .await;
     assert!(
         active_non_worktree_item_tasks.is_empty(),
-        "A task can not be resolved with context with no ZED_WORKTREE_ROOT data"
+        "A task can not be resolved with context with no MAV_WORKTREE_ROOT data"
     );
 
     let active_worktree_tasks = cx

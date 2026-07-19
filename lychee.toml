@@ -8,8 +8,8 @@ timeout = 45
 
 exclude = [
     # Don't fail CI check if collab is down
-    'https://staging-collab.zed.dev/',
-    "https://collab.zed.dev",
+    'https://staging-collab.mav.dev/',
+    "https://collab.mav.dev",
 
     # Slow and unreliable server.
     'https://repology.org',

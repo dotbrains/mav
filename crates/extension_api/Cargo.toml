@@ -1,9 +1,9 @@
 [package]
-name = "zed_extension_api"
+name = "mav_extension_api"
 version = "0.8.0"
-description = "APIs for creating Zed extensions in Rust"
+description = "APIs for creating Mav extensions in Rust"
 repository = "https://github.com/dotbrains/mav"
-documentation = "https://docs.rs/zed_extension_api"
+documentation = "https://docs.rs/mav_extension_api"
 keywords = ["mav", "extension"]
 edition.workspace = true
 # Change back to `true` when we're ready to publish v0.8.0.

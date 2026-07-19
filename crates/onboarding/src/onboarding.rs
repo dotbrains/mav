@@ -1,5 +1,5 @@
 use crate::multibuffer_hint::MultibufferHint;
-use client::{Client, UserStore, zed_urls};
+use client::{Client, UserStore, mav_urls};
 use cloud_api_types::Plan;
 use db::kvp::KeyValueStore;
 use fs::Fs;
@@ -224,7 +224,7 @@ impl Onboarding {
         let client = Client::global(cx);
         let status = *client.status().borrow();
         let plan = workspace.user_store().read(cx).plan();
-        let zed_agent_state = if status.is_signed_out()
+        let mav_agent_state = if status.is_signed_out()
             || matches!(
                 status,
                 client::Status::AuthenticationError | client::Status::ConnectionError
@@ -234,12 +234,12 @@ impl Onboarding {
             "signing_in"
         } else {
             match plan {
-                Some(Plan::ZedPro) => "pro",
-                Some(Plan::ZedProTrial) => "trial",
-                Some(Plan::ZedBusiness) => "business",
-                Some(Plan::ZedVip) => "vip",
-                Some(Plan::ZedStudent) => "student",
-                Some(Plan::ZedFree) | None => "free",
+                Some(Plan::MavPro) => "pro",
+                Some(Plan::MavProTrial) => "trial",
+                Some(Plan::MavBusiness) => "business",
+                Some(Plan::MavVip) => "vip",
+                Some(Plan::MavStudent) => "student",
+                Some(Plan::MavFree) | None => "free",
             }
         };
         let agents_installed = basics_page::FEATURED_AGENT_IDS
@@ -249,7 +249,7 @@ impl Onboarding {
             .collect::<Vec<_>>();
         telemetry::event!(
             "Welcome Agent Setup Viewed",
-            zed_agent = zed_agent_state,
+            mav_agent = mav_agent_state,
             agents_installed = agents_installed,
         );
 
@@ -293,7 +293,7 @@ impl Onboarding {
     }
 
     fn handle_open_account(_: &OpenAccount, _: &mut Window, cx: &mut App) {
-        cx.open_url(&zed_urls::account_url(cx))
+        cx.open_url(&mav_urls::account_url(cx))
     }
 
     fn render_page(&mut self, cx: &mut Context<Self>) -> AnyElement {
@@ -347,11 +347,11 @@ impl Render for Onboarding {
                                     .child(
                                         h_flex()
                                             .gap_4()
-                                            .child(Vector::square(VectorName::ZedLogo, rems(2.5)))
+                                            .child(Vector::square(VectorName::MavLogo, rems(2.5)))
                                             .child(
                                                 v_flex()
                                                     .child(
-                                                        Headline::new("Welcome to Zed")
+                                                        Headline::new("Welcome to Mav")
                                                             .size(HeadlineSize::Small),
                                                     )
                                                     .child(

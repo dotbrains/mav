@@ -83,7 +83,7 @@ fn generate_markdown(seed: u64, target_size: usize) -> String {
 
     markdown.push_str("---\n");
     markdown.push_str("title: Markdown renderer benchmark\n");
-    markdown.push_str("author: Zed benchmark\n");
+    markdown.push_str("author: Mav benchmark\n");
     markdown.push_str("---\n\n");
 
     while markdown.len() < target_size {
@@ -338,7 +338,7 @@ fn init_context(cx: &mut BenchAppContext) {
 
 fn markdown_sizes() -> Vec<usize> {
     let mut sizes = vec![5_000, 10_000, 50_000, 250_000];
-    if std::env::var("ZED_BENCH_HUGE").is_ok() {
+    if std::env::var("MAV_BENCH_HUGE").is_ok() {
         sizes.push(1_000_000);
     }
     sizes

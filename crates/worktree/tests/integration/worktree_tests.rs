@@ -4114,7 +4114,7 @@ async fn test_noisy_dot_git_events_do_not_emit_git_repo_update(
 ) {
     // Events for object database writes, hook files, lock files, and the
     // reflogs of HEAD/branches/remote-tracking branches carry no git state
-    // changes that Zed cares about beyond what the accompanying ref or index
+    // changes that Mav cares about beyond what the accompanying ref or index
     // events already convey, so they must not trigger a git metadata rescan.
     // The stash reflog and ref updates themselves must still trigger one.
     //

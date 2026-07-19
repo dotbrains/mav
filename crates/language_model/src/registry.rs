@@ -1,6 +1,6 @@
 use crate::{
     LanguageModel, LanguageModelId, LanguageModelProvider, LanguageModelProviderId,
-    LanguageModelProviderState, ZED_CLOUD_PROVIDER_ID,
+    LanguageModelProviderState, MAV_CLOUD_PROVIDER_ID,
 };
 use collections::{BTreeMap, HashSet};
 use gpui::{App, Context, Entity, EventEmitter, Global, prelude::*};
@@ -100,8 +100,8 @@ impl ConfiguredModel {
         self.model.id() == other.model.id() && self.provider.id() == other.provider.id()
     }
 
-    pub fn is_provided_by_zed(&self) -> bool {
-        self.provider.id() == ZED_CLOUD_PROVIDER_ID
+    pub fn is_provided_by_mav(&self) -> bool {
+        self.provider.id() == MAV_CLOUD_PROVIDER_ID
     }
 }
 
@@ -179,13 +179,13 @@ impl LanguageModelRegistry {
     }
 
     pub fn providers(&self) -> Vec<Arc<dyn LanguageModelProvider>> {
-        let zed_provider_id = LanguageModelProviderId("mav.dev".into());
+        let mav_provider_id = LanguageModelProviderId("mav.dev".into());
         let mut providers = Vec::with_capacity(self.providers.len());
-        if let Some(provider) = self.providers.get(&zed_provider_id) {
+        if let Some(provider) = self.providers.get(&mav_provider_id) {
             providers.push(provider.clone());
         }
         providers.extend(self.providers.values().filter_map(|p| {
-            if p.id() != zed_provider_id {
+            if p.id() != mav_provider_id {
                 Some(p.clone())
             } else {
                 None
@@ -413,7 +413,7 @@ impl LanguageModelRegistry {
 
     pub fn default_model(&self) -> Option<ConfiguredModel> {
         #[cfg(debug_assertions)]
-        if std::env::var("ZED_SIMULATE_NO_LLM_PROVIDER").is_ok() {
+        if std::env::var("MAV_SIMULATE_NO_LLM_PROVIDER").is_ok() {
             return None;
         }
 
@@ -433,7 +433,7 @@ impl LanguageModelRegistry {
 
     pub fn inline_assistant_model(&self) -> Option<ConfiguredModel> {
         #[cfg(debug_assertions)]
-        if std::env::var("ZED_SIMULATE_NO_LLM_PROVIDER").is_ok() {
+        if std::env::var("MAV_SIMULATE_NO_LLM_PROVIDER").is_ok() {
             return None;
         }
 
@@ -444,7 +444,7 @@ impl LanguageModelRegistry {
 
     pub fn commit_message_model(&self, cx: &App) -> Option<ConfiguredModel> {
         #[cfg(debug_assertions)]
-        if std::env::var("ZED_SIMULATE_NO_LLM_PROVIDER").is_ok() {
+        if std::env::var("MAV_SIMULATE_NO_LLM_PROVIDER").is_ok() {
             return None;
         }
 
@@ -456,7 +456,7 @@ impl LanguageModelRegistry {
 
     pub fn thread_summary_model(&self, cx: &App) -> Option<ConfiguredModel> {
         #[cfg(debug_assertions)]
-        if std::env::var("ZED_SIMULATE_NO_LLM_PROVIDER").is_ok() {
+        if std::env::var("MAV_SIMULATE_NO_LLM_PROVIDER").is_ok() {
             return None;
         }
 

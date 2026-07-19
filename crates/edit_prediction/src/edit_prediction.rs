@@ -15,10 +15,9 @@ use cloud_llm_client::predict_edits_v3::{
 };
 use cloud_llm_client::predict_edits_v4::{PredictEditsV4Request, PredictEditsV4Response};
 use cloud_llm_client::{
-    EditPredictionRejectReason, EditPredictionRejection,
+    EditPredictionRejectReason, EditPredictionRejection, MAV_VERSION_HEADER_NAME,
     MAX_EDIT_PREDICTION_REJECTIONS_PER_REQUEST, MINIMUM_REQUIRED_VERSION_HEADER_NAME,
     PREFERRED_EXPERIMENT_HEADER_NAME, PredictEditsRequestTrigger, RejectEditPredictionsBodyRef,
-    ZED_VERSION_HEADER_NAME,
 };
 use collections::{HashMap, HashSet};
 use copilot::{Copilot, Reinstall, SignIn, SignOut};
@@ -86,8 +85,8 @@ mod prediction;
 
 pub mod udiff;
 
+mod mav_edit_prediction_delegate;
 pub mod open_ai_compatible;
-mod zed_edit_prediction_delegate;
 pub mod zeta;
 
 #[cfg(test)]
@@ -99,12 +98,12 @@ use crate::example_spec::RecentFile;
 use crate::license_detection::LicenseDetectionWatcher;
 use crate::mercury::Mercury;
 pub use crate::metrics::{KeptRateResult, compute_kept_rate};
-use crate::onboarding_modal::ZedPredictModal;
+use crate::onboarding_modal::MavPredictModal;
 use crate::prediction::EditPredictionResult;
 pub use crate::prediction::{EditPrediction, EditPredictionId, EditPredictionInputs};
 pub use language_model::ApiKeyState;
+pub use mav_edit_prediction_delegate::MavEditPredictionDelegate;
 pub use telemetry_events::EditPredictionRating;
-pub use zed_edit_prediction_delegate::MavEditPredictionDelegate;
 
 actions!(
     edit_prediction,
@@ -124,7 +123,7 @@ const EDIT_HISTORY_DIFF_SIZE_LIMIT: usize = 2048 * 3; // ~2048 tokens or ~50% of
 const COLLABORATOR_EDIT_LOCALITY_CONTEXT_TOKENS: usize = 512;
 const GIT_CHANGED_FILE_SETS_COMMIT_LIMIT: usize = 100;
 const LAST_CHANGE_GROUPING_TIME: Duration = Duration::from_secs(1);
-const ZED_PREDICT_DATA_COLLECTION_CHOICE: &str = "zed_predict_data_collection_choice";
+const MAV_PREDICT_DATA_COLLECTION_CHOICE: &str = "mav_predict_data_collection_choice";
 const REJECT_REQUEST_DEBOUNCE: Duration = Duration::from_secs(15);
 const REQUEST_TIMEOUT_BACKOFF: Duration = Duration::from_secs(10);
 
@@ -1040,10 +1039,10 @@ impl EditPredictionStore {
     }
 
     fn zeta2_raw_config_from_env() -> Option<Zeta2RawConfig> {
-        let version_str = env::var("ZED_ZETA_FORMAT").ok()?;
+        let version_str = env::var("MAV_ZETA_FORMAT").ok()?;
         let format = ZetaFormat::parse(&version_str).ok()?;
-        let model_id = env::var("ZED_ZETA_MODEL").ok();
-        let environment = env::var("ZED_ZETA_ENVIRONMENT").ok();
+        let model_id = env::var("MAV_ZETA_MODEL").ok();
+        let environment = env::var("MAV_ZETA_ENVIRONMENT").ok();
         Some(Zeta2RawConfig {
             model_id,
             environment,
@@ -1121,7 +1120,7 @@ impl EditPredictionStore {
                 .background_spawn(async move {
                     let organization_id =
                         organization_id.ok_or_else(|| anyhow!("No organization selected."))?;
-                    let url = client.http_client().build_zed_llm_url(
+                    let url = client.http_client().build_mav_llm_url(
                         "/edit_prediction_experiments",
                         &[("is_jumps_api", if is_jumps_api { "true" } else { "false" })],
                     )?;
@@ -1131,7 +1130,7 @@ impl EditPredictionStore {
                                 .method(Method::GET)
                                 .uri(url.as_ref())
                                 .header("Authorization", format!("Bearer {token}"))
-                                .header(ZED_VERSION_HEADER_NAME, app_version.to_string())
+                                .header(MAV_VERSION_HEADER_NAME, app_version.to_string())
                                 .body(Default::default())?)
                         })
                         .await?;
@@ -1167,11 +1166,11 @@ impl EditPredictionStore {
                 edit_prediction_types::EditPredictionIconSet::new(IconName::Inception)
             }
             EditPredictionModel::Zeta => {
-                edit_prediction_types::EditPredictionIconSet::new(IconName::ZedPredict)
-                    .with_disabled(IconName::ZedPredictDisabled)
-                    .with_up(IconName::ZedPredictUp)
-                    .with_down(IconName::ZedPredictDown)
-                    .with_error(IconName::ZedPredictError)
+                edit_prediction_types::EditPredictionIconSet::new(IconName::MavPredict)
+                    .with_disabled(IconName::MavPredictDisabled)
+                    .with_up(IconName::MavPredictUp)
+                    .with_down(IconName::MavPredictDown)
+                    .with_error(IconName::MavPredictError)
             }
             EditPredictionModel::Fim { .. } => {
                 let settings = &all_language_settings(None, cx).edit_predictions;
@@ -1892,7 +1891,7 @@ impl EditPredictionStore {
 
             let url = client
                 .http_client()
-                .build_zed_llm_url("/predict_edits/reject", &[])
+                .build_mav_llm_url("/predict_edits/reject", &[])
                 .unwrap();
 
             let flush_count = batched
@@ -2333,7 +2332,7 @@ async fn send_settled_batches(
 ) {
     let Some(url) = client
         .http_client()
-        .build_zed_llm_url("/predict_edits/settled", &[])
+        .build_mav_llm_url("/predict_edits/settled", &[])
         .context("failed to build edit predictions settled url")
         .log_err()
     else {
@@ -2801,11 +2800,11 @@ impl EditPredictionStore {
             })
             .unwrap_or_default();
 
-        let is_staff_zed_repo = cx.is_staff()
+        let is_staff_mav_repo = cx.is_staff()
             && repository_url
                 .as_ref()
-                .is_some_and(|url| is_zed_industries_repo(url));
-        let is_open_source = is_staff_zed_repo
+                .is_some_and(|url| is_mav_industries_repo(url));
+        let is_open_source = is_staff_mav_repo
             || (snapshot
                 .file()
                 .map_or(false, |file| self.is_file_open_source(&project, file, cx))
@@ -2899,7 +2898,7 @@ impl EditPredictionStore {
         } else {
             client
                 .http_client()
-                .build_zed_llm_url("/predict_edits/raw", &[])?
+                .build_mav_llm_url("/predict_edits/raw", &[])?
         };
 
         Self::send_api_request(
@@ -2982,7 +2981,7 @@ impl EditPredictionStore {
         Req: serde::Serialize,
         Res: serde::de::DeserializeOwned,
     {
-        let url = client.http_client().build_zed_llm_url(path, &[])?;
+        let url = client.http_client().build_mav_llm_url(path, &[])?;
         let request_id = uuid::Uuid::new_v4().to_string();
 
         let json_bytes = serde_json::to_vec(&request)?;
@@ -3031,7 +3030,7 @@ impl EditPredictionStore {
                     http_client::Request::builder()
                         .method(Method::POST)
                         .header("Content-Type", "application/json")
-                        .header(ZED_VERSION_HEADER_NAME, app_version.to_string())
+                        .header(MAV_VERSION_HEADER_NAME, app_version.to_string())
                         .header("Authorization", format!("Bearer {token}")),
                 )
             })
@@ -3054,7 +3053,7 @@ impl EditPredictionStore {
         {
             anyhow::ensure!(
                 *app_version >= minimum_required_version,
-                ZedUpdateRequiredError {
+                MavUpdateRequiredError {
                     minimum_version: minimum_required_version
                 }
             );
@@ -3234,7 +3233,7 @@ impl EditPredictionStore {
 
     fn load_legacy_data_collection_enabled(cx: &App) -> bool {
         KeyValueStore::global(cx)
-            .read_kvp(ZED_PREDICT_DATA_COLLECTION_CHOICE)
+            .read_kvp(MAV_PREDICT_DATA_COLLECTION_CHOICE)
             .log_err()
             .flatten()
             .as_deref()
@@ -3441,9 +3440,9 @@ fn merge_anchor_ranges(
 
 #[derive(Error, Debug)]
 #[error(
-    "You must update to Zed version {minimum_version} or higher to continue using edit predictions."
+    "You must update to Mav version {minimum_version} or higher to continue using edit predictions."
 )]
-pub struct ZedUpdateRequiredError {
+pub struct MavUpdateRequiredError {
     minimum_version: Version,
 }
 
@@ -3451,28 +3450,28 @@ pub struct ZedUpdateRequiredError {
 #[error("Cloud request timed out")]
 pub(crate) struct CloudRequestTimeoutError;
 
-struct ZedPredictUpsell;
+struct MavPredictUpsell;
 
 fn is_upsell_dismissed(cx: &App) -> bool {
-    // To make this backwards compatible with older versions of Zed, we
+    // To make this backwards compatible with older versions of Mav, we
     // check if the user has seen the previous Edit Prediction Onboarding
     // before, by checking the data collection choice which was written to
     // the database once the user clicked on "Accept and Enable"
     let kvp = KeyValueStore::global(cx);
     if kvp
-        .read_kvp(ZED_PREDICT_DATA_COLLECTION_CHOICE)
+        .read_kvp(MAV_PREDICT_DATA_COLLECTION_CHOICE)
         .log_err()
         .is_some_and(|s| s.is_some())
     {
         return true;
     }
 
-    kvp.read_kvp(ZedPredictUpsell::KEY)
+    kvp.read_kvp(MavPredictUpsell::KEY)
         .log_err()
         .is_some_and(|s| s.is_some())
 }
 
-impl Dismissable for ZedPredictUpsell {
+impl Dismissable for MavPredictUpsell {
     const KEY: &'static str = "dismissed-edit-predict-upsell";
 
     fn dismissed(cx: &App) -> bool {
@@ -3488,7 +3487,7 @@ pub fn init(cx: &mut App) {
     cx.observe_new(move |workspace: &mut Workspace, _, _cx| {
         workspace.register_action(
             move |workspace, _: &mav_actions::OpenMavPredictOnboarding, window, cx| {
-                ZedPredictModal::toggle(
+                MavPredictModal::toggle(
                     workspace,
                     workspace.user_store().clone(),
                     workspace.client().clone(),
@@ -3533,7 +3532,7 @@ pub fn init(cx: &mut App) {
     .detach();
 }
 
-fn is_zed_industries_repo(url: &str) -> bool {
+fn is_mav_industries_repo(url: &str) -> bool {
     url.strip_prefix("https://github.com/mav-industries/")
         .or_else(|| url.strip_prefix("http://github.com/mav-industries/"))
         .or_else(|| url.strip_prefix("git@github.com:mav-industries/"))

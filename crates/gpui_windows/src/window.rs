@@ -215,7 +215,7 @@ impl WindowsWindowState {
                 &self.border_offset,
                 self.scale_factor.get(),
             ),
-            placement.showCmd == SW_SHOWMAXIMIZED.0 as u32,
+            placement.showCmd == SW_SHOWMAXIMIMAV.0 as u32,
         )
     }
 
@@ -1319,7 +1319,7 @@ enum WindowOpenState {
     Windowed,
 }
 
-const WINDOW_CLASS_NAME: PCWSTR = w!("Zed::Window");
+const WINDOW_CLASS_NAME: PCWSTR = w!("Mav::Window");
 
 fn register_window_class(icon_handle: HICON) {
     static ONCE: Once = Once::new();
@@ -1399,7 +1399,7 @@ fn get_module_handle() -> HMODULE {
         let mut h_module = std::mem::zeroed();
         GetModuleHandleExW(
             GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-            windows::core::w!("ZedModule"),
+            windows::core::w!("MavModule"),
             &mut h_module,
         )
         .expect("Unable to get module handle"); // this should never fail

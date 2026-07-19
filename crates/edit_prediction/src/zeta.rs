@@ -1,8 +1,8 @@
 use crate::{
     CloudRequestTimeoutError, CurrentEditPrediction, DebugEvent, EditPredictionFinishedDebugEvent,
     EditPredictionId, EditPredictionInputs, EditPredictionModelInput,
-    EditPredictionStartedDebugEvent, EditPredictionStore, PromptHistoryBoundary,
-    ZedUpdateRequiredError, buffer_path_with_id_fallback,
+    EditPredictionStartedDebugEvent, EditPredictionStore, MavUpdateRequiredError,
+    PromptHistoryBoundary, buffer_path_with_id_fallback,
     cursor_excerpt::{self, compute_cursor_excerpt, compute_syntax_ranges},
     data_collection::CapturedPredictionContext,
     prediction::EditPredictionResult,
@@ -635,7 +635,7 @@ fn handle_api_response<T>(
                     .ok();
             }
 
-            if err.is::<ZedUpdateRequiredError>() {
+            if err.is::<MavUpdateRequiredError>() {
                 cx.update(|cx| {
                     this.update(cx, |this, _cx| {
                         this.update_required = true;
@@ -655,12 +655,12 @@ fn handle_api_response<T>(
                             ErrorSeverity::Critical
                         }
                         fn primary_action(&self) -> ErrorAction {
-                            ErrorAction::link("Update Zed", "https://mav.dev/releases")
+                            ErrorAction::link("Update Mav", "https://mav.dev/releases")
                         }
                     }
 
                     show_app_notification(
-                        NotificationId::unique::<ZedUpdateRequiredError>(),
+                        NotificationId::unique::<MavUpdateRequiredError>(),
                         cx,
                         move |cx| {
                             cx.new({
@@ -851,7 +851,7 @@ pub(crate) fn edit_prediction_accepted(
 
         let url = client
             .http_client()
-            .build_zed_llm_url("/predict_edits/accept", &[])?;
+            .build_mav_llm_url("/predict_edits/accept", &[])?;
         EditPredictionStore::send_api_request::<()>(
             move |builder| Ok(builder.uri(url.as_ref()).body(body.clone().into())?),
             client,

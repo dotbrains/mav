@@ -1,6 +1,6 @@
-# Zed Schema Generator
+# Mav Schema Generator
 
-Prints various Zed schemas to stdout.
+Prints various Mav schemas to stdout.
 
 ## Usage
 

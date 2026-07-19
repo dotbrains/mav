@@ -202,8 +202,8 @@ impl DynLspInstaller for ExtensionLspAdapter {
                 let path = self.extension.path_from_extension(command_path);
 
                 // TODO: This should now be done via the `mav::make_file_executable` function in
-                // Zed extension API, but we're leaving these existing usages in place temporarily
-                // to avoid any compatibility issues between Zed and the extension versions.
+                // Mav extension API, but we're leaving these existing usages in place temporarily
+                // to avoid any compatibility issues between Mav and the extension versions.
                 //
                 // We can remove once the following extension versions no longer see any use:
                 // - toml@0.0.2
@@ -290,7 +290,7 @@ impl LspAdapter for ExtensionLspAdapter {
     fn language_ids(&self) -> HashMap<LanguageName, String> {
         // TODO: The language IDs can be provided via the language server options
         // in `extension.toml now but we're leaving these existing usages in place temporarily
-        // to avoid any compatibility issues between Zed and the extension versions.
+        // to avoid any compatibility issues between Mav and the extension versions.
         //
         // We can remove once the following extension versions no longer see any use:
         // - php@0.0.1

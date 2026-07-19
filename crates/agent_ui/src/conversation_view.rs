@@ -16,7 +16,7 @@ use anyhow::{Result, anyhow};
 #[cfg(feature = "audio")]
 use audio::{Audio, Sound};
 use buffer_diff::BufferDiff;
-use client::zed_urls;
+use client::mav_urls;
 use collections::{HashMap, HashSet, IndexMap};
 use editor::scroll::Autoscroll;
 use editor::{
@@ -2387,7 +2387,7 @@ impl ConversationView {
         window.spawn(cx, async move |cx| {
             let mut task = login.clone();
             if let Some(cmd) = &task.command {
-                // Have "node" command use Zed's managed Node runtime by default
+                // Have "node" command use Mav's managed Node runtime by default
                 if cmd == "node" {
                     let resolved_node_runtime = project.update(cx, |project, cx| {
                         let agent_server_store = project.agent_server_store().clone();
@@ -2714,7 +2714,7 @@ impl ConversationView {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let (heading_label, description_label) = (
-            format!("Upgrade {} to work with Zed", self.agent.agent_id()),
+            format!("Upgrade {} to work with Mav", self.agent.agent_id()),
             if version.is_empty() {
                 format!(
                     "Currently using {}, which does not report a valid --version",
@@ -3164,7 +3164,7 @@ impl ConversationView {
     }
 
     fn current_model_name(&self, cx: &App) -> SharedString {
-        // For native agent (Zed Agent), use the specific model name (e.g., "Claude 3.5 Sonnet")
+        // For native agent (Mav Agent), use the specific model name (e.g., "Claude 3.5 Sonnet")
         // For ACP agents, use the agent name (e.g., "Claude Agent", "Gemini CLI")
         // This provides better clarity about what refused the request
         if self.as_native_connection(cx).is_some() {
@@ -3504,8 +3504,8 @@ impl ConversationView {
 
                 Some(ContextMenu::build(window, cx, |mut menu, _window, _cx| {
                     menu = menu.item(
-                        ContextMenuEntry::new("Zed Agent")
-                            .icon(IconName::ZedAgent)
+                        ContextMenuEntry::new("Mav Agent")
+                            .icon(IconName::MavAgent)
                             .icon_color(Color::Muted)
                             .handler({
                                 let this = this.clone();
@@ -5686,7 +5686,7 @@ pub(crate) mod tests {
         C: 'static + AgentConnection + Send + Clone,
     {
         fn logo(&self) -> ui::IconName {
-            ui::IconName::ZedAgent
+            ui::IconName::MavAgent
         }
 
         fn agent_id(&self) -> AgentId {
@@ -5762,7 +5762,7 @@ pub(crate) mod tests {
 
     impl AgentServer for FlakyAgentServer {
         fn logo(&self) -> ui::IconName {
-            ui::IconName::ZedAgent
+            ui::IconName::MavAgent
         }
 
         fn agent_id(&self) -> AgentId {

@@ -6,7 +6,7 @@ use collections::{HashMap, HashSet};
 use credentials_provider::CredentialsProvider;
 use gpui::{App, Context, Entity};
 use language_model::{
-    ConfiguredModel, LanguageModelProviderId, LanguageModelRegistry, ZED_CLOUD_PROVIDER_ID,
+    ConfiguredModel, LanguageModelProviderId, LanguageModelRegistry, MAV_CLOUD_PROVIDER_ID,
 };
 use provider::deepseek::DeepSeekLanguageModelProvider;
 
@@ -145,16 +145,16 @@ pub fn init(user_store: Entity<UserStore>, client: Arc<Client>, cx: &mut App) {
 /// Recomputes and sets the [`LanguageModelRegistry`]'s environment fallback
 /// model based on currently authenticated providers.
 ///
-/// Prefers the Zed cloud provider so that, once the user is signed in, we
-/// always pick a Zed-hosted model over models from other authenticated
-/// providers in the environment. If the Zed cloud provider is authenticated
+/// Prefers the Mav cloud provider so that, once the user is signed in, we
+/// always pick a Mav-hosted model over models from other authenticated
+/// providers in the environment. If the Mav cloud provider is authenticated
 /// but hasn't finished loading its models yet, we don't fall back to another
 /// provider to avoid flickering between providers during sign in.
 pub fn update_environment_fallback_model(cx: &mut App) {
     let registry = LanguageModelRegistry::global(cx);
     let fallback_model = {
         let registry = registry.read(cx);
-        let cloud_provider = registry.provider(&ZED_CLOUD_PROVIDER_ID);
+        let cloud_provider = registry.provider(&MAV_CLOUD_PROVIDER_ID);
         if cloud_provider
             .as_ref()
             .is_some_and(|provider| provider.is_authenticated(cx))

@@ -234,19 +234,19 @@ where
 ///
 /// This function checks if the current process is running with root privileges
 /// and terminates the program with an error message unless explicitly allowed via the
-/// `ZED_ALLOW_ROOT` environment variable.
+/// `MAV_ALLOW_ROOT` environment variable.
 #[cfg(unix)]
 pub fn prevent_root_execution() {
     let is_root = nix::unistd::geteuid().is_root();
-    let allow_root = std::env::var("ZED_ALLOW_ROOT").is_ok_and(|val| val == "true");
+    let allow_root = std::env::var("MAV_ALLOW_ROOT").is_ok_and(|val| val == "true");
 
     if is_root && !allow_root {
         eprintln!(
             "\
-Error: Running Zed as root or via sudo is unsupported.
-       Doing so (even once) may subtly break things for all subsequent non-root usage of Zed.
+Error: Running Mav as root or via sudo is unsupported.
+       Doing so (even once) may subtly break things for all subsequent non-root usage of Mav.
        It is untested and not recommended, don't complain when things break.
-       If you wish to proceed anyways, set `ZED_ALLOW_ROOT=true` in your environment."
+       If you wish to proceed anyways, set `MAV_ALLOW_ROOT=true` in your environment."
         );
         std::process::exit(1);
     }
@@ -308,35 +308,35 @@ fn load_shell_from_passwd() -> Result<()> {
 }
 
 /// Returns a shell escaped path for the current mav executable
-pub fn get_shell_safe_zed_path(shell_kind: shell::ShellKind) -> anyhow::Result<String> {
+pub fn get_shell_safe_mav_path(shell_kind: shell::ShellKind) -> anyhow::Result<String> {
     use anyhow::Context as _;
     use paths::PathExt;
-    let mut zed_path =
+    let mut mav_path =
         std::env::current_exe().context("Failed to determine current mav executable path.")?;
     if cfg!(target_os = "linux")
-        && !zed_path.is_file()
-        && let Some(truncated) = zed_path
+        && !mav_path.is_file()
+        && let Some(truncated) = mav_path
             .clone()
             .file_name()
             .and_then(|s| s.to_str())
             .and_then(|n| n.strip_suffix(" (deleted)"))
     {
         // Might have been deleted during update; let's use the new binary if there is one.
-        zed_path.set_file_name(truncated);
+        mav_path.set_file_name(truncated);
     }
 
-    zed_path
+    mav_path
         .try_shell_safe(shell_kind)
-        .context("Failed to shell-escape Zed executable path.")
+        .context("Failed to shell-escape Mav executable path.")
 }
 
 /// Returns a path for the mav cli executable, this function
 /// should be called from the mav executable, not mav-cli.
-pub fn get_zed_cli_path() -> Result<PathBuf> {
+pub fn get_mav_cli_path() -> Result<PathBuf> {
     use anyhow::Context as _;
-    let zed_path =
+    let mav_path =
         std::env::current_exe().context("Failed to determine current mav executable path.")?;
-    let parent = zed_path
+    let parent = mav_path
         .parent()
         .context("Failed to determine parent directory of mav executable path.")?;
 
@@ -361,7 +361,7 @@ pub fn get_zed_cli_path() -> Result<PathBuf> {
                 .join(p)
                 .canonicalize()
                 .ok()
-                .filter(|p| p != &zed_path)
+                .filter(|p| p != &mav_path)
         })
         .with_context(|| {
             format!(
@@ -386,9 +386,9 @@ pub async fn load_login_shell_environment() -> Result<()> {
         .await
         .with_context(|| format!("capturing environment with {:?}", get_system_shell()))?
     {
-        // Skip SHLVL to prevent it from polluting Zed's process environment.
+        // Skip SHLVL to prevent it from polluting Mav's process environment.
         // The login shell used for env capture increments SHLVL, and if we propagate it,
-        // terminals spawned by Zed will inherit it and increment again, causing SHLVL
+        // terminals spawned by Mav will inherit it and increment again, causing SHLVL
         // to start at 2 instead of 1 (and increase by 2 on each reload).
         if name == "SHLVL" {
             continue;

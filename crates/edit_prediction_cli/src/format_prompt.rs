@@ -859,7 +859,7 @@ mod tests {
             predictions: Vec::new(),
             score: Vec::new(),
             qa: Vec::new(),
-            zed_version: None,
+            mav_version: None,
             state: None,
         }
     }
@@ -1581,7 +1581,7 @@ mod tests {
                 predictions: Vec::new(),
                 score: Vec::new(),
                 qa: Vec::new(),
-                zed_version: None,
+                mav_version: None,
                 state: None,
             },
             response,
@@ -1663,7 +1663,7 @@ mod tests {
                 predictions: Vec::new(),
                 score: Vec::new(),
                 qa: Vec::new(),
-                zed_version: None,
+                mav_version: None,
                 state: None,
             },
             editable_range,

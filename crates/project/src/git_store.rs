@@ -348,7 +348,7 @@ struct CommitDataHandler {
     pending_requests: HashSet<Oid>,
 }
 
-/// Represents the handler of a git cat-file --batch process within Zed
+/// Represents the handler of a git cat-file --batch process within Mav
 /// It's used to lazily fetch commit data as needed (whatever a user is viewing)
 enum CommitDataHandlerState {
     /// The handler is open and processing requests
@@ -746,7 +746,7 @@ impl GitStore {
             .values()
             .filter(|repo| {
                 let repo_path = &repo.read(cx).work_directory_abs_path;
-                // The folder opened in Zed isn't necessarily the repo root; it may be
+                // The folder opened in Mav isn't necessarily the repo root; it may be
                 // a subdirectory of it, e.g. opening `~/code/myrepo/backend` when the
                 // repo lives at `~/code/myrepo`. So match any repo whose work directory
                 // contains the folder. Nested repos can produce multiple matches, e.g.
@@ -8814,7 +8814,7 @@ impl Repository {
         self.send_job("access", None, move |git_repo, _cx| async move {
             match git_repo {
                 // TODO: Correctly handle remote repositories, where the user
-                // that's running the Zed remote may not own the `.git/`
+                // that's running the Mav remote may not own the `.git/`
                 // directory. For now we just return `GitAccess::Yes` so that
                 // remoting continues working as expected.
                 RepositoryState::Remote(..) => GitAccess::Yes,

@@ -55,9 +55,9 @@ if ($Help) {
     exit 0
 }
 
-Push-Location -Path crates/zed
+Push-Location -Path crates/mav
 $channel = Get-Content "RELEASE_CHANNEL"
-$env:ZED_RELEASE_CHANNEL = $channel
+$env:MAV_RELEASE_CHANNEL = $channel
 $env:RELEASE_CHANNEL = $channel
 Pop-Location
 
@@ -67,7 +67,7 @@ function CheckEnvironmentVariables {
     }
 
     $requiredVars = @(
-        'ZED_WORKSPACE', 'RELEASE_VERSION', 'ZED_RELEASE_CHANNEL',
+        'MAV_WORKSPACE', 'RELEASE_VERSION', 'MAV_RELEASE_CHANNEL',
         'AZURE_TENANT_ID', 'AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET',
         'ACCOUNT_NAME', 'CERT_PROFILE_NAME', 'ENDPOINT',
         'FILE_DIGEST', 'TIMESTAMP_DIGEST', 'TIMESTAMP_SERVER'
@@ -86,7 +86,7 @@ function PrepareForBundle {
         Remove-Item -Path "$innoDir" -Recurse -Force
     }
     New-Item -Path "$innoDir" -ItemType Directory -Force
-    Copy-Item -Path "$env:ZED_WORKSPACE\crates\zed\resources\windows\*" -Destination "$innoDir" -Recurse -Force
+    Copy-Item -Path "$env:MAV_WORKSPACE\crates\mav\resources\windows\*" -Destination "$innoDir" -Recurse -Force
     New-Item -Path "$innoDir\make_appx" -ItemType Directory -Force
     New-Item -Path "$innoDir\appx" -ItemType Directory -Force
     New-Item -Path "$innoDir\bin" -ItemType Directory -Force
@@ -99,11 +99,11 @@ function GenerateLicenses {
     . $PSScriptRoot/generate-licenses.ps1
 }
 
-function BuildZedAndItsFriends {
-    Write-Output "Building Zed and its friends, for channel: $channel"
-    # Build zed.exe, cli.exe and auto_update_helper.exe
-    cargo build --release --package zed --package cli --package auto_update_helper --target $target
-    Copy-Item -Path ".\$CargoOutDir\zed.exe" -Destination "$innoDir\Zed.exe" -Force
+function BuildMavAndItsFriends {
+    Write-Output "Building Mav and its friends, for channel: $channel"
+    # Build mav.exe, cli.exe and auto_update_helper.exe
+    cargo build --release --package mav --package cli --package auto_update_helper --target $target
+    Copy-Item -Path ".\$CargoOutDir\mav.exe" -Destination "$innoDir\Mav.exe" -Force
     Copy-Item -Path ".\$CargoOutDir\cli.exe" -Destination "$innoDir\cli.exe" -Force
     Copy-Item -Path ".\$CargoOutDir\auto_update_helper.exe" -Destination "$innoDir\auto_update_helper.exe" -Force
     # Build explorer_command_injector.dll
@@ -118,7 +118,7 @@ function BuildZedAndItsFriends {
             cargo build --release --package explorer_command_injector --target $target
         }
     }
-    Copy-Item -Path ".\$CargoOutDir\explorer_command_injector.dll" -Destination "$innoDir\zed_explorer_command_injector.dll" -Force
+    Copy-Item -Path ".\$CargoOutDir\explorer_command_injector.dll" -Destination "$innoDir\mav_explorer_command_injector.dll" -Force
 }
 
 function BuildRemoteServer {
@@ -133,23 +133,23 @@ function BuildRemoteServer {
         & "$innoDir\sign.ps1" $remoteServerSrc
     }
 
-    $remoteServerDst = "$env:ZED_WORKSPACE\target\zed-remote-server-windows-$Architecture.zip"
+    $remoteServerDst = "$env:MAV_WORKSPACE\target\mav-remote-server-windows-$Architecture.zip"
     Write-Output "Compressing remote_server to $remoteServerDst"
     Compress-Archive -Path $remoteServerSrc -DestinationPath $remoteServerDst -Force
 
     Write-Output "Remote server compressed successfully"
 }
 
-function ZipZedAndItsFriendsDebug {
+function ZipMavAndItsFriendsDebug {
     $items = @(
-        ".\$CargoOutDir\zed.pdb",
+        ".\$CargoOutDir\mav.pdb",
         ".\$CargoOutDir\cli.pdb",
         ".\$CargoOutDir\auto_update_helper.pdb",
         ".\$CargoOutDir\explorer_command_injector.pdb",
         ".\$CargoOutDir\remote_server.pdb"
     )
 
-    Compress-Archive -Path $items -DestinationPath ".\$CargoOutDir\zed-$env:RELEASE_VERSION-$env:ZED_RELEASE_CHANNEL.dbg.zip" -Force
+    Compress-Archive -Path $items -DestinationPath ".\$CargoOutDir\mav-$env:RELEASE_VERSION-$env:MAV_RELEASE_CHANNEL.dbg.zip" -Force
 }
 
 
@@ -163,10 +163,10 @@ function UploadToSentry {
         Write-Output "missing SENTRY_AUTH_TOKEN. skipping sentry upload."
         return
     }
-    Write-Output "Uploading zed debug symbols to sentry..."
+    Write-Output "Uploading mav debug symbols to sentry..."
     for ($i = 1; $i -le 3; $i++) {
         try {
-            sentry-cli debug-files upload --include-sources --wait -p zed -o zed-dev $CargoOutDir
+            sentry-cli debug-files upload --include-sources --wait -p mav -o mav-dev $CargoOutDir
             break
         }
         catch {
@@ -183,28 +183,28 @@ function UploadToSentry {
 function MakeAppx {
     switch ($channel) {
         "stable" {
-            $manifestFile = "$env:ZED_WORKSPACE\crates\explorer_command_injector\AppxManifest.xml"
+            $manifestFile = "$env:MAV_WORKSPACE\crates\explorer_command_injector\AppxManifest.xml"
         }
         "preview" {
-            $manifestFile = "$env:ZED_WORKSPACE\crates\explorer_command_injector\AppxManifest-Preview.xml"
+            $manifestFile = "$env:MAV_WORKSPACE\crates\explorer_command_injector\AppxManifest-Preview.xml"
         }
         default {
-            $manifestFile = "$env:ZED_WORKSPACE\crates\explorer_command_injector\AppxManifest-Nightly.xml"
+            $manifestFile = "$env:MAV_WORKSPACE\crates\explorer_command_injector\AppxManifest-Nightly.xml"
         }
     }
     Copy-Item -Path "$manifestFile" -Destination "$innoDir\make_appx\AppxManifest.xml"
     # Add makeAppx.exe to Path
     $sdk = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64"
     $env:Path += ';' + $sdk
-    makeAppx.exe pack /d "$innoDir\make_appx" /p "$innoDir\zed_explorer_command_injector.appx" /nv
+    makeAppx.exe pack /d "$innoDir\make_appx" /p "$innoDir\mav_explorer_command_injector.appx" /nv
 }
 
-function SignZedAndItsFriends {
+function SignMavAndItsFriends {
     if (-not $env:CI) {
         return
     }
 
-    $files = "$innoDir\Zed.exe,$innoDir\cli.exe,$innoDir\auto_update_helper.exe,$innoDir\zed_explorer_command_injector.dll,$innoDir\zed_explorer_command_injector.appx"
+    $files = "$innoDir\Mav.exe,$innoDir\cli.exe,$innoDir\auto_update_helper.exe,$innoDir\mav_explorer_command_injector.dll,$innoDir\mav_explorer_command_injector.appx"
     & "$innoDir\sign.ps1" $files
 }
 
@@ -226,10 +226,10 @@ function DownloadConpty {
 }
 
 function CollectFiles {
-    Move-Item -Path "$innoDir\zed_explorer_command_injector.appx" -Destination "$innoDir\appx\zed_explorer_command_injector.appx" -Force
-    Move-Item -Path "$innoDir\zed_explorer_command_injector.dll" -Destination "$innoDir\appx\zed_explorer_command_injector.dll" -Force
-    Move-Item -Path "$innoDir\cli.exe" -Destination "$innoDir\bin\zed.exe" -Force
-    Move-Item -Path "$innoDir\zed.sh" -Destination "$innoDir\bin\zed" -Force
+    Move-Item -Path "$innoDir\mav_explorer_command_injector.appx" -Destination "$innoDir\appx\mav_explorer_command_injector.appx" -Force
+    Move-Item -Path "$innoDir\mav_explorer_command_injector.dll" -Destination "$innoDir\appx\mav_explorer_command_injector.dll" -Force
+    Move-Item -Path "$innoDir\cli.exe" -Destination "$innoDir\bin\mav.exe" -Force
+    Move-Item -Path "$innoDir\mav.sh" -Destination "$innoDir\bin\mav" -Force
     Move-Item -Path "$innoDir\auto_update_helper.exe" -Destination "$innoDir\tools\auto_update_helper.exe" -Force
     if($Architecture -eq "aarch64") {
         New-Item -Type Directory -Path "$innoDir\arm64" -Force
@@ -247,63 +247,63 @@ function CollectFiles {
 }
 
 function BuildInstaller {
-    $issFilePath = "$innoDir\zed.iss"
+    $issFilePath = "$innoDir\mav.iss"
     switch ($channel) {
         "stable" {
             $appId = "{{2DB0DA96-CA55-49BB-AF4F-64AF36A86712}"
             $appIconName = "app-icon"
-            $appName = "Zed"
-            $appDisplayName = "Zed"
-            $appSetupName = "Zed-$Architecture"
-            # The mutex name here should match the mutex name in crates\zed\src\zed\windows_only_instance.rs
-            $appMutex = "Zed-Stable-Instance-Mutex"
-            $appExeName = "Zed"
-            $regValueName = "Zed"
-            $appUserId = "ZedIndustries.Zed"
+            $appName = "Mav"
+            $appDisplayName = "Mav"
+            $appSetupName = "Mav-$Architecture"
+            # The mutex name here should match the mutex name in crates\mav\src\mav\windows_only_instance.rs
+            $appMutex = "Mav-Stable-Instance-Mutex"
+            $appExeName = "Mav"
+            $regValueName = "Mav"
+            $appUserId = "MavIndustries.Mav"
             $appShellNameShort = "Z&ed"
-            $appAppxFullName = "ZedIndustries.Zed_1.0.0.0_neutral__japxn1gcva8rg"
+            $appAppxFullName = "MavIndustries.Mav_1.0.0.0_neutral__japxn1gcva8rg"
         }
         "preview" {
             $appId = "{{F70E4811-D0E2-4D88-AC99-D63752799F95}"
             $appIconName = "app-icon-preview"
-            $appName = "Zed Preview"
-            $appDisplayName = "Zed Preview"
-            $appSetupName = "Zed-$Architecture"
-            # The mutex name here should match the mutex name in crates\zed\src\zed\windows_only_instance.rs
-            $appMutex = "Zed-Preview-Instance-Mutex"
-            $appExeName = "Zed"
-            $regValueName = "ZedPreview"
-            $appUserId = "ZedIndustries.Zed.Preview"
+            $appName = "Mav Preview"
+            $appDisplayName = "Mav Preview"
+            $appSetupName = "Mav-$Architecture"
+            # The mutex name here should match the mutex name in crates\mav\src\mav\windows_only_instance.rs
+            $appMutex = "Mav-Preview-Instance-Mutex"
+            $appExeName = "Mav"
+            $regValueName = "MavPreview"
+            $appUserId = "MavIndustries.Mav.Preview"
             $appShellNameShort = "Z&ed Preview"
-            $appAppxFullName = "ZedIndustries.Zed.Preview_1.0.0.0_neutral__japxn1gcva8rg"
+            $appAppxFullName = "MavIndustries.Mav.Preview_1.0.0.0_neutral__japxn1gcva8rg"
         }
         "nightly" {
             $appId = "{{1BDB21D3-14E7-433C-843C-9C97382B2FE0}"
             $appIconName = "app-icon-nightly"
-            $appName = "Zed Nightly"
-            $appDisplayName = "Zed Nightly"
-            $appSetupName = "Zed-$Architecture"
-            # The mutex name here should match the mutex name in crates\zed\src\zed\windows_only_instance.rs
-            $appMutex = "Zed-Nightly-Instance-Mutex"
-            $appExeName = "Zed"
-            $regValueName = "ZedNightly"
-            $appUserId = "ZedIndustries.Zed.Nightly"
+            $appName = "Mav Nightly"
+            $appDisplayName = "Mav Nightly"
+            $appSetupName = "Mav-$Architecture"
+            # The mutex name here should match the mutex name in crates\mav\src\mav\windows_only_instance.rs
+            $appMutex = "Mav-Nightly-Instance-Mutex"
+            $appExeName = "Mav"
+            $regValueName = "MavNightly"
+            $appUserId = "MavIndustries.Mav.Nightly"
             $appShellNameShort = "Z&ed Editor Nightly"
-            $appAppxFullName = "ZedIndustries.Zed.Nightly_1.0.0.0_neutral__japxn1gcva8rg"
+            $appAppxFullName = "MavIndustries.Mav.Nightly_1.0.0.0_neutral__japxn1gcva8rg"
         }
         "dev" {
             $appId = "{{8357632E-24A4-4F32-BA97-E575B4D1FE5D}"
             $appIconName = "app-icon-dev"
-            $appName = "Zed Dev"
-            $appDisplayName = "Zed Dev"
-            $appSetupName = "Zed-$Architecture"
-            # The mutex name here should match the mutex name in crates\zed\src\zed\windows_only_instance.rs
-            $appMutex = "Zed-Dev-Instance-Mutex"
-            $appExeName = "Zed"
-            $regValueName = "ZedDev"
-            $appUserId = "ZedIndustries.Zed.Dev"
+            $appName = "Mav Dev"
+            $appDisplayName = "Mav Dev"
+            $appSetupName = "Mav-$Architecture"
+            # The mutex name here should match the mutex name in crates\mav\src\mav\windows_only_instance.rs
+            $appMutex = "Mav-Dev-Instance-Mutex"
+            $appExeName = "Mav"
+            $regValueName = "MavDev"
+            $appUserId = "MavIndustries.Mav.Dev"
             $appShellNameShort = "Z&ed Dev"
-            $appAppxFullName = "ZedIndustries.Zed.Dev_1.0.0.0_neutral__japxn1gcva8rg"
+            $appAppxFullName = "MavIndustries.Mav.Dev_1.0.0.0_neutral__japxn1gcva8rg"
         }
         default {
             Write-Error "can't bundle installer for $channel."
@@ -319,7 +319,7 @@ function BuildInstaller {
     $definitions = @{
         "AppId"          = $appId
         "AppIconName"    = $appIconName
-        "OutputDir"      = "$env:ZED_WORKSPACE\target"
+        "OutputDir"      = "$env:MAV_WORKSPACE\target"
         "AppSetupName"   = $appSetupName
         "AppName"        = $appName
         "AppDisplayName" = $appDisplayName
@@ -330,7 +330,7 @@ function BuildInstaller {
         "ShellNameShort" = $appShellNameShort
         "AppUserId"      = $appUserId
         "Version"        = "$env:RELEASE_VERSION"
-        "SourceDir"      = "$env:ZED_WORKSPACE"
+        "SourceDir"      = "$env:MAV_WORKSPACE"
         "AppxFullName"   = $appAppxFullName
     }
 
@@ -360,19 +360,19 @@ function BuildInstaller {
     }
 }
 
-ParseZedWorkspace
-$innoDir = "$env:ZED_WORKSPACE\inno\$Architecture"
-$debugArchive = "$CargoOutDir\zed-$env:RELEASE_VERSION-$env:ZED_RELEASE_CHANNEL.dbg.zip"
-$debugStoreKey = "$env:ZED_RELEASE_CHANNEL/zed-$env:RELEASE_VERSION-$env:ZED_RELEASE_CHANNEL.dbg.zip"
+ParseMavWorkspace
+$innoDir = "$env:MAV_WORKSPACE\inno\$Architecture"
+$debugArchive = "$CargoOutDir\mav-$env:RELEASE_VERSION-$env:MAV_RELEASE_CHANNEL.dbg.zip"
+$debugStoreKey = "$env:MAV_RELEASE_CHANNEL/mav-$env:RELEASE_VERSION-$env:MAV_RELEASE_CHANNEL.dbg.zip"
 
 CheckEnvironmentVariables
 PrepareForBundle
 GenerateLicenses
-BuildZedAndItsFriends
+BuildMavAndItsFriends
 BuildRemoteServer
 MakeAppx
-SignZedAndItsFriends
-ZipZedAndItsFriendsDebug
+SignMavAndItsFriends
+ZipMavAndItsFriendsDebug
 DownloadAMDGpuServices
 DownloadConpty
 CollectFiles
@@ -385,8 +385,8 @@ if($env:CI) {
 if ($buildSuccess) {
     Write-Output "Build successful"
     if ($Install) {
-        Write-Output "Installing Zed..."
-        Start-Process -FilePath "$env:ZED_WORKSPACE/target/ZedEditorUserSetup-x64-$env:RELEASE_VERSION.exe"
+        Write-Output "Installing Mav..."
+        Start-Process -FilePath "$env:MAV_WORKSPACE/target/MavEditorUserSetup-x64-$env:RELEASE_VERSION.exe"
     }
     exit 0
 }

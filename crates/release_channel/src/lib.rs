@@ -12,7 +12,7 @@ const MAV_DOCS_URL: &str = "https://mav.dev/docs";
 /// stable | dev | nightly | preview
 pub static RELEASE_CHANNEL_NAME: LazyLock<String> = LazyLock::new(|| {
     if cfg!(debug_assertions) {
-        env::var("ZED_RELEASE_CHANNEL")
+        env::var("MAV_RELEASE_CHANNEL")
             .unwrap_or_else(|_| include_str!("../../mav/RELEASE_CHANNEL").trim().to_string())
     } else {
         include_str!("../../mav/RELEASE_CHANNEL").trim().to_string()
@@ -87,8 +87,8 @@ impl AppVersion {
         build_id: Option<&str>,
         commit_sha: Option<AppCommitSha>,
     ) -> Version {
-        let mut version: Version = if let Ok(from_env) = env::var("ZED_APP_VERSION") {
-            from_env.parse().expect("invalid ZED_APP_VERSION")
+        let mut version: Version = if let Ok(from_env) = env::var("MAV_APP_VERSION") {
+            from_env.parse().expect("invalid MAV_APP_VERSION")
         } else {
             pkg_version.parse().expect("invalid version in Cargo.toml")
         };

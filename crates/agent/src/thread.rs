@@ -43,8 +43,8 @@ use language_model::{
     LanguageModelId, LanguageModelImage, LanguageModelProviderId, LanguageModelRegistry,
     LanguageModelRequest, LanguageModelRequestMessage, LanguageModelRequestTool,
     LanguageModelToolResult, LanguageModelToolResultContent, LanguageModelToolSchemaFormat,
-    LanguageModelToolUse, LanguageModelToolUseId, MessageContent, Role, SelectedModel, Speed,
-    StopReason, TokenUsage, ZED_CLOUD_PROVIDER_ID,
+    LanguageModelToolUse, LanguageModelToolUseId, MAV_CLOUD_PROVIDER_ID, MessageContent, Role,
+    SelectedModel, Speed, StopReason, TokenUsage,
 };
 use project::Project;
 use prompt_store::ProjectContext;
@@ -785,7 +785,7 @@ pub struct SiblingThreadRequest {
     pub title: SharedString,
     /// The initial prompt to send to the new thread.
     pub prompt: String,
-    /// Optional agent ID to use. Defaults to the native Zed agent.
+    /// Optional agent ID to use. Defaults to the native Mav agent.
     pub agent_id: Option<String>,
     /// Optional model override, as `provider/model-id`.
     /// Defaults to the user's configured default model for the agent.
@@ -829,7 +829,7 @@ pub struct AvailableAgent {
     pub id: String,
     /// Human-readable name shown in the UI.
     pub name: SharedString,
-    /// Whether this is Zed's built-in native agent.
+    /// Whether this is Mav's built-in native agent.
     pub is_native: bool,
     /// Models available for this agent. May be empty if models are not
     /// enumerated up front (e.g., external agents that choose their own).
@@ -3197,7 +3197,7 @@ impl Thread {
             return Err(anyhow!(error));
         };
 
-        let auto_retry = if model.provider_id() == ZED_CLOUD_PROVIDER_ID {
+        let auto_retry = if model.provider_id() == MAV_CLOUD_PROVIDER_ID {
             plan.is_some()
         } else {
             true

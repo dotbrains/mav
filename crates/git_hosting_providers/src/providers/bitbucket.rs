@@ -364,7 +364,7 @@ mod tests {
     #[test]
     fn test_parse_remote_url_given_https_url_with_username() {
         let parsed_remote = Bitbucket::public_instance()
-            .parse_remote_url("https://thorstenballzed@bitbucket.org/mav-industries/mav.git")
+            .parse_remote_url("https://thorstenballmav@bitbucket.org/mav-industries/mav.git")
             .unwrap();
 
         assert_eq!(
@@ -446,7 +446,7 @@ mod tests {
 
     #[test]
     fn test_parse_remote_url_given_self_hosted_https_url_with_username() {
-        let remote_url = "https://thorstenballzed@bitbucket.company.com/mav-industries/mav.git";
+        let remote_url = "https://thorstenballmav@bitbucket.company.com/mav-industries/mav.git";
 
         let parsed_remote = Bitbucket::from_remote_url(remote_url)
             .unwrap()

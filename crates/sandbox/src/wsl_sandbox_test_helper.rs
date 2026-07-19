@@ -11,12 +11,12 @@
 //! one: that a sandboxed process cannot escape via WSL interop by exec'ing a
 //! Windows binary.
 //!
-//! It targets the **default** WSL distro (matching real Zed usage for native
+//! It targets the **default** WSL distro (matching real Mav usage for native
 //! Windows paths); provision that distro before running (see
 //! `script/test-wsl-sandbox.ps1`). Like the Linux helper, it **skips** (rather
 //! than fails) the enforcement assertions when the environment can't actually
 //! enforce a sandbox, so a misconfigured WSL doesn't masquerade as a sandbox
-//! regression. Set `ZED_TEST_SANDBOX_REQUIRE_ENFORCED=1` to turn that skip into
+//! regression. Set `MAV_TEST_SANDBOX_REQUIRE_ENFORCED=1` to turn that skip into
 //! a failure once you've provisioned an environment that *should* enforce.
 //!
 //! Run it with a dedicated WSL sandbox test runner.
@@ -86,7 +86,7 @@ mod imp {
     }
 
     fn run() -> Result<()> {
-        let require_enforced = env_flag("ZED_TEST_SANDBOX_REQUIRE_ENFORCED");
+        let require_enforced = env_flag("MAV_TEST_SANDBOX_REQUIRE_ENFORCED");
         let wsl = Wsl::detect();
         println!("{RESULT_TAG} starting (require_enforced={require_enforced})");
 
@@ -114,12 +114,12 @@ mod imp {
     }
 
     /// The environment can't enforce a sandbox. Skip the enforcement checks
-    /// unless the caller asserted (via `ZED_TEST_SANDBOX_REQUIRE_ENFORCED`) that
+    /// unless the caller asserted (via `MAV_TEST_SANDBOX_REQUIRE_ENFORCED`) that
     /// it should be able to, in which case this is a real failure.
     fn not_enforced(require_enforced: bool, reason: &str) -> Result<()> {
         if require_enforced {
             bail!(
-                "ZED_TEST_SANDBOX_REQUIRE_ENFORCED is set, but the WSL sandbox could not be \
+                "MAV_TEST_SANDBOX_REQUIRE_ENFORCED is set, but the WSL sandbox could not be \
                  enforced: {reason}"
             );
         }
@@ -141,7 +141,7 @@ mod imp {
         // than overlaying like `/tmp`). This mirrors the Linux helper and is
         // robust: it doesn't depend on how drvfs `/mnt/<drive>` submounts behave
         // under bwrap's recursive root bind. The Windows-drive translation path
-        // (the realistic Zed-on-`C:` case) gets its own dedicated check below.
+        // (the realistic Mav-on-`C:` case) gets its own dedicated check below.
         let root_base = format!("/var/tmp/mav-wsl-sandbox-test-{pid}");
         let writable_wsl = format!("{root_base}/writable");
         let forbidden_wsl = format!("{root_base}/forbidden");
@@ -341,7 +341,7 @@ mod imp {
     /// Windows-specific GRANT: a writable directory passed as a native `C:\`
     /// path is translated into WSL with `wslpath`, bound read-write, and a write
     /// inside the sandbox lands back on the Windows filesystem. Exercises the
-    /// native-drive path translation end-to-end (the realistic case of Zed on
+    /// native-drive path translation end-to-end (the realistic case of Mav on
     /// Windows sandboxing a command in a project under `C:\`).
     fn check_windows_drive_writable(wsl: &Wsl, checks: &mut Checks) -> Result<()> {
         let base =
@@ -438,7 +438,7 @@ mod imp {
     /// WSL's own.
     fn check_env_forwarding(checks: &mut Checks) -> Result<()> {
         let mut env = HashMap::new();
-        env.insert("ZED_TEST_FORWARDED".to_string(), "yes".to_string());
+        env.insert("MAV_TEST_FORWARDED".to_string(), "yes".to_string());
         // If PATH were forwarded it would replace WSL's PATH with this bogus
         // value; it must not be.
         env.insert(
@@ -449,7 +449,7 @@ mod imp {
             "/bin/sh",
             &[
                 "-c",
-                "[ \"$ZED_TEST_FORWARDED\" = yes ] && [ \"$PATH\" != /mav-sentinel-should-not-win ]",
+                "[ \"$MAV_TEST_FORWARDED\" = yes ] && [ \"$PATH\" != /mav-sentinel-should-not-win ]",
             ],
             &[],
             SandboxPermissions::default(),
@@ -496,7 +496,7 @@ mod imp {
         )
     }
 
-    /// Drive the real sandbox the way Zed's terminal integration does: wrap the
+    /// Drive the real sandbox the way Mav's terminal integration does: wrap the
     /// invocation, then spawn the resulting `wsl.exe` command and collect its
     /// result. `wrap_invocation` errors are classified into [`Outcome`] by the
     /// shared unavailable-prefix marker rather than bubbling up, so callers can
@@ -555,12 +555,12 @@ mod imp {
     }
 
     /// Find a TCP peer reachable from inside WSL so the network checks have a
-    /// real endpoint. Honors `ZED_TEST_ECHO_ADDR` (a `host:port`) if set;
+    /// real endpoint. Honors `MAV_TEST_ECHO_ADDR` (a `host:port`) if set;
     /// otherwise binds a local listener on the Windows side and finds an address
     /// WSL can use to reach the Windows host. Returns `None` (so the caller
     /// skips, rather than fails, the network checks) when nothing is reachable.
     fn discover_peer(wsl: &Wsl) -> Result<Option<String>> {
-        if let Some(address) = std::env::var("ZED_TEST_ECHO_ADDR")
+        if let Some(address) = std::env::var("MAV_TEST_ECHO_ADDR")
             .ok()
             .filter(|address| !address.is_empty())
         {
@@ -623,10 +623,10 @@ mod imp {
     fn ensure_host_port(address: &str) -> Result<()> {
         let (host, port) = address
             .rsplit_once(':')
-            .with_context(|| format!("ZED_TEST_ECHO_ADDR must be host:port, got {address:?}"))?;
+            .with_context(|| format!("MAV_TEST_ECHO_ADDR must be host:port, got {address:?}"))?;
         ensure!(
             !host.is_empty() && port.parse::<u16>().is_ok(),
-            "ZED_TEST_ECHO_ADDR must be host:port, got {address:?}"
+            "MAV_TEST_ECHO_ADDR must be host:port, got {address:?}"
         );
         Ok(())
     }

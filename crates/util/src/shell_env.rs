@@ -82,7 +82,7 @@ async fn capture_unix(
     use crate::command::new_std_command;
 
     let shell_kind = ShellKind::new(shell_path, false);
-    let quoted_zed_path = super::get_shell_safe_zed_path(shell_kind)?;
+    let quoted_mav_path = super::get_shell_safe_mav_path(shell_kind)?;
 
     let mut command_string = String::new();
     let mut command = new_std_command(shell_path);
@@ -143,7 +143,7 @@ async fn capture_unix(
     if let Some(prefix) = shell_kind.command_prefix() {
         command_string.push(prefix);
     }
-    command_string.push_str(&format!("{} --printenv {}", quoted_zed_path, redir));
+    command_string.push_str(&format!("{} --printenv {}", quoted_mav_path, redir));
 
     if let ShellKind::Nushell = shell_kind {
         command_string.push_str("; exit");
@@ -212,7 +212,7 @@ async fn capture_windows(
 ) -> Result<collections::HashMap<String, String>> {
     use std::process::Stdio;
 
-    let zed_path =
+    let mav_path =
         std::env::current_exe().context("Failed to determine current mav executable path.")?;
 
     let shell_kind = ShellKind::new(shell_path, true);
@@ -223,7 +223,7 @@ async fn capture_windows(
     } else {
         directory_string
     };
-    let zed_path_string = zed_path.display().to_string();
+    let mav_path_string = mav_path.display().to_string();
     let quote_for_shell = |value: &str| {
         shell_kind
             .try_quote(value)
@@ -233,7 +233,7 @@ async fn capture_windows(
     let mut cmd = crate::command::new_command(shell_path);
     cmd.args(args);
     let quoted_directory = quote_for_shell(&directory_string)?;
-    let quoted_zed_path = quote_for_shell(&zed_path_string)?;
+    let quoted_mav_path = quote_for_shell(&mav_path_string)?;
     let cmd = match shell_kind {
         ShellKind::Csh
         | ShellKind::Tcsh
@@ -244,7 +244,7 @@ async fn capture_windows(
             "-l",
             "-i",
             "-c",
-            &format!("cd {}; {} --printenv", quoted_directory, quoted_zed_path),
+            &format!("cd {}; {} --printenv", quoted_directory, quoted_mav_path),
         ]),
         ShellKind::PowerShell | ShellKind::Pwsh => cmd.args([
             "-NonInteractive",
@@ -252,25 +252,25 @@ async fn capture_windows(
             "-Command",
             &format!(
                 "Set-Location {}; & {} --printenv",
-                quoted_directory, quoted_zed_path
+                quoted_directory, quoted_mav_path
             ),
         ]),
         ShellKind::Elvish => cmd.args([
             "-c",
-            &format!("cd {}; {} --printenv", quoted_directory, quoted_zed_path),
+            &format!("cd {}; {} --printenv", quoted_directory, quoted_mav_path),
         ]),
         ShellKind::Nushell => {
-            let zed_command = shell_kind
-                .prepend_command_prefix(&quoted_zed_path)
+            let mav_command = shell_kind
+                .prepend_command_prefix(&quoted_mav_path)
                 .into_owned();
             cmd.args([
                 "-c",
-                &format!("cd {}; {} --printenv", quoted_directory, zed_command),
+                &format!("cd {}; {} --printenv", quoted_directory, mav_command),
             ])
         }
         ShellKind::Cmd => {
             let dir = directory_string.trim_end_matches('\\');
-            cmd.args(["/d", "/c", "cd", dir, "&&", &zed_path_string, "--printenv"])
+            cmd.args(["/d", "/c", "cd", dir, "&&", &mav_path_string, "--printenv"])
         }
     }
     .stdin(Stdio::null())

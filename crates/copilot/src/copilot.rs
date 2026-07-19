@@ -712,9 +712,9 @@ impl Copilot {
         this.update(cx, |this, cx| {
             cx.notify();
 
-            if env::var("ZED_FORCE_COPILOT_ERROR").is_ok() {
+            if env::var("MAV_FORCE_COPILOT_ERROR").is_ok() {
                 this.server = CopilotServer::Error(
-                    "Forced error for testing (ZED_FORCE_COPILOT_ERROR)".into(),
+                    "Forced error for testing (MAV_FORCE_COPILOT_ERROR)".into(),
                 );
                 return;
             }

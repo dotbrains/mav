@@ -107,7 +107,7 @@ mod tests {
         };
         let templates = Templates::new();
         let rendered = template.render(&templates).unwrap();
-        assert!(rendered.contains("You are the Zed coding agent"));
+        assert!(rendered.contains("You are the Mav coding agent"));
         assert!(rendered.contains("Today's Date: 2026-01-01"));
         assert!(rendered.contains("## Fixing Diagnostics"));
         assert!(rendered.contains("test-model"));
@@ -288,7 +288,7 @@ mod tests {
     }
 
     #[test]
-    fn test_system_prompt_does_not_render_legacy_zed_rules_section() {
+    fn test_system_prompt_does_not_render_legacy_mav_rules_section() {
         let project = prompt_store::ProjectContext::default();
         let template = SystemPromptTemplate {
             project: &project,

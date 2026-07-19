@@ -7,7 +7,7 @@ pub const PROTOCOL_VERSION: u32 = 0;
 /// The name of the header used to indicate the protocol version in use.
 pub const PROTOCOL_VERSION_HEADER_NAME: &str = "x-mav-protocol-version";
 
-/// A message from Cloud to the Zed client.
+/// A message from Cloud to the Mav client.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum MessageToClient {
     /// The user was updated and should be refreshed.

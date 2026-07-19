@@ -1,19 +1,19 @@
-//! A persistent registry of git worktrees that Zed itself created.
+//! A persistent registry of git worktrees that Mav itself created.
 //!
 //! Thread archival deletes a worktree's directory from disk, so it must be
-//! certain the worktree was created by Zed rather than by the user. This
-//! module records each Zed-created worktree in the local database, keyed by
+//! certain the worktree was created by Mav rather than by the user. This
+//! module records each Mav-created worktree in the local database, keyed by
 //! its path (and remote host, for remote projects), along with the creation
-//! time of the worktree's git metadata directory at the time Zed created it.
+//! time of the worktree's git metadata directory at the time Mav created it.
 //!
 //! Before deleting a worktree, callers re-stat that directory and compare
 //! against the recorded time. A mismatch means the worktree was removed and
-//! recreated outside Zed, so deletion must be skipped. Every failure mode
+//! recreated outside Mav, so deletion must be skipped. Every failure mode
 //! (no record, unreadable creation time, mismatched time) fails safe by
 //! leaving the directory untouched.
 //!
 //! Because the registry lives in the local database, worktrees created by a
-//! different Zed install (e.g. another release channel, or another machine
+//! different Mav install (e.g. another release channel, or another machine
 //! connecting to the same remote host) are treated as manually created and
 //! never archived. That is intentional: when in doubt, don't delete.
 
@@ -49,7 +49,7 @@ fn record_key(worktree_path: &Path, remote: Option<&RemoteConnectionOptions>) ->
     format!("{host}\n{}", worktree_path.display())
 }
 
-/// Records that Zed created the worktree at `worktree_path`, along with the
+/// Records that Mav created the worktree at `worktree_path`, along with the
 /// creation time of its git metadata directory.
 pub fn record_created_worktree(
     worktree_path: &Path,
@@ -72,8 +72,8 @@ pub fn record_created_worktree(
     async move { store.scoped(NAMESPACE).write(key, value?).await }
 }
 
-/// Returns the recorded creation time for a worktree Zed created, or `None`
-/// if Zed has no record of creating it.
+/// Returns the recorded creation time for a worktree Mav created, or `None`
+/// if Mav has no record of creating it.
 pub fn recorded_created_at(
     worktree_path: &Path,
     remote: Option<&RemoteConnectionOptions>,
@@ -137,8 +137,8 @@ pub async fn record_created_worktree_for_repo(
     }
 }
 
-/// Removes the record for a worktree, either because Zed deleted it or
-/// because the directory on disk turned out not to be the one Zed created.
+/// Removes the record for a worktree, either because Mav deleted it or
+/// because the directory on disk turned out not to be the one Mav created.
 pub fn forget_created_worktree(
     worktree_path: &Path,
     remote: Option<&RemoteConnectionOptions>,

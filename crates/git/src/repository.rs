@@ -631,8 +631,8 @@ pub struct GitExcludeOverride {
 }
 
 impl GitExcludeOverride {
-    const START_BLOCK_MARKER: &str = "\n\n#  ====== Auto-added by Zed: =======\n";
-    const END_BLOCK_MARKER: &str = "\n#  ====== End of auto-added by Zed =======\n";
+    const START_BLOCK_MARKER: &str = "\n\n#  ====== Auto-added by Mav: =======\n";
+    const END_BLOCK_MARKER: &str = "\n#  ====== End of auto-added by Mav =======\n";
 
     pub async fn new(git_exclude_path: PathBuf) -> Result<Self> {
         let original_excludes =
@@ -696,7 +696,7 @@ impl GitExcludeOverride {
             }
         }
 
-        // Older versions of Zed didn't have end-of-block markers,
+        // Older versions of Mav didn't have end-of-block markers,
         // so it's impossible to determine auto-generated lines.
         // Conservatively remove the standard list of excludes
         let standard_excludes = format!(
@@ -1326,7 +1326,7 @@ pub async fn get_git_committer(cx: &AsyncApp) -> GitCommitter {
     }
 
     let git_binary_path =
-        if cfg!(target_os = "macos") && option_env!("ZED_BUNDLE").as_deref() == Some("true") {
+        if cfg!(target_os = "macos") && option_env!("MAV_BUNDLE").as_deref() == Some("true") {
             cx.update(|cx| {
                 cx.path_for_auxiliary_executable("git")
                     .context("could not find git binary path")
@@ -3671,7 +3671,7 @@ async fn run_git_command(
             .env("SSH_ASKPASS", ask_pass.script_path())
             .env("SSH_ASKPASS_REQUIRE", "force");
         #[cfg(target_os = "windows")]
-        command.env("ZED_ASKPASS_SOCKET", ask_pass.socket_path());
+        command.env("MAV_ASKPASS_SOCKET", ask_pass.socket_path());
         let git_process = command.spawn()?;
 
         run_askpass_command(ask_pass, git_process).await
@@ -3880,9 +3880,9 @@ fn parse_upstream_track(upstream_track: &str) -> Result<UpstreamTracking> {
 
 fn checkpoint_author_envs() -> HashMap<String, String> {
     HashMap::from_iter([
-        ("GIT_AUTHOR_NAME".to_string(), "Zed".to_string()),
+        ("GIT_AUTHOR_NAME".to_string(), "Mav".to_string()),
         ("GIT_AUTHOR_EMAIL".to_string(), "hi@mav.dev".to_string()),
-        ("GIT_COMMITTER_NAME".to_string(), "Zed".to_string()),
+        ("GIT_COMMITTER_NAME".to_string(), "Mav".to_string()),
         ("GIT_COMMITTER_EMAIL".to_string(), "hi@mav.dev".to_string()),
     ])
 }
@@ -4771,7 +4771,7 @@ mod tests {
     #[test]
     fn test_branches_parsing_containing_refs_with_missing_fields() {
         #[allow(clippy::octal_escapes)]
-        let input = " \090012116c03db04344ab10d50348553aa94f1ea0\0refs/heads/broken\n \0eb0cae33272689bd11030822939dd2701c52f81e\0895951d681e5561478c0acdd6905e8aacdfd2249\0refs/heads/dev\0\0\01762948725\0Zed\0Add feature\n*\0895951d681e5561478c0acdd6905e8aacdfd2249\0\0refs/heads/main\0\0\01762948695\0Zed\0Initial commit\n";
+        let input = " \090012116c03db04344ab10d50348553aa94f1ea0\0refs/heads/broken\n \0eb0cae33272689bd11030822939dd2701c52f81e\0895951d681e5561478c0acdd6905e8aacdfd2249\0refs/heads/dev\0\0\01762948725\0Mav\0Add feature\n*\0895951d681e5561478c0acdd6905e8aacdfd2249\0\0refs/heads/main\0\0\01762948695\0Mav\0Initial commit\n";
 
         let branches = parse_branch_input(input).unwrap();
         assert_eq!(branches.len(), 2);
@@ -4786,7 +4786,7 @@ mod tests {
                         sha: "eb0cae33272689bd11030822939dd2701c52f81e".into(),
                         subject: "Add feature".into(),
                         commit_timestamp: 1762948725,
-                        author_name: SharedString::new_static("Zed"),
+                        author_name: SharedString::new_static("Mav"),
                         has_parent: true,
                     })
                 },
@@ -4798,7 +4798,7 @@ mod tests {
                         sha: "895951d681e5561478c0acdd6905e8aacdfd2249".into(),
                         subject: "Initial commit".into(),
                         commit_timestamp: 1762948695,
-                        author_name: SharedString::new_static("Zed"),
+                        author_name: SharedString::new_static("Mav"),
                         has_parent: false,
                     })
                 }
@@ -5323,20 +5323,20 @@ mod tests {
     fn test_original_repo_path_from_common_dir() {
         // Normal repo: common_dir is <work_dir>/.git
         assert_eq!(
-            original_repo_path_from_common_dir(Path::new("/code/zed5/.git")),
-            Some(PathBuf::from("/code/zed5"))
+            original_repo_path_from_common_dir(Path::new("/code/mav5/.git")),
+            Some(PathBuf::from("/code/mav5"))
         );
 
         // Worktree: common_dir is the main repo's .git
         // (same result — that's the point, it always traces back to the original)
         assert_eq!(
-            original_repo_path_from_common_dir(Path::new("/code/zed5/.git")),
-            Some(PathBuf::from("/code/zed5"))
+            original_repo_path_from_common_dir(Path::new("/code/mav5/.git")),
+            Some(PathBuf::from("/code/mav5"))
         );
 
         // Bare repo: no .git suffix, returns None (no working-tree root)
         assert_eq!(
-            original_repo_path_from_common_dir(Path::new("/code/zed5.git")),
+            original_repo_path_from_common_dir(Path::new("/code/mav5.git")),
             None
         );
 

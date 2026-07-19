@@ -410,9 +410,9 @@ fn probe_script() -> String {
 ///
 /// Successful results are cached per distro for the life of the process —
 /// like `linux_bubblewrap::is_available`, the answers can't realistically
-/// change while Zed runs. Failures are deliberately *not* cached so a user
+/// change while Mav runs. Failures are deliberately *not* cached so a user
 /// who installs `bwrap` (or lifts a user-namespace restriction) after seeing
-/// the error can retry the command without restarting Zed.
+/// the error can retry the command without restarting Mav.
 async fn probe_environment(wsl_exe: &Path, distro: Option<&str>) -> Result<EnvironmentProbe> {
     static CACHE: OnceLock<Mutex<HashMap<Option<String>, EnvironmentProbe>>> = OnceLock::new();
     let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
@@ -1181,7 +1181,7 @@ mod tests {
         // Login-shell profile scripts run before the probe body and may print
         // arbitrary text; only the marked result line counts.
         let probe = parse_probe_output(
-            "welcome to my shell, interop fans\nzed-wsl-probe: no-interop /usr/bin/bwrap\n",
+            "welcome to my shell, interop fans\nmav-wsl-probe: no-interop /usr/bin/bwrap\n",
         )
         .unwrap();
         assert!(!probe.mask_interop_dir);
@@ -1319,7 +1319,7 @@ mod tests {
     #[test]
     fn bwrap_binds_explicit_writable_file_paths() {
         let args = build_bwrap_args(
-            &["/mnt/c/Users/me/AppData/Roaming/Zed/AGENTS.md".to_string()],
+            &["/mnt/c/Users/me/AppData/Roaming/Mav/AGENTS.md".to_string()],
             &[],
             SandboxPermissions::default(),
             None,
@@ -1329,8 +1329,8 @@ mod tests {
         assert!(args.windows(3).any(|window| window
             == [
                 "--bind",
-                "/mnt/c/Users/me/AppData/Roaming/Zed/AGENTS.md",
-                "/mnt/c/Users/me/AppData/Roaming/Zed/AGENTS.md"
+                "/mnt/c/Users/me/AppData/Roaming/Mav/AGENTS.md",
+                "/mnt/c/Users/me/AppData/Roaming/Mav/AGENTS.md"
             ]));
     }
 

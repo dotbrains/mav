@@ -609,7 +609,7 @@ async fn run_terminal_tool(
                     "Downgrading requested agent terminal Git metadata access because one or more external Git metadata paths could not be verified"
                 );
                 git_access_downgrade_note = Some(
-                    "Note: Git metadata access was requested or already allowed, but Zed could not verify one or more external Git metadata paths for this project. The command ran with Git metadata protected, so Git operations that read or write `.git` may fail with sandbox permission errors."
+                    "Note: Git metadata access was requested or already allowed, but Mav could not verify one or more external Git metadata paths for this project. The command ran with Git metadata protected, so Git operations that read or write `.git` may fail with sandbox permission errors."
                         .to_string(),
                 );
             }

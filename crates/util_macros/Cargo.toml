@@ -4,7 +4,7 @@ version = "0.1.0"
 edition.workspace = true
 publish = false
 license = "LicenseRef-PolyForm-Shield-1.0.0"
-description = "Utility macros for Zed"
+description = "Utility macros for Mav"
 
 [lints]
 workspace = true
