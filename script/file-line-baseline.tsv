@@ -641,7 +641,6 @@
      526	crates/collab/tests/integration/auto_watch_tests.rs
      525	crates/agent/src/tools/evals/terminal_tool.rs
      523	crates/editor/src/signature_help.rs
-     523	crates/editor/src/code_actions.rs
      520	crates/vim/test_data/test_change_surrounding_character_objects.json
      520	crates/project/src/lsp_store/document_symbols.rs
      520	crates/editor/src/display_map/crease_map.rs
