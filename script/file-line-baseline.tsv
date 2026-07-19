@@ -562,7 +562,6 @@
      634	crates/open_ai/src/responses.rs
      629	crates/json_schema_store/src/json_schema_store.rs
      616	crates/gpui/examples/shadow.rs
-     608	crates/edit_prediction_cli/src/repair.rs
      602	crates/collab/seed/github_users.json
      599	crates/git_hosting_providers/src/providers/gitlab.rs
      598	crates/settings_content/src/language_model.rs
