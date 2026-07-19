@@ -591,7 +591,6 @@
      587	crates/proto/proto/mav.proto
      583	crates/vim/src/normal/scroll.rs
      578	crates/dap/src/proto_conversions.rs
-     577	crates/ui/src/components/redistributable_columns.rs
      576	crates/language/src/text_diff.rs
      574	crates/gpui_macos/src/events.rs
      572	crates/editor/src/clipboard.rs
