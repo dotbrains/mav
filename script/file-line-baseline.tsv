@@ -527,7 +527,6 @@
      682	crates/git_ui/src/commit_modal.rs
      682	crates/edit_prediction_context/src/bm25_context.rs
      681	crates/benchmarks/benches/edit_file_tool.rs
-     656	crates/git_hosting_providers/src/providers/bitbucket.rs
      644	crates/util/src/rel_path.rs
      643	crates/terminal_view/src/persistence.rs
      640	crates/fuzzy/src/matcher.rs
