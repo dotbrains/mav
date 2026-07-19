@@ -608,7 +608,6 @@
      564	crates/agent/src/tools/create_directory_tool.rs
      562	crates/livekit_client/src/livekit_client.rs
      559	crates/vim/src/replace.rs
-     558	crates/project_panel/src/undo.rs
      557	crates/vim/test_data/test_f_and_t.json
      553	crates/proto/proto/debugger.proto
      552	crates/gpui/examples/testing.rs
