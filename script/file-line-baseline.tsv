@@ -598,7 +598,6 @@
      569	crates/languages/src/json.rs
      569	crates/edit_prediction/src/cursor_excerpt.rs
      569	crates/dap_adapters/src/javascript.rs
-     568	crates/recent_projects/src/remote_servers/filter.rs
      566	crates/remote/src/transport.rs
      565	crates/workspace/src/searchable.rs
      564	crates/workspace/src/security_modal.rs
