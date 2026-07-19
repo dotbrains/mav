@@ -629,7 +629,6 @@
      534	crates/task/src/debug_format.rs
      534	crates/crashes/src/crashes.rs
      534	crates/agent/src/tools/context_server_registry.rs
-     532	crates/sqlez/src/connection.rs
      532	crates/git_ui/src/blame_ui.rs
      531	crates/sum_tree/src/tree_map.rs
      531	crates/gpui_macos/src/pasteboard.rs
