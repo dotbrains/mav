@@ -86,8 +86,7 @@ stdenv.mkDerivation {
   # libwebrtc loads libEGL/libGL at runtime via dlopen() in the Wayland
   # screencast path, so they are not visible as ordinary DT_NEEDED edges.
   # Keep an explicit rpath so the shared object can resolve them at runtime.
-  NIX_LDFLAGS = lib.optionalString stdenv.hostPlatform.isLinux
-    "-rpath ${lib.makeLibraryPath [ libGL ]}";
+  NIX_LDFLAGS = lib.optionalString stdenv.hostPlatform.isLinux "-rpath ${lib.makeLibraryPath [ libGL ]}";
 
   # Prevent fixup from stripping the rpath above as "unused".
   dontPatchELF = stdenv.hostPlatform.isLinux;

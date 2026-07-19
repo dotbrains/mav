@@ -386,7 +386,7 @@ impl Render for EditPredictionButton {
                                     source = "Edit Prediction Status Button"
                                 );
                                 window.dispatch_action(
-                                    mav_actions::OpenZedPredictOnboarding.boxed_clone(),
+                                    mav_actions::OpenMavPredictOnboarding.boxed_clone(),
                                     cx,
                                 );
                             })),

@@ -150,7 +150,10 @@ let
     '';
   };
 
-  testPython = pkgs.python3.withPackages (ps: [ ps.pyatspi ps.pygobject3 ]);
+  testPython = pkgs.python3.withPackages (ps: [
+    ps.pyatspi
+    ps.pygobject3
+  ]);
 
   giTypelibPath = lib.makeSearchPath "lib/girepository-1.0" [
     pkgs.at-spi2-core
