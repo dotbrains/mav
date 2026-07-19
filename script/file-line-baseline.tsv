@@ -563,7 +563,6 @@
      629	crates/json_schema_store/src/json_schema_store.rs
      616	crates/gpui/examples/shadow.rs
      608	crates/edit_prediction_cli/src/repair.rs
-     607	crates/tab_switcher/src/tab_switcher_tests.rs
      607	crates/gpui/src/app/test_app.rs
      602	crates/collab/seed/github_users.json
      599	crates/git_hosting_providers/src/providers/gitlab.rs
