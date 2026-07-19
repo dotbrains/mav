@@ -566,7 +566,6 @@
      625	crates/mav/src/mav/telemetry_log.rs
      624	crates/vim/src/test/neovim_connection.rs
      617	crates/project_symbols/src/project_symbols.rs
-     617	crates/editor/src/persistence.rs
      616	crates/gpui/examples/shadow.rs
      612	crates/ui/src/components/button/button.rs
      611	crates/gpui/src/tab_stop.rs
