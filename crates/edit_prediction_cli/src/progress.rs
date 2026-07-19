@@ -8,7 +8,16 @@ use std::{
 
 use crate::paths::RUN_DIR;
 
-use log::{Level, Log, Metadata, Record};
+use terminal::{
+    ProgressLogger, format_duration, get_terminal_width, strip_ansi_len, truncate_to_visible_width,
+    truncate_with_ellipsis,
+};
+pub use types::{InfoStyle, Step};
+
+#[path = "progress/terminal.rs"]
+mod terminal;
+#[path = "progress/types.rs"]
+mod types;
 
 pub struct Progress {
     inner: Mutex<ProgressInner>,
@@ -41,55 +50,6 @@ struct CompletedTask {
     example_name: String,
     duration: Duration,
     info: Option<(String, InfoStyle)>,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum Step {
-    LoadProject,
-    Context,
-    FormatPrompt,
-    Predict,
-    Score,
-    Qa,
-    Repair,
-    Synthesize,
-    PullExamples,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum InfoStyle {
-    Normal,
-    Warning,
-}
-
-impl Step {
-    pub fn label(&self) -> &'static str {
-        match self {
-            Step::LoadProject => "Load",
-            Step::Context => "Context",
-            Step::FormatPrompt => "Format",
-            Step::Predict => "Predict",
-            Step::Score => "Score",
-            Step::Qa => "QA",
-            Step::Repair => "Repair",
-            Step::Synthesize => "Synthesize",
-            Step::PullExamples => "Pull",
-        }
-    }
-
-    fn color_code(&self) -> &'static str {
-        match self {
-            Step::LoadProject => "\x1b[33m",
-            Step::Context => "\x1b[35m",
-            Step::FormatPrompt => "\x1b[34m",
-            Step::Predict => "\x1b[32m",
-            Step::Score => "\x1b[31m",
-            Step::Qa => "\x1b[36m",
-            Step::Repair => "\x1b[95m",
-            Step::Synthesize => "\x1b[36m",
-            Step::PullExamples => "\x1b[36m",
-        }
-    }
 }
 
 static GLOBAL: OnceLock<Arc<Progress>> = OnceLock::new();
@@ -521,131 +481,5 @@ impl StepProgress {
 impl Drop for StepProgress {
     fn drop(&mut self) {
         self.progress.finish(self.step, &self.example_name);
-    }
-}
-
-struct ProgressLogger;
-
-impl Log for ProgressLogger {
-    fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= Level::Info
-    }
-
-    fn log(&self, record: &Record) {
-        if !self.enabled(record.metadata()) {
-            return;
-        }
-
-        let level_color = match record.level() {
-            Level::Error => "\x1b[31m",
-            Level::Warn => "\x1b[33m",
-            Level::Info => "\x1b[32m",
-            Level::Debug => "\x1b[34m",
-            Level::Trace => "\x1b[35m",
-        };
-        let reset = "\x1b[0m";
-        let bold = "\x1b[1m";
-
-        let level_label = match record.level() {
-            Level::Error => "Error",
-            Level::Warn => "Warn",
-            Level::Info => "Info",
-            Level::Debug => "Debug",
-            Level::Trace => "Trace",
-        };
-
-        let message = format!(
-            "{bold}{level_color}{level_label:>12}{reset} {}",
-            record.args()
-        );
-
-        if let Some(progress) = GLOBAL.get() {
-            progress.log(&message);
-        } else {
-            eprintln!("{}", message);
-        }
-    }
-
-    fn flush(&self) {
-        let _ = std::io::stderr().flush();
-    }
-}
-
-#[cfg(unix)]
-fn get_terminal_width() -> usize {
-    unsafe {
-        let mut winsize: libc::winsize = std::mem::zeroed();
-        if libc::ioctl(libc::STDERR_FILENO, libc::TIOCGWINSZ, &mut winsize) == 0
-            && winsize.ws_col > 0
-        {
-            winsize.ws_col as usize
-        } else {
-            80
-        }
-    }
-}
-
-#[cfg(not(unix))]
-fn get_terminal_width() -> usize {
-    80
-}
-
-fn strip_ansi_len(s: &str) -> usize {
-    let mut len = 0;
-    let mut in_escape = false;
-    for c in s.chars() {
-        if c == '\x1b' {
-            in_escape = true;
-        } else if in_escape {
-            if c == 'm' {
-                in_escape = false;
-            }
-        } else {
-            len += 1;
-        }
-    }
-    len
-}
-
-fn truncate_with_ellipsis(s: &str, max_len: usize) -> Cow<'_, str> {
-    if s.len() <= max_len {
-        Cow::Borrowed(s)
-    } else {
-        Cow::Owned(format!("{}…", &s[..max_len.saturating_sub(1)]))
-    }
-}
-
-fn truncate_to_visible_width(s: &str, max_visible_len: usize) -> &str {
-    let mut visible_len = 0;
-    let mut in_escape = false;
-    let mut last_byte_index = 0;
-    for (byte_index, c) in s.char_indices() {
-        if c == '\x1b' {
-            in_escape = true;
-        } else if in_escape {
-            if c == 'm' {
-                in_escape = false;
-            }
-        } else {
-            if visible_len >= max_visible_len {
-                return &s[..last_byte_index];
-            }
-            visible_len += 1;
-        }
-        last_byte_index = byte_index + c.len_utf8();
-    }
-    s
-}
-
-fn format_duration(duration: Duration) -> String {
-    const MINUTE_IN_MILLIS: f32 = 60. * 1000.;
-
-    let millis = duration.as_millis() as f32;
-    if millis < 1000.0 {
-        format!("{}ms", millis)
-    } else if millis < MINUTE_IN_MILLIS {
-        format!("{:.1}s", millis / 1_000.0)
-    } else {
-        format!("{:.1}m", millis / MINUTE_IN_MILLIS)
     }
 }
