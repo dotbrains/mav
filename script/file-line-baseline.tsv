@@ -525,7 +525,6 @@
      693	crates/multi_buffer/src/path_key.rs
      693	crates/editor/src/split_editor_view.rs
      691	crates/git_ui/src/conflict_view.rs
-     690	crates/extension_cli/src/main.rs
      688	crates/agent_ui/src/agent_registry_ui.rs
      686	crates/collab_ui/src/collab_panel/channel_modal.rs
      685	crates/theme/src/styles/colors.rs

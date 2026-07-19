@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use collections::HashMap;
-use futures::FutureExt as _;
+use futures::channel::oneshot;
 use gpui::{BackgroundExecutor, FutureExt as _};
 use proto::{AnyTypedEnvelope, EnvelopedMessage, LspRequestId, LspRequestMessage, TypedEnvelope};
 use std::{sync::atomic, time::Duration};

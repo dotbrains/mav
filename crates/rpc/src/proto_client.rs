@@ -1,24 +1,18 @@
 use anyhow::{Context, Result};
-use collections::{HashMap, TypeIdHashMap};
+use collections::HashMap;
 use futures::{
-    Future, FutureExt as _, Stream, StreamExt as _,
-    channel::oneshot,
-    future::{BoxFuture, LocalBoxFuture},
+    Future, FutureExt as _, Stream, StreamExt as _, channel::oneshot, future::BoxFuture,
     stream::BoxStream,
 };
-use gpui::{AnyEntity, AnyWeakEntity, AsyncApp, BackgroundExecutor, Entity, FutureExt as _};
+use gpui::{AsyncApp, Entity};
 use parking_lot::Mutex;
 use proto::{
-    AnyTypedEnvelope, EntityMessage, Envelope, EnvelopedMessage, LspRequestId, LspRequestMessage,
-    RequestMessage, TypedEnvelope, error::ErrorExt as _,
+    AnyTypedEnvelope, EntityMessage, Envelope, EnvelopedMessage, LspRequestId, RequestMessage,
+    TypedEnvelope, error::ErrorExt as _,
 };
 use std::{
     any::{Any, TypeId},
-    sync::{
-        Arc, OnceLock,
-        atomic::{self, AtomicU64},
-    },
-    time::Duration,
+    sync::{Arc, OnceLock, atomic::AtomicU64},
 };
 
 #[derive(Debug, Clone)]
