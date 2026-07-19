@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+limit="${1:-500}"
+baseline_file="${2:-script/file-line-baseline.tsv}"
+
+git ls-files |
+  grep -Ev '(^|/)(node_modules|target|dist|build|deps|_build|site|fixtures|vendor|\.git)(/|$)' |
+  grep -Ev '(^|/)(Cargo.lock|flake.lock|\.flox/env/manifest.lock)$' |
+  grep -Ev '^script/file-line-baseline\.tsv$' |
+  grep -Ev '\.(png|jpg|jpeg|gif|webp|ico|icns|exe|ttf|otf|woff|woff2|wav)$' |
+  while read -r file; do
+    [[ -f "$file" ]] || continue
+    lines="$(wc -l < "$file")"
+    printf '%s\t%s\n' "$lines" "$file"
+  done |
+  awk -v limit="$limit" -v baseline_file="$baseline_file" '
+    BEGIN {
+      while ((getline line < baseline_file) > 0) {
+        tab = index(line, "\t")
+        if (tab == 0) {
+          continue
+        }
+        count = substr(line, 1, tab - 1) + 0
+        path = substr(line, tab + 1)
+        baseline[path] = count
+      }
+    }
+    {
+      lines = $1 + 0
+      path = substr($0, index($0, "\t") + 1)
+      file_limit = limit
+      if (baseline[path] > file_limit) {
+        file_limit = baseline[path]
+      }
+      if (lines > file_limit) {
+        printf "%s: %s lines > budget %s\n", path, lines, file_limit
+      }
+    }
+  ' |
+  tee /tmp/mav-file-line-budget.txt
+
+if [[ -s /tmp/mav-file-line-budget.txt ]]; then
+  exit 1
+fi

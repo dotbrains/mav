@@ -51,6 +51,8 @@ jobs:
       - uses: flox/install-flox-action@v2
       - name: format
         run: flox activate -- cargo fmt --all -- --check
+      - name: file line budget
+        run: script/check-file-lines 500
       - name: manifest check
         run: flox activate -- cargo check -p mav --bin mav --locked
 
