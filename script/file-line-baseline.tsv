@@ -625,7 +625,6 @@
      538	crates/language_models/src/provider/google.rs
      536	crates/multi_buffer/src/anchor.rs
      535	crates/prompt_store/src/prompts.rs
-     535	crates/gpui/src/app/async_context.rs
      534	crates/task/src/debug_format.rs
      532	crates/git_ui/src/blame_ui.rs
      531	crates/sum_tree/src/tree_map.rs
