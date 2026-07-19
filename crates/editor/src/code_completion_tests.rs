@@ -1,13 +1,13 @@
 use crate::code_context_menus::CompletionsMenu;
+use completion_builder::CompletionBuilder;
 use fuzzy::{StringMatch, StringMatchCandidate};
 use gpui::TestAppContext;
-use language::CodeLabel;
-use lsp::{CompletionItem, CompletionItemKind, LanguageServerId};
-use project::{Completion, CompletionSource};
+use project::Completion;
 use settings::SnippetSortOrder;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
-use text::{Anchor, BufferId};
+
+mod completion_builder;
 
 #[gpui::test]
 async fn test_sort_kind(cx: &mut TestAppContext) {
@@ -406,89 +406,6 @@ async fn test_for_each_prefix<F>(
         let matches =
             filter_and_sort_matches(prefix, completions, SnippetSortOrder::default(), cx).await;
         test_fn(matches);
-    }
-}
-
-struct CompletionBuilder;
-
-impl CompletionBuilder {
-    fn constant(label: &str, filter_text: Option<&str>, sort_text: &str) -> Completion {
-        Self::new(
-            label,
-            filter_text,
-            sort_text,
-            Some(CompletionItemKind::CONSTANT),
-        )
-    }
-
-    fn function(label: &str, filter_text: Option<&str>, sort_text: &str) -> Completion {
-        Self::new(
-            label,
-            filter_text,
-            sort_text,
-            Some(CompletionItemKind::FUNCTION),
-        )
-    }
-
-    fn method(label: &str, filter_text: Option<&str>, sort_text: &str) -> Completion {
-        Self::new(
-            label,
-            filter_text,
-            sort_text,
-            Some(CompletionItemKind::METHOD),
-        )
-    }
-
-    fn variable(label: &str, filter_text: Option<&str>, sort_text: &str) -> Completion {
-        Self::new(
-            label,
-            filter_text,
-            sort_text,
-            Some(CompletionItemKind::VARIABLE),
-        )
-    }
-
-    fn snippet(label: &str, filter_text: Option<&str>, sort_text: &str) -> Completion {
-        Self::new(
-            label,
-            filter_text,
-            sort_text,
-            Some(CompletionItemKind::SNIPPET),
-        )
-    }
-
-    fn new(
-        label: &str,
-        filter_text: Option<&str>,
-        sort_text: &str,
-        kind: Option<CompletionItemKind>,
-    ) -> Completion {
-        Completion {
-            replace_range: Anchor::min_max_range_for_buffer(BufferId::new(1).unwrap()),
-            new_text: label.to_string(),
-            label: CodeLabel::plain(label.to_string(), filter_text),
-            documentation: None,
-            source: CompletionSource::Lsp {
-                insert_range: None,
-                server_id: LanguageServerId(0),
-                lsp_completion: Box::new(CompletionItem {
-                    label: label.to_string(),
-                    kind: kind,
-                    sort_text: Some(sort_text.to_string()),
-                    filter_text: filter_text.map(|text| text.to_string()),
-                    ..Default::default()
-                }),
-                lsp_defaults: None,
-                resolved: false,
-            },
-            icon_path: None,
-            icon_color: None,
-            insert_text_mode: None,
-            confirm: None,
-            match_start: None,
-            snippet_deduplication_key: None,
-            group: None,
-        }
     }
 }
 
