@@ -519,7 +519,6 @@
      708	crates/copilot_ui/src/sign_in.rs
      705	crates/edit_prediction_cli/src/openai_client.rs
      699	crates/workspace/src/welcome.rs
-     698	crates/edit_prediction_metrics/src/jumps.rs
      694	crates/collab/tests/integration/randomized_test_helpers.rs
      691	crates/git_ui/src/conflict_view.rs
      688	crates/agent_ui/src/agent_registry_ui.rs
