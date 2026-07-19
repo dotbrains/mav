@@ -1,10 +1,11 @@
+mod fields;
+
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{format_ident, quote};
-use syn::{
-    DeriveInput, Field, FieldsNamed, PredicateType, TraitBound, Type, TypeParamBound, WhereClause,
-    WherePredicate, parse_macro_input, parse_quote,
-};
+use syn::{DeriveInput, Field, FieldsNamed, WhereClause, parse_macro_input};
+
+use fields::{get_wrapper_type, is_optional_field, is_refineable_field, wrapper_clone_bounds};
 
 #[proc_macro_derive(Refineable, attributes(refineable))]
 pub fn derive_refineable(input: TokenStream) -> TokenStream {
@@ -66,28 +67,7 @@ pub fn derive_refineable(input: TokenStream) -> TokenStream {
         })
         .collect();
 
-    // Create trait bound that each wrapped type must implement Clone
-    let type_param_bounds: Vec<_> = wrapped_types
-        .iter()
-        .map(|ty| {
-            WherePredicate::Type(PredicateType {
-                lifetimes: None,
-                bounded_ty: ty.clone(),
-                colon_token: Default::default(),
-                bounds: {
-                    let mut punctuated = syn::punctuated::Punctuated::new();
-                    punctuated.push_value(TypeParamBound::Trait(TraitBound {
-                        paren_token: None,
-                        modifier: syn::TraitBoundModifier::None,
-                        lifetimes: None,
-                        path: parse_quote!(Clone),
-                    }));
-
-                    punctuated
-                },
-            })
-        })
-        .collect();
+    let type_param_bounds = wrapper_clone_bounds(&wrapped_types);
 
     // Append to where_clause or create a new one if it doesn't exist
     let where_clause = match where_clause.cloned() {
@@ -501,48 +481,4 @@ pub fn derive_refineable(input: TokenStream) -> TokenStream {
         #debug_impl
     };
     r#gen.into()
-}
-
-fn is_refineable_field(f: &Field) -> bool {
-    f.attrs
-        .iter()
-        .any(|attr| attr.path().is_ident("refineable"))
-}
-
-fn is_optional_field(f: &Field) -> bool {
-    if let Type::Path(typepath) = &f.ty
-        && typepath.qself.is_none()
-    {
-        let segments = &typepath.path.segments;
-        if segments.len() == 1 && segments.iter().any(|s| s.ident == "Option") {
-            return true;
-        }
-    }
-    false
-}
-
-fn get_wrapper_type(field: &Field, ty: &Type) -> syn::Type {
-    if is_refineable_field(field) {
-        let struct_name = if let Type::Path(tp) = ty {
-            tp.path.segments.last().unwrap().ident.clone()
-        } else {
-            panic!("Expected struct type for a refineable field");
-        };
-
-        let refinement_struct_name = if struct_name.to_string().ends_with("Refinement") {
-            format_ident!("{}", struct_name)
-        } else {
-            format_ident!("{}Refinement", struct_name)
-        };
-        let generics = if let Type::Path(tp) = ty {
-            &tp.path.segments.last().unwrap().arguments
-        } else {
-            &syn::PathArguments::None
-        };
-        parse_quote!(#refinement_struct_name #generics)
-    } else if is_optional_field(field) {
-        ty.clone()
-    } else {
-        parse_quote!(Option<#ty>)
-    }
 }
