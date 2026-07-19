@@ -544,7 +544,6 @@
      670	crates/eval_cli/mav_eval/launch.py
      670	crates/etw_tracing/etw_tracing.rs
      669	crates/git_hosting_providers/src/providers/github.rs
-     667	crates/languages/src/c.rs
      666	crates/markdown/src/html/html_rendering.rs
      664	crates/ui/src/components/button/toggle_button.rs
      662	crates/picker/src/shape.rs
