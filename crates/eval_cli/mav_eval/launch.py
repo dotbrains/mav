@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 import uuid
 from pathlib import Path
 from typing import Any
 
-from . import benchmarks, config, harness_command, run_index, source
+from . import benchmarks, config, run_index, source
 from .builds import prepare_build_request, resolve_source, validate_build_id
 from .common import (
     dedupe_preserving_order,
@@ -19,10 +18,14 @@ from .common import (
     utc_now,
     utc_timestamp,
 )
+from .launch_execution import (
+    benchmark_plan_entry,
+    execute_prepared_runs,
+    print_untracked_warning,
+    suite_plan_entry,
+)
+from .launch_rejudge import build_rejudge_request, command_rejudge
 from .volume import build_ready_on_volume
-
-# Local scratch dir used only for dry-run/plan previews of harness commands.
-PREVIEW_JOBS_DIR = "/tmp/agent-evals/harbor-jobs"
 
 
 def read_task_file(path: str | None) -> list[str]:
@@ -139,85 +142,6 @@ def mint_suite_id(args: argparse.Namespace, run_count: int) -> str | None:
     return f"{source.sanitize_namespace(prefix)}-{utc_timestamp()}"
 
 
-def build_rejudge_request(args: argparse.Namespace) -> dict[str, Any]:
-    """Build the request for re-grading an existing run with a different judge.
-
-    The positional `run_id` is the *parent* run; the derived run gets a new id
-    under the same experiment so `report`/`list` group them together. Only the
-    judge differs — no build, no agent model, no task selection.
-    """
-    judge_preset = args.judge
-    config.get_judge(judge_preset)  # validate before spawning anything remote
-    if getattr(args, "experiment_name", None):
-        experiment_name = source.sanitize_namespace(args.experiment_name)
-        namespace = default_namespace(args)
-    else:
-        entry = run_index.lookup(args.run_id)
-        if not entry:
-            raise ValueError(
-                f"could not locate run '{args.run_id}' in the local run index "
-                f"({run_index.index_path()}). Pass --experiment-name (and "
-                "--namespace if it isn't yours)."
-            )
-        experiment_name = source.sanitize_namespace(entry["experiment_name"])
-        namespace = source.sanitize_namespace(
-            getattr(args, "namespace", None) or entry["namespace"]
-        )
-    parent_namespace = (
-        source.sanitize_namespace(args.parent_namespace)
-        if getattr(args, "parent_namespace", None)
-        else namespace
-    )
-    parent_run_id = args.run_id
-    judge_slug = source.sanitize_namespace(judge_preset)
-    new_run_id = (
-        args.new_run_id
-        or f"{parent_run_id}-rejudge-{judge_slug}-{uuid.uuid4().hex[:6]}"
-    )
-    return {
-        "namespace": namespace,
-        "experiment_name": experiment_name,
-        "run_id": new_run_id,
-        "parent": {
-            "namespace": parent_namespace,
-            "experiment_name": experiment_name,
-            "run_id": parent_run_id,
-        },
-        "judge_preset": judge_preset,
-        "judge_model": getattr(args, "judge_model", None),
-        "volume_name": args.volume,
-        "api_secret_name": args.api_secret,
-        "created_at": utc_now(),
-    }
-
-
-def command_rejudge(args: argparse.Namespace) -> int:
-    rejudge_request = build_rejudge_request(args)
-    if getattr(args, "dry_run", False) or getattr(args, "plan", False):
-        print_json(rejudge_request)
-        return 0
-
-    controller = deployed_function(args, "rejudge_controller")
-    call = controller.spawn(rejudge_request)
-    run_index.record_run(
-        {**rejudge_request, "volume_name": args.volume, "kind": "rejudge"}
-    )
-    parent = rejudge_request["parent"]
-    print(f"Namespace:  {rejudge_request['namespace']}")
-    print(f"Experiment: {rejudge_request['experiment_name']}")
-    print(
-        f"Source run: {parent['namespace']}/{parent['experiment_name']}/"
-        f"{parent['run_id']}"
-    )
-    print(f"New run id: {rejudge_request['run_id']}")
-    print(f"Judge:      {rejudge_request['judge_preset']}")
-    print(f"Spawned rejudge controller: {modal_call_id(call)}")
-    print("\nNext steps (run id alone is enough):")
-    print(f"  mav-eval status {rejudge_request['run_id']}")
-    print(f"  mav-eval report {rejudge_request['run_id']} --fetch")
-    return 0
-
-
 def common_run_request_fields(
     args: argparse.Namespace,
     *,
@@ -273,139 +197,6 @@ def common_run_request_fields(
     }
 
 
-def benchmark_plan_entry(
-    benchmark_id: str, run_request: dict[str, Any], build_request: dict[str, Any] | None
-) -> dict[str, Any]:
-    return {
-        "benchmark": benchmark_id,
-        "run_id": run_request["run_id"],
-        "harness": run_request["benchmark"]["harness"],
-        "model": run_request["agent_model"],
-        "judge": run_request.get("judge_preset"),
-        "build_id": run_request.get("build_id"),
-        "will_build": build_request is not None,
-        "n_tasks": run_request.get("n_tasks"),
-    }
-
-
-def print_plan(
-    summaries: list[dict[str, Any]],
-    details: list[tuple[str, dict[str, Any], dict[str, Any] | None]],
-    *,
-    verbose: bool,
-) -> None:
-    print("Plan:")
-    print_json(summaries)
-    if verbose:
-        for header, run_request, build_request in details:
-            print(f"\n=== {header} ===")
-            print_dry_run(run_request, build_request)
-
-
-def print_dry_run(
-    run_request: dict[str, Any], build_request: dict[str, Any] | None
-) -> None:
-    print("Run request:")
-    print_json(run_request)
-    if build_request:
-        print("\nBuild request:")
-        build_preview = dict(build_request)
-        patch = build_preview.pop("patch", "")
-        build_preview["patch_line_count"] = len(patch.splitlines())
-        build_preview["source"] = source.public_source_info(
-            build_request.get("source") or {}
-        )
-        print_json(build_preview)
-    command = config.redacted_command(
-        harness_command.build_harness_command(run_request, PREVIEW_JOBS_DIR)
-    )
-    print("\nHarness command:")
-    print(command)
-
-
-def execute_prepared_runs(
-    args: argparse.Namespace,
-    prepared: list[tuple[str, dict[str, Any], dict[str, Any] | None]],
-    plan_entry,
-) -> int:
-    if args.plan:
-        print_plan(
-            [
-                plan_entry(label, run_request, build_request)
-                for label, run_request, build_request in prepared
-            ],
-            prepared,
-            verbose=args.verbose,
-        )
-        return 0
-    if args.dry_run:
-        for label, run_request, build_request in prepared:
-            print(f"\n=== {label} ===")
-            print_dry_run(run_request, build_request)
-        return 0
-
-    spawned_builds: set[str] = set()
-    for label, run_request, build_request in prepared:
-        print(f"\n=== Launching {label} ===")
-        launch_prepared_run(args, run_request, build_request, spawned_builds)
-    return 0
-
-
-def launch_prepared_run(
-    args: argparse.Namespace,
-    run_request: dict[str, Any],
-    build_request: dict[str, Any] | None,
-    spawned_builds: set[str] | None = None,
-) -> None:
-    build_function = None
-    if build_request:
-        run_request["source"] = source.public_source_info(build_request["source"])
-        print_untracked_warning(build_request)
-        build_function = deployed_function(args, "build_eval_cli")
-    record_function = deployed_function(args, "create_run_record")
-    controller_function = deployed_function(args, "run_controller")
-
-    record_state = record_function.remote(run_request)
-    run_index.record_run(run_request)
-
-    print(f"Namespace:  {run_request['namespace']}")
-    print(f"Experiment: {run_request['experiment_name']}")
-    print(f"Run id:     {run_request['run_id']}")
-    print(f"Volume:     {run_request['volume_name']}")
-    print(f"Run state:  {record_state['status']}")
-    print(f"Model:      {run_request['agent_model']}")
-    if run_request.get("judge_preset"):
-        print(f"Judge:      {run_request['judge_preset']}")
-    if run_request.get("suite_id"):
-        print(f"Suite:      {run_request['suite_id']}")
-    if run_request.get("build_id"):
-        print(f"Build id:  {run_request['build_id']}")
-    if run_request.get("task_names"):
-        print(f"Tasks:     {len(run_request['task_names'])} explicit task(s)")
-    elif run_request.get("n_tasks"):
-        print(f"Tasks:     Harbor --n-tasks {run_request['n_tasks']}")
-    else:
-        print("Tasks:     full dataset selection")
-
-    build_id = run_request.get("build_id")
-    if build_function is not None and build_id not in (spawned_builds or set()):
-        build_call = build_function.spawn(build_request)
-        print(f"Spawned build:      {modal_call_id(build_call)}")
-        if spawned_builds is not None and build_id:
-            spawned_builds.add(build_id)
-    controller_call = controller_function.spawn(run_request)
-    print(f"Spawned controller: {modal_call_id(controller_call)}")
-
-    run_id = run_request["run_id"]
-    print(
-        "\nNext steps (run id alone is enough; namespace/experiment are resolved "
-        "from this machine's local run index):"
-    )
-    print(f"  mav-eval status {run_id}")
-    print(f"  mav-eval logs {run_id}")
-    print(f"  mav-eval report {run_id} --fetch")
-
-
 def resolve_benchmark_judge(
     args: argparse.Namespace, benchmark: benchmarks.Benchmark
 ) -> str | None:
@@ -434,17 +225,6 @@ def benchmark_metadata_for_run(
             getattr(args, "swe_atlas_repo_ref", None) or benchmarks.SWE_ATLAS_REPO_REF
         )
     return metadata
-
-
-def print_untracked_warning(build_request: dict[str, Any]) -> None:
-    build_source = build_request.get("source") or {}
-    untracked_files = build_source.get("untracked_files") or []
-    if untracked_files:
-        print(
-            f"Warning: proceeding with {len(untracked_files)} untracked file(s) "
-            "not included in the build patch.",
-            file=sys.stderr,
-        )
 
 
 def prepare_shared_build(
@@ -608,17 +388,6 @@ def resolve_suite_parts(args: argparse.Namespace) -> list[str]:
     raise ValueError(
         "choose at least one SWE-Atlas part with --parts (e.g. --parts rf,qna or --parts all)"
     )
-
-
-def suite_plan_entry(
-    part: str, run_request: dict[str, Any], build_request: dict[str, Any] | None
-) -> dict[str, Any]:
-    return {
-        "part": part,
-        **benchmark_plan_entry(
-            run_request["benchmark"]["id"], run_request, build_request
-        ),
-    }
 
 
 def suite_entry_label(benchmark_id: str) -> str:
