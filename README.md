@@ -6,8 +6,8 @@
 [![Platform: macOS + Linux](https://img.shields.io/badge/platform-macOS%20%2B%20Linux-lightgrey.svg)](docs/getting-started.md)
 [![Rust: stable](https://img.shields.io/badge/rust-stable-orange.svg)](CONTRIBUTING.md)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](.pre-commit-config.yaml)
-[![Dev env: Flox](https://img.shields.io/badge/dev%20env-flox-7c3aed.svg)](https://flox.dev)
-[![Nix: flake](https://img.shields.io/badge/nix-flake-5277c3.svg)](flake.nix)
+[![Dev env: Flox](https://img.shields.io/static/v1?label=dev%20env&message=Flox&color=7c3aed)](https://flox.dev)
+[![Nix: flake](https://img.shields.io/static/v1?label=Nix&message=flake&color=5277c3)](flake.nix)
 
 Private **dotbrains editor workspace for macOS and Linux**. `mav` keeps the
 desktop runtime, extension host, bundled languages, themes, settings, packaging
@@ -27,7 +27,8 @@ $ nix develop
 $ cargo check -p mav --bin mav --locked
 ```
 
-See [docs/architecture.md](docs/architecture.md) for the workspace layout and
+See [docs/README.md](docs/README.md) for the full documentation index,
+[docs/architecture.md](docs/architecture.md) for the workspace layout, and
 [docs/getting-started.md](docs/getting-started.md) for first-run setup.
 
 ## Install
