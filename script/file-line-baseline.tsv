@@ -626,7 +626,6 @@
      518	crates/gpui/src/platform/test/platform.rs
      517	crates/project/tests/integration/signature_help.rs
      510	crates/workspace/src/persistence/model.rs
-     510	crates/csv_preview/src/parser.rs
      509	crates/mermaid_render/src/postprocess/inject_css.rs
      508	crates/ui/src/components/popover_menu.rs
      506	crates/workspace/src/tasks.rs
