@@ -12,7 +12,7 @@ use language_model::{
     ConfigurationViewTargetAgent, EnvVar, FastModeConfirmation, IconOrSvg, LanguageModel,
     LanguageModelCompletionError, LanguageModelCompletionEvent, LanguageModelId, LanguageModelName,
     LanguageModelProvider, LanguageModelProviderId, LanguageModelProviderName,
-    LanguageModelProviderState, LanguageModelRequest, LanguageModelToolChoice,
+    LanguageModelProviderState, LanguageModelRequest, LanguageModelToolChoice, ModelMode,
     ProviderConfigurationView, RateLimiter, env_var,
 };
 use settings::{Settings, SettingsStore};
@@ -349,10 +349,8 @@ fn pick_preferred_model(
 /// Convert a settings-defined `available_models` entry into an `anthropic::Model`.
 fn available_model_to_anthropic_model(available: &AvailableModel) -> anthropic::Model {
     let mode = match available.mode.unwrap_or_default() {
-        settings::ModelMode::Default => AnthropicModelMode::Default,
-        settings::ModelMode::Thinking { budget_tokens } => {
-            AnthropicModelMode::Thinking { budget_tokens }
-        }
+        ModelMode::Default => AnthropicModelMode::Default,
+        ModelMode::Thinking { budget_tokens } => AnthropicModelMode::Thinking { budget_tokens },
     };
     let supports_thinking = matches!(
         mode,

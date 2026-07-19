@@ -9,7 +9,7 @@ use language_model::{
     AuthenticateError, IconOrSvg, LanguageModel, LanguageModelCompletionError,
     LanguageModelCompletionEvent, LanguageModelId, LanguageModelName, LanguageModelProvider,
     LanguageModelProviderId, LanguageModelProviderName, LanguageModelProviderState,
-    LanguageModelRequest, LanguageModelToolChoice, RateLimiter,
+    LanguageModelRequest, LanguageModelToolChoice, ModelMode, RateLimiter,
 };
 use settings::Settings;
 use std::sync::Arc;
@@ -49,10 +49,8 @@ pub type State = ApiCompatibleProviderState<AnthropicCompatibleSettings>;
 
 fn available_model_to_anthropic_model(available: &AvailableModel) -> anthropic::Model {
     let mode = match available.mode.unwrap_or_default() {
-        settings::ModelMode::Default => AnthropicModelMode::Default,
-        settings::ModelMode::Thinking { budget_tokens } => {
-            AnthropicModelMode::Thinking { budget_tokens }
-        }
+        ModelMode::Default => AnthropicModelMode::Default,
+        ModelMode::Thinking { budget_tokens } => AnthropicModelMode::Thinking { budget_tokens },
     };
     let supports_thinking = matches!(mode, AnthropicModelMode::Thinking { .. });
 
