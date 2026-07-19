@@ -614,7 +614,6 @@
      552	crates/open_path_prompt/src/open_path_prompt_tests.rs
      552	crates/gpui/examples/testing.rs
      551	crates/edit_prediction_cli/src/filter_languages.rs
-     531	crates/sum_tree/src/tree_map.rs
      531	crates/gpui_macos/src/pasteboard.rs
      530	crates/eval_cli/mav_eval/agent.py
      527	crates/language_core/src/language_config.rs
