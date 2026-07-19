@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use time::OffsetDateTime;
 
-use client::telemetry::Telemetry;
 use collections::{HashMap, HashSet};
 use fs::Fs;
 use futures::StreamExt;
@@ -11,22 +10,25 @@ use gpui::{
     App, Empty, Entity, EventEmitter, FocusHandle, Focusable, ListAlignment, ListState,
     StyleRefinement, Task, TextStyleRefinement, Window, list, prelude::*,
 };
-use language::LanguageRegistry;
 use markdown::{
-    CodeBlockRenderer, CopyButtonVisibility, Markdown, MarkdownElement, MarkdownStyle,
-    WrapButtonVisibility,
+    CodeBlockRenderer, CopyButtonVisibility, MarkdownElement, MarkdownStyle, WrapButtonVisibility,
 };
 use project::Project;
 use settings::Settings;
-use telemetry_events::{Event, EventWrapper};
+use telemetry_events::EventWrapper;
 use theme_settings::ThemeSettings;
 use ui::{
     Icon, IconButton, IconName, IconSize, Label, TextSize, Tooltip, WithScrollbar, prelude::*,
 };
-use workspace::{
-    Item, ItemHandle, Toast, ToolbarItemEvent, ToolbarItemLocation, ToolbarItemView, Workspace,
-    notifications::NotificationId,
-};
+use workspace::{Item, Toast, Workspace, notifications::NotificationId};
+
+#[path = "telemetry_log/entry.rs"]
+mod entry;
+#[path = "telemetry_log/toolbar.rs"]
+mod toolbar;
+
+use entry::{TelemetryLogEntry, event_wrapper_to_entry, expanded_params_md};
+pub use toolbar::TelemetryLogToolbarItemView;
 
 const MAX_EVENTS: usize = 10_000;
 
@@ -67,26 +69,6 @@ pub struct TelemetryLogView {
     search_query: String,
     filtered_indices: Vec<usize>,
     _subscription: Task<()>,
-}
-
-struct TelemetryLogEntry {
-    received_at: OffsetDateTime,
-    event_type: SharedString,
-    event_properties: HashMap<String, serde_json::Value>,
-    signed_in: bool,
-    collapsed_md: Option<Entity<Markdown>>,
-    expanded_md: Option<Entity<Markdown>>,
-}
-
-impl TelemetryLogEntry {
-    fn props_as_json_object(&self) -> serde_json::Value {
-        serde_json::Value::Object(
-            self.event_properties
-                .iter()
-                .map(|(k, v)| (k.clone(), v.clone()))
-                .collect(),
-        )
-    }
 }
 
 impl TelemetryLogView {
@@ -145,49 +127,6 @@ impl TelemetryLogView {
         }
     }
 
-    fn event_wrapper_to_entry(
-        event_wrapper: &EventWrapper,
-        language_registry: &Arc<LanguageRegistry>,
-        cx: &mut App,
-    ) -> TelemetryLogEntry {
-        let (event_type, std_event_properties): (
-            SharedString,
-            std::collections::HashMap<String, serde_json::Value>,
-        ) = match &event_wrapper.event {
-            Event::Flexible(flexible) => (
-                flexible.event_type.clone().into(),
-                flexible.event_properties.clone(),
-            ),
-        };
-
-        let event_properties: HashMap<String, serde_json::Value> =
-            std_event_properties.into_iter().collect();
-
-        let entry = TelemetryLogEntry {
-            received_at: OffsetDateTime::now_utc(),
-            event_type,
-            event_properties,
-            signed_in: event_wrapper.signed_in,
-            collapsed_md: None,
-            expanded_md: None,
-        };
-
-        let collapsed_md = if !entry.event_properties.is_empty() {
-            Some(collapsed_params_md(
-                &entry.props_as_json_object(),
-                language_registry,
-                cx,
-            ))
-        } else {
-            None
-        };
-
-        TelemetryLogEntry {
-            collapsed_md,
-            ..entry
-        }
-    }
-
     fn push_event(&mut self, event_wrapper: EventWrapper, cx: &mut Context<Self>) {
         self.push_events(std::iter::once(event_wrapper), cx);
     }
@@ -200,7 +139,7 @@ impl TelemetryLogView {
         let language_registry = self.project.read(cx).languages().clone();
 
         for event_wrapper in event_wrappers {
-            let entry = Self::event_wrapper_to_entry(&event_wrapper, &language_registry, cx);
+            let entry = event_wrapper_to_entry(&event_wrapper, &language_registry, cx);
             self.events.push_back(entry);
         }
 
@@ -442,38 +381,6 @@ impl TelemetryLogView {
     }
 }
 
-fn collapsed_params_md(
-    params: &serde_json::Value,
-    language_registry: &Arc<LanguageRegistry>,
-    cx: &mut App,
-) -> Entity<Markdown> {
-    let params_json = serde_json::to_string(params).unwrap_or_default();
-    let mut spaced_out_json = String::with_capacity(params_json.len() + params_json.len() / 4);
-
-    for ch in params_json.chars() {
-        match ch {
-            '{' => spaced_out_json.push_str("{ "),
-            '}' => spaced_out_json.push_str(" }"),
-            ':' => spaced_out_json.push_str(": "),
-            ',' => spaced_out_json.push_str(", "),
-            c => spaced_out_json.push(c),
-        }
-    }
-
-    let params_md = format!("```json\n{}\n```", spaced_out_json);
-    cx.new(|cx| Markdown::new(params_md.into(), Some(language_registry.clone()), None, cx))
-}
-
-fn expanded_params_md(
-    params: &serde_json::Value,
-    language_registry: &Arc<LanguageRegistry>,
-    cx: &mut App,
-) -> Entity<Markdown> {
-    let params_json = serde_json::to_string_pretty(params).unwrap_or_default();
-    let params_md = format!("```json\n{}\n```", params_json);
-    cx.new(|cx| Markdown::new(params_md.into(), Some(language_registry.clone()), None, cx))
-}
-
 pub enum TelemetryLogEvent {
     ShowToast(Toast),
 }
@@ -527,99 +434,5 @@ impl Render for TelemetryLogView {
                     .vertical_scrollbar_for(&self.list_state, window, cx)
                     .into_any()
             })
-    }
-}
-
-pub struct TelemetryLogToolbarItemView {
-    telemetry_log: Option<Entity<TelemetryLogView>>,
-    search_editor: Entity<editor::Editor>,
-}
-
-impl TelemetryLogToolbarItemView {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let search_editor = cx.new(|cx| {
-            let mut editor = editor::Editor::single_line(window, cx);
-            editor.set_placeholder_text("Filter events...", window, cx);
-            editor
-        });
-
-        cx.subscribe(
-            &search_editor,
-            |this, editor, event: &editor::EditorEvent, cx| {
-                if let editor::EditorEvent::BufferEdited { .. } = event {
-                    let query = editor.read(cx).text(cx);
-                    if let Some(telemetry_log) = &this.telemetry_log {
-                        telemetry_log.update(cx, |log, cx| {
-                            log.set_search_query(query, cx);
-                        });
-                    }
-                }
-            },
-        )
-        .detach();
-
-        Self {
-            telemetry_log: None,
-            search_editor,
-        }
-    }
-}
-
-impl Render for TelemetryLogToolbarItemView {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let Some(telemetry_log) = self.telemetry_log.as_ref() else {
-            return Empty.into_any_element();
-        };
-
-        let telemetry_log_clone = telemetry_log.clone();
-        let has_events = !telemetry_log.read(cx).events.is_empty();
-
-        h_flex()
-            .gap_2()
-            .child(div().w(px(200.)).child(self.search_editor.clone()))
-            .child(
-                IconButton::new("clear_events", IconName::Trash)
-                    .icon_size(IconSize::Small)
-                    .tooltip(Tooltip::text("Clear Events"))
-                    .disabled(!has_events)
-                    .on_click(cx.listener(move |_this, _, _window, cx| {
-                        telemetry_log_clone.update(cx, |log, cx| {
-                            log.clear_events(cx);
-                        });
-                    })),
-            )
-            .child(
-                IconButton::new("open_log_file", IconName::File)
-                    .icon_size(IconSize::Small)
-                    .tooltip(Tooltip::text("Open Raw Log File"))
-                    .on_click(|_, _window, cx| {
-                        let path = Telemetry::log_file_path();
-                        cx.open_url(&format!("file://{}", path.display()));
-                    }),
-            )
-            .into_any()
-    }
-}
-
-impl EventEmitter<ToolbarItemEvent> for TelemetryLogToolbarItemView {}
-
-impl ToolbarItemView for TelemetryLogToolbarItemView {
-    fn set_active_pane_item(
-        &mut self,
-        active_pane_item: Option<&dyn ItemHandle>,
-        _window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> ToolbarItemLocation {
-        if let Some(item) = active_pane_item
-            && let Some(telemetry_log) = item.downcast::<TelemetryLogView>()
-        {
-            self.telemetry_log = Some(telemetry_log);
-            cx.notify();
-            return ToolbarItemLocation::PrimaryRight;
-        }
-        if self.telemetry_log.take().is_some() {
-            cx.notify();
-        }
-        ToolbarItemLocation::Hidden
     }
 }
