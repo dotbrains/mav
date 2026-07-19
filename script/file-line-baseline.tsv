@@ -624,4 +624,3 @@
      518	crates/vim/test_data/test_delete_surrounding_character_objects.json
      518	crates/theme_selector/src/icon_theme_selector.rs
      518	crates/gpui/src/platform/test/platform.rs
-     517	crates/project/tests/integration/signature_help.rs
