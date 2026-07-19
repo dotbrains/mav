@@ -56,28 +56,16 @@
 //! -------------------
 //! ```
 
-use std::{any::type_name, marker::PhantomData};
+mod drag;
 
+use std::any::type_name;
+
+use drag::{DragPreview, ResizeDrag};
 use gpui::{ClickEvent, Context, CursorStyle, DragMoveEvent, MouseButton, Point, Styled, Window};
 use ui::prelude::*;
 
 use crate::shape::{Centered, PositionAndShape, Shape, SizeBounds};
 use crate::{Picker, PickerDelegate, preview::Layout};
-
-pub struct DragPreview;
-
-impl Render for DragPreview {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-    }
-}
-
-#[derive(Clone, Copy)]
-struct ResizeDrag<S> {
-    shape_before: PositionAndShape,
-    phantom_data: PhantomData<S>,
-    mouse_pos_before: Point<Pixels>,
-}
 
 pub(crate) trait Side: Copy + 'static {
     fn id() -> &'static str {
@@ -402,23 +390,6 @@ impl Side for RightCorner {
     fn revert_to_default_size(&self, shape: &mut Shape, default: &Centered, _window: &Window) {
         shape.reset_width(default);
         shape.reset_height(default);
-    }
-}
-
-impl<S: Side> ResizeDrag<S> {
-    fn start_new(
-        shape: Shape,
-        bounds: &SizeBounds,
-        layout: Option<Layout>,
-        window: &mut Window,
-    ) -> Self {
-        Self {
-            mouse_pos_before: window.mouse_position(),
-            // Before rendering we always clamp so the current shape may not be
-            // within SizeBounds so use a clamped one
-            shape_before: shape.clamped_position_and_size(layout, bounds, window),
-            phantom_data: PhantomData,
-        }
     }
 }
 
