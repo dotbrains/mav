@@ -632,4 +632,3 @@
      506	crates/workspace/src/tasks.rs
      506	crates/workspace/src/path_link.rs
      505	crates/agent/src/tests/test_tools.rs
-     504	crates/project/src/task_store.rs
