@@ -3,10 +3,17 @@ use collections::{HashMap, HashSet, IndexSet};
 use gpui_shared_string::SharedString;
 use lsp::LanguageServerName;
 use regex::Regex;
-use schemars::{JsonSchema, SchemaGenerator, json_schema};
-use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
+use schemars::JsonSchema;
+use serde::{Deserialize, Deserializer, Serialize};
 use std::{num::NonZeroU32, path::Path, sync::Arc};
 use util::serde::default_true;
+
+mod regex_serde;
+
+pub use regex_serde::{
+    auto_indent_using_last_non_empty_line_default, deserialize_regex, deserialize_regex_vec,
+    regex_json_schema, regex_vec_json_schema, serialize_regex,
+};
 
 /// Controls the soft-wrapping behavior in the editor.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
@@ -479,49 +486,4 @@ pub struct WrapCharactersConfig {
     /// after the prefix (i.e., between prefix and suffix).
     pub end_prefix: String,
     pub end_suffix: String,
-}
-
-pub fn auto_indent_using_last_non_empty_line_default() -> bool {
-    true
-}
-
-pub fn deserialize_regex<'de, D: Deserializer<'de>>(d: D) -> Result<Option<Regex>, D::Error> {
-    let source = Option::<String>::deserialize(d)?;
-    if let Some(source) = source {
-        Ok(Some(regex::Regex::new(&source).map_err(de::Error::custom)?))
-    } else {
-        Ok(None)
-    }
-}
-
-pub fn regex_json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
-    json_schema!({
-        "type": "string"
-    })
-}
-
-pub fn serialize_regex<S>(regex: &Option<Regex>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    match regex {
-        Some(regex) => serializer.serialize_str(regex.as_str()),
-        None => serializer.serialize_none(),
-    }
-}
-
-pub fn deserialize_regex_vec<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<Regex>, D::Error> {
-    let sources = Vec::<String>::deserialize(d)?;
-    sources
-        .into_iter()
-        .map(|source| regex::Regex::new(&source))
-        .collect::<Result<_, _>>()
-        .map_err(de::Error::custom)
-}
-
-pub fn regex_vec_json_schema(_: &mut SchemaGenerator) -> schemars::Schema {
-    json_schema!({
-        "type": "array",
-        "items": { "type": "string" }
-    })
 }
