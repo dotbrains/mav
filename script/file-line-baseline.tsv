@@ -527,7 +527,6 @@
      688	crates/agent_ui/src/agent_registry_ui.rs
      686	crates/collab_ui/src/collab_panel/channel_modal.rs
      685	crates/theme/src/styles/colors.rs
-     683	crates/remote/src/transport/wsl.rs
      682	crates/gpui_web/src/events.rs
      682	crates/git_ui/src/commit_modal.rs
      682	crates/edit_prediction_context/src/bm25_context.rs
