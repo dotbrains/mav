@@ -31,7 +31,12 @@ jobs:
             git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
             changed_files="$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD)"
           else
-            changed_files="$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")"
+            before="${{ github.event.before }}"
+            if git cat-file -e "${before}^{commit}" 2>/dev/null; then
+              changed_files="$(git diff --name-only "${before}" "${{ github.sha }}")"
+            else
+              changed_files="$(git diff --name-only HEAD^ HEAD)"
+            fi
           fi
 
           if [[ -n "$changed_files" ]] && ! grep -vE '\.md$' <<< "$changed_files" >/dev/null; then
