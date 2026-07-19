@@ -633,7 +633,6 @@
      531	crates/sum_tree/src/tree_map.rs
      531	crates/gpui_macos/src/pasteboard.rs
      530	crates/eval_cli/mav_eval/agent.py
-     529	crates/platform_title_bar/src/system_window_tabs.rs
      527	crates/language_core/src/language_config.rs
      527	crates/gpui_wgpu/src/wgpu_atlas.rs
      526	crates/editor/src/test/editor_lsp_test_context.rs

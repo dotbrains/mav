@@ -1,11 +1,12 @@
 use settings::{Settings, SettingsStore};
 
+mod dragged_tab;
+
 use gpui::{
-    AnyWindowHandle, Context, Hsla, InteractiveElement, MouseButton, ParentElement, ScrollHandle,
-    Styled, SystemWindowTab, SystemWindowTabController, Window, WindowId, actions, canvas, div,
+    Context, Hsla, InteractiveElement, MouseButton, ParentElement, ScrollHandle, Styled,
+    SystemWindowTab, SystemWindowTabController, Window, actions, canvas, div,
 };
 
-use theme_settings::ThemeSettings;
 use ui::{
     Color, ContextMenu, DynamicSpacing, IconButton, IconButtonShape, IconName, IconSize, Label,
     LabelSize, Tab, h_flex, prelude::*, right_click_menu,
@@ -14,6 +15,8 @@ use workspace::{
     CloseWindow, ItemSettings, Workspace, WorkspaceSettings,
     item::{ClosePosition, ShowCloseButton},
 };
+
+pub use dragged_tab::DraggedWindowTab;
 
 actions!(
     window,
@@ -24,18 +27,6 @@ actions!(
         MoveTabToNewWindow
     ]
 );
-
-#[derive(Clone)]
-pub struct DraggedWindowTab {
-    pub id: WindowId,
-    pub ix: usize,
-    pub handle: AnyWindowHandle,
-    pub title: String,
-    pub width: Pixels,
-    pub is_active: bool,
-    pub active_background_color: Hsla,
-    pub inactive_background_color: Hsla,
-}
 
 pub struct SystemWindowTabs {
     tab_bar_scroll_handle: ScrollHandle,
@@ -492,38 +483,5 @@ impl Render for SystemWindowTabs {
                     ),
             )
             .into_any_element()
-    }
-}
-
-impl Render for DraggedWindowTab {
-    fn render(
-        &mut self,
-        _window: &mut gpui::Window,
-        cx: &mut gpui::Context<Self>,
-    ) -> impl gpui::IntoElement {
-        let ui_font = ThemeSettings::get_global(cx).ui_font.clone();
-        let label = Label::new(self.title.clone())
-            .size(LabelSize::Small)
-            .truncate()
-            .color(if self.is_active {
-                Color::Default
-            } else {
-                Color::Muted
-            });
-
-        h_flex()
-            .h(Tab::container_height(cx))
-            .w(self.width)
-            .px(DynamicSpacing::Base16.px(cx))
-            .justify_center()
-            .bg(if self.is_active {
-                self.active_background_color
-            } else {
-                self.inactive_background_color
-            })
-            .border_1()
-            .border_color(cx.theme().colors().border)
-            .font(ui_font)
-            .child(label)
     }
 }
