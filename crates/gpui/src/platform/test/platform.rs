@@ -2,9 +2,8 @@ use crate::{
     AnyWindowHandle, BackgroundExecutor, ClipboardItem, CursorStyle, DevicePixels,
     DummyKeyboardMapper, ForegroundExecutor, Keymap, NoopTextSystem, PathPromptOptions, Platform,
     PlatformDisplay, PlatformHeadlessRenderer, PlatformKeyboardLayout, PlatformKeyboardMapper,
-    PlatformTextSystem, PromptButton, ScreenCaptureFrame, ScreenCaptureSource, ScreenCaptureStream,
-    SourceMetadata, Task, TestDisplay, TestWindow, ThermalState, WindowAppearance, WindowParams,
-    size,
+    PlatformTextSystem, PromptButton, ScreenCaptureSource, SourceMetadata, Task, TestDisplay,
+    TestWindow, ThermalState, WindowAppearance, WindowParams,
 };
 use anyhow::Result;
 use collections::VecDeque;
@@ -16,6 +15,10 @@ use std::{
     rc::{Rc, Weak},
     sync::Arc,
 };
+
+mod screen_capture;
+
+pub use screen_capture::TestScreenCaptureSource;
 
 /// TestPlatform implements the Platform trait for use in tests.
 pub(crate) struct TestPlatform {
@@ -37,42 +40,6 @@ pub(crate) struct TestPlatform {
     pub expect_restart: RefCell<Option<oneshot::Sender<Option<PathBuf>>>>,
     headless_renderer_factory: Option<Box<dyn Fn() -> Option<Box<dyn PlatformHeadlessRenderer>>>>,
     weak: Weak<Self>,
-}
-
-#[derive(Clone)]
-/// A fake screen capture source, used for testing.
-pub struct TestScreenCaptureSource {}
-
-/// A fake screen capture stream, used for testing.
-pub struct TestScreenCaptureStream {}
-
-impl ScreenCaptureSource for TestScreenCaptureSource {
-    fn metadata(&self) -> Result<SourceMetadata> {
-        Ok(SourceMetadata {
-            id: 0,
-            is_main: None,
-            label: None,
-            resolution: size(DevicePixels(1), DevicePixels(1)),
-        })
-    }
-
-    fn stream(
-        &self,
-        _foreground_executor: &ForegroundExecutor,
-        _frame_callback: Box<dyn Fn(ScreenCaptureFrame) + Send>,
-    ) -> oneshot::Receiver<Result<Box<dyn ScreenCaptureStream>>> {
-        let (mut tx, rx) = oneshot::channel();
-        let stream = TestScreenCaptureStream {};
-        tx.send(Ok(Box::new(stream) as Box<dyn ScreenCaptureStream>))
-            .ok();
-        rx
-    }
-}
-
-impl ScreenCaptureStream for TestScreenCaptureStream {
-    fn metadata(&self) -> Result<SourceMetadata> {
-        TestScreenCaptureSource {}.metadata()
-    }
 }
 
 struct TestPrompt {
@@ -495,13 +462,6 @@ impl Platform for TestPlatform {
 
     fn open_with_system(&self, _path: &Path) {
         unimplemented!()
-    }
-}
-
-impl TestScreenCaptureSource {
-    /// Create a fake screen capture source, for testing.
-    pub fn new() -> Self {
-        Self {}
     }
 }
 

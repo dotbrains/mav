@@ -615,4 +615,3 @@
      520	crates/vim/test_data/test_change_surrounding_character_objects.json
      519	crates/editor/src/code_completion_tests.rs
      518	crates/vim/test_data/test_delete_surrounding_character_objects.json
-     518	crates/gpui/src/platform/test/platform.rs
