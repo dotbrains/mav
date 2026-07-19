@@ -287,7 +287,12 @@ in
   sandbox-no-bwrap = mkTest {
     name = "sandbox-no-bwrap";
     machine = machineConfigs.no-bwrap;
-    checks = [ { canCreate = false; error = "bwrap_not_found"; } ];
+    checks = [
+      {
+        canCreate = false;
+        error = "bwrap_not_found";
+      }
+    ];
   };
 
   sandbox-setuid-bwrap = mkTest {

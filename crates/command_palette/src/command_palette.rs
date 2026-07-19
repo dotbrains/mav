@@ -18,7 +18,7 @@ use gpui::{
     Action, App, Context, DismissEvent, Entity, EventEmitter, FocusHandle, Focusable,
     ParentElement, Render, Styled, Task, TaskExt, WeakEntity, Window,
 };
-use mav_actions::{OpenZedUrl, command_palette::Toggle};
+use mav_actions::{OpenMavUrl, command_palette::Toggle};
 use persistence::CommandPaletteDB;
 use picker::Direction;
 use picker::{Picker, PickerDelegate};
@@ -491,7 +491,7 @@ impl PickerDelegate for CommandPaletteDelegate {
                 let intercept_result = if is_zed_link {
                     CommandInterceptResult {
                         results: vec![CommandInterceptItem {
-                            action: OpenZedUrl {
+                            action: OpenMavUrl {
                                 url: query_for_link.clone().into(),
                             }
                             .boxed_clone(),
