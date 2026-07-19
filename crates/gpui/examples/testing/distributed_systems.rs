@@ -130,11 +130,7 @@ fn test_app_sync(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext) {
 /// pick which app's tasks to run next. This allows you to test that your distributed code
 /// is robust to different execution orderings.
 #[gpui::test(iterations = 10)]
-fn test_random_interleaving(
-    cx_a: &mut TestAppContext,
-    cx_b: &mut TestAppContext,
-    mut rng: StdRng,
-) {
+fn test_random_interleaving(cx_a: &mut TestAppContext, cx_b: &mut TestAppContext, mut rng: StdRng) {
     let network = MockNetwork::new();
 
     // Track execution order
