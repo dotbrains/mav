@@ -10,8 +10,8 @@ use repl::{
     worktree_id_for_editor,
 };
 use ui::{
-    ButtonLike, CommonAnimationExt, ContextMenu, IconWithIndicator, Indicator, IntoElement,
-    PopoverMenu, PopoverMenuHandle, Tooltip, prelude::*,
+    ButtonLike, CommonAnimationExt, ContextMenu, IconWithIndicator, IntoElement, PopoverMenu,
+    PopoverMenuHandle, Tooltip, prelude::*,
 };
 use util::ResultExt;
 

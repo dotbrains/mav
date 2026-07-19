@@ -1,9 +1,7 @@
 use std::collections::VecDeque;
-use std::sync::Arc;
-
 use time::OffsetDateTime;
 
-use collections::{HashMap, HashSet};
+use collections::HashSet;
 use fs::Fs;
 use futures::StreamExt;
 use gpui::{
@@ -17,9 +15,7 @@ use project::Project;
 use settings::Settings;
 use telemetry_events::EventWrapper;
 use theme_settings::ThemeSettings;
-use ui::{
-    Icon, IconButton, IconName, IconSize, Label, TextSize, Tooltip, WithScrollbar, prelude::*,
-};
+use ui::{Icon, IconName, IconSize, Label, TextSize, WithScrollbar, prelude::*};
 use workspace::{Item, Toast, Workspace, notifications::NotificationId};
 
 #[path = "telemetry_log/entry.rs"]

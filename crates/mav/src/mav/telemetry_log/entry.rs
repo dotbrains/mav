@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use collections::HashMap;
-use gpui::{App, Entity, SharedString};
+use gpui::{App, AppContext, Entity, SharedString};
 use language::LanguageRegistry;
 use markdown::Markdown;
 use telemetry_events::{Event, EventWrapper};
