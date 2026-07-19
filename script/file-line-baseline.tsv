@@ -615,7 +615,6 @@
      552	crates/gpui/examples/testing.rs
      551	crates/edit_prediction_cli/src/filter_languages.rs
      531	crates/gpui_macos/src/pasteboard.rs
-     530	crates/eval_cli/mav_eval/agent.py
      527	crates/language_core/src/language_config.rs
      527	crates/gpui_wgpu/src/wgpu_atlas.rs
      526	crates/editor/src/test/editor_lsp_test_context.rs
