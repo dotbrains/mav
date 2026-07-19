@@ -573,7 +573,6 @@
      608	crates/edit_prediction_cli/src/repair.rs
      607	crates/tab_switcher/src/tab_switcher_tests.rs
      607	crates/gpui/src/app/test_app.rs
-     606	crates/git_ui/src/file_diff_view.rs
      602	crates/ui/src/components/indent_guides.rs
      602	crates/extension/src/extension_manifest.rs
      602	crates/collab/seed/github_users.json
