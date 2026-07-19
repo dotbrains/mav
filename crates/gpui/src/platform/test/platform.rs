@@ -1,9 +1,9 @@
 use crate::{
-    AnyWindowHandle, BackgroundExecutor, ClipboardItem, CursorStyle, DevicePixels,
-    DummyKeyboardMapper, ForegroundExecutor, Keymap, NoopTextSystem, PathPromptOptions, Platform,
-    PlatformDisplay, PlatformHeadlessRenderer, PlatformKeyboardLayout, PlatformKeyboardMapper,
-    PlatformTextSystem, PromptButton, ScreenCaptureSource, SourceMetadata, Task, TestDisplay,
-    TestWindow, ThermalState, WindowAppearance, WindowParams,
+    AnyWindowHandle, BackgroundExecutor, ClipboardItem, CursorStyle, DummyKeyboardMapper,
+    ForegroundExecutor, Keymap, NoopTextSystem, PathPromptOptions, Platform, PlatformDisplay,
+    PlatformHeadlessRenderer, PlatformKeyboardLayout, PlatformKeyboardMapper, PlatformTextSystem,
+    PromptButton, ScreenCaptureSource, Task, TestDisplay, TestWindow, ThermalState,
+    WindowAppearance, WindowParams,
 };
 use anyhow::Result;
 use collections::VecDeque;
@@ -18,7 +18,7 @@ use std::{
 
 mod screen_capture;
 
-pub use screen_capture::TestScreenCaptureSource;
+pub use screen_capture::{TestScreenCaptureSource, TestScreenCaptureStream};
 
 /// TestPlatform implements the Platform trait for use in tests.
 pub(crate) struct TestPlatform {

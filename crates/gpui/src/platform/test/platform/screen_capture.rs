@@ -1,6 +1,6 @@
 use crate::{
-    BackgroundExecutor, DevicePixels, ForegroundExecutor, ScreenCaptureFrame, ScreenCaptureSource,
-    ScreenCaptureStream, SourceMetadata, size,
+    DevicePixels, ForegroundExecutor, ScreenCaptureFrame, ScreenCaptureSource, ScreenCaptureStream,
+    SourceMetadata, size,
 };
 use anyhow::Result;
 use futures::channel::oneshot;
