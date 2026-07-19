@@ -562,7 +562,6 @@
      634	crates/open_ai/src/responses.rs
      629	crates/json_schema_store/src/json_schema_store.rs
      616	crates/gpui/examples/shadow.rs
-     611	crates/gpui/src/tab_stop.rs
      608	crates/edit_prediction_cli/src/repair.rs
      607	crates/tab_switcher/src/tab_switcher_tests.rs
      607	crates/gpui/src/app/test_app.rs
