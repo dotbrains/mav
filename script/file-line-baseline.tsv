@@ -593,7 +593,6 @@
      570	crates/vim/test_data/test_capital_f_and_capital_t.json
      569	crates/languages/src/json.rs
      569	crates/edit_prediction/src/cursor_excerpt.rs
-     566	crates/remote/src/transport.rs
      562	crates/livekit_client/src/livekit_client.rs
      559	crates/vim/src/replace.rs
      557	crates/vim/test_data/test_f_and_t.json
