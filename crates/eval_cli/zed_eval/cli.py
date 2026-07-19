@@ -54,7 +54,7 @@ def modal_secret_names() -> set[str]:
 
 def command_doctor(args: argparse.Namespace) -> int:
     namespace = default_namespace(args)
-    print("zed-eval doctor")
+    print("mav-eval doctor")
     print(f"  namespace:          {namespace}")
     print(f"  app:                {args.app_name}")
     print(f"  volume:             {args.volume}")
@@ -226,10 +226,10 @@ def add_build_source_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--clean-source",
         action="store_true",
-        help="Build exactly --base-sha/--zed-version with no local patch",
+        help="Build exactly --base-sha/--mav-version with no local patch",
     )
     parser.add_argument(
-        "--zed-version",
+        "--mav-version",
         help="Git ref/tag/SHA of Zed to build as a clean source snapshot",
     )
 
@@ -252,9 +252,9 @@ def add_model_options(parser: argparse.ArgumentParser) -> None:
     )
     advanced.add_argument(
         "--model-provider",
-        choices=("zed", "baseten"),
-        default="zed",
-        help="Use 'zed' for built-in provider/model ids, or 'baseten' for Baseten Model APIs",
+        choices=("mav", "baseten"),
+        default="mav",
+        help="Use 'mav' for built-in provider/model ids, or 'baseten' for Baseten Model APIs",
     )
     advanced.add_argument(
         "--baseten-model",
@@ -421,18 +421,18 @@ def add_command_parser(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="zed-eval",
+        prog="mav-eval",
         description="Launch, monitor, and fetch remote SWE-Atlas agent evals on Modal.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Common workflows:\n"
-            "  zed-eval run swe-atlas -m sonnet-4.6       # launch the SWE-Atlas suite\n"
-            "  zed-eval run rf -m sonnet-4.6              # launch one benchmark\n"
-            "  zed-eval runs                              # what did I launch recently?\n"
-            "  zed-eval status                            # check my most recent run\n"
-            "  zed-eval status <run-id>                   # check a specific run\n"
-            "  zed-eval logs <run-id>                     # print controller logs\n"
-            "  zed-eval report <run-id> --fetch           # fetch + score a run\n"
+            "  mav-eval run swe-atlas -m sonnet-4.6       # launch the SWE-Atlas suite\n"
+            "  mav-eval run rf -m sonnet-4.6              # launch one benchmark\n"
+            "  mav-eval runs                              # what did I launch recently?\n"
+            "  mav-eval status                            # check my most recent run\n"
+            "  mav-eval status <run-id>                   # check a specific run\n"
+            "  mav-eval logs <run-id>                     # print controller logs\n"
+            "  mav-eval report <run-id> --fetch           # fetch + score a run\n"
             "\n"
             "After launching, a run id alone locates the run — namespace and\n"
             "benchmark storage name are resolved from this machine's local run index."

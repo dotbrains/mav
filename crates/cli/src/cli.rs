@@ -21,21 +21,21 @@ pub enum OpenBehavior {
     #[default]
     Default,
     /// Always create a new window. No matching against existing worktrees.
-    /// Corresponds to `zed -n`.
+    /// Corresponds to `mav -n`.
     AlwaysNew,
     /// Match broadly including subdirectories, and fall back to any existing
-    /// window if no worktree matched. Corresponds to `zed -a`.
+    /// window if no worktree matched. Corresponds to `mav -a`.
     Add,
     /// Open directories as a new workspace in the current Zed window's sidebar.
     /// Reuse existing windows for files in open worktrees.
-    /// Corresponds to `zed -e`.
+    /// Corresponds to `mav -e`.
     ExistingWindow,
     /// New window for directories, reuse existing window for files in open
     /// worktrees. The classic pre-sidebar behavior.
-    /// Corresponds to `zed --classic`.
+    /// Corresponds to `mav --classic`.
     Classic,
     /// Replace the content of an existing window with a new workspace.
-    /// Corresponds to `zed -r`.
+    /// Corresponds to `mav -r`.
     Reuse,
 }
 
@@ -87,7 +87,7 @@ pub enum CliResponse {
 /// When Zed started not as an *.app but as a binary (e.g. local development),
 /// there's a possibility to tell it to behave "regularly".
 ///
-/// Note that in the main zed binary, this variable is unset after it's read for the first time,
+/// Note that in the main mav binary, this variable is unset after it's read for the first time,
 /// therefore it should always be accessed through the `FORCE_CLI_MODE` static.
 pub const FORCE_CLI_MODE_ENV_VAR_NAME: &str = "ZED_FORCE_CLI_MODE";
 

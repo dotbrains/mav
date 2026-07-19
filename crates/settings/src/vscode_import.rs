@@ -945,7 +945,7 @@ impl VsCodeSettings {
             .map(|v| {
                 v.iter()
                     .map(|(k, v)| (k.clone(), v.to_string()))
-                    // zed does not support substitutions, so this can break env vars
+                    // mav does not support substitutions, so this can break env vars
                     .filter(|(_, v)| !v.contains('$'))
                     .collect()
             });

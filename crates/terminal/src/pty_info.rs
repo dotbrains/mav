@@ -220,7 +220,7 @@ impl PtyProcessInfo {
 mod tests {
     use super::*;
 
-    /// Regression test for <https://github.com/zed-industries/zed/issues/58651>:
+    /// Regression test for <https://github.com/mav-industries/mav/issues/58651>:
     /// on Linux, sysinfo keeps an open `/proc/<pid>/stat` handle for every
     /// `Process` entry retained in a `System`, and never evicts entries that are
     /// absent from the refreshed pid set. The per-terminal `System` must

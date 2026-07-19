@@ -138,7 +138,7 @@ def eval_cli_with_log_command(
     POSIX shells return the last command's status for a pipeline, so `cmd | tee`
     would otherwise hide eval-cli failures whenever `tee` succeeds.
     """
-    status_file = "/tmp/zed-eval-eval-cli-status"
+    status_file = "/tmp/mav-eval-eval-cli-status"
     quoted_status_file = shlex.quote(status_file)
     quoted_log_path = shlex.quote(log_path)
     timeout_handler = 'if [ "$ec" -eq 2 ]; then ec=0; fi; '

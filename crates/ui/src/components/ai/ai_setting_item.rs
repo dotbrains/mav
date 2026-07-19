@@ -374,7 +374,7 @@ impl Component for AiSettingItem {
                             AiSettingItemSource::Registry,
                         )
                         .icon(
-                            Icon::new(IconName::ZedAssistant)
+                            Icon::new(IconName::MavAssistant)
                                 .size(IconSize::Small)
                                 .color(Color::Muted),
                         ),

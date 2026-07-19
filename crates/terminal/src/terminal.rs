@@ -639,7 +639,7 @@ pub fn insert_zed_terminal_env(
     version: &impl std::fmt::Display,
 ) {
     env.insert("ZED_TERM".to_string(), "true".to_string());
-    env.insert("TERM_PROGRAM".to_string(), "zed".to_string());
+    env.insert("TERM_PROGRAM".to_string(), "mav".to_string());
     env.insert("TERM".to_string(), "xterm-256color".to_string());
     env.insert("COLORTERM".to_string(), "truecolor".to_string());
     env.insert("TERM_PROGRAM_VERSION".to_string(), version.to_string());
@@ -4394,7 +4394,7 @@ mod tests {
 
     #[gpui::test]
     async fn test_hyperlink_ctrl_click_same_position(cx: &mut TestAppContext) {
-        let terminal = init_ctrl_click_hyperlink_test(cx, b"Visit https://zed.dev/ for more\r\n");
+        let terminal = init_ctrl_click_hyperlink_test(cx, b"Visit https://mav.dev/ for more\r\n");
 
         terminal.update(cx, |terminal, cx| {
             let click_position = point(px(80.0), px(10.0));
@@ -4415,7 +4415,7 @@ mod tests {
     async fn test_hyperlink_ctrl_click_drag_outside_bounds(cx: &mut TestAppContext) {
         let terminal = init_ctrl_click_hyperlink_test(
             cx,
-            b"Visit https://zed.dev/ for more\r\nThis is another line\r\n",
+            b"Visit https://mav.dev/ for more\r\nThis is another line\r\n",
         );
 
         terminal.update(cx, |terminal, cx| {
@@ -4438,7 +4438,7 @@ mod tests {
 
     #[gpui::test]
     async fn test_hyperlink_ctrl_click_drag_within_bounds(cx: &mut TestAppContext) {
-        let terminal = init_ctrl_click_hyperlink_test(cx, b"Visit https://zed.dev/ for more\r\n");
+        let terminal = init_ctrl_click_hyperlink_test(cx, b"Visit https://mav.dev/ for more\r\n");
 
         terminal.update(cx, |terminal, cx| {
             let down_position = point(px(70.0), px(10.0));

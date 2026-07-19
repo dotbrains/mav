@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
-# Install or update the zed-eval Python CLI as an editable uv tool.
+# Install or update the mav-eval Python CLI as an editable uv tool.
 #
 # Usage:
-#   crates/eval_cli/script/install-zed-eval
+#   crates/eval_cli/script/install-mav-eval
 #
-# After this, `zed-eval` is available on PATH (assuming uv's tool bin directory
+# After this, `mav-eval` is available on PATH (assuming uv's tool bin directory
 # is on PATH) and tracks changes in crates/eval_cli/zed_eval without reinstalling.
 
 set -euo pipefail
@@ -15,7 +15,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 PACKAGE_DIR="$REPO_ROOT/crates/eval_cli/zed_eval"
 
 if ! command -v uv >/dev/null 2>&1; then
-    echo "error: uv is required to install zed-eval" >&2
+    echo "error: uv is required to install mav-eval" >&2
     echo "Install uv from https://docs.astral.sh/uv/getting-started/installation/" >&2
     exit 1
 fi
@@ -23,5 +23,5 @@ fi
 uv tool install --editable "$PACKAGE_DIR" --force
 
 echo ""
-echo "Installed zed-eval from $PACKAGE_DIR"
-echo "If your shell cannot find 'zed-eval', run: uv tool update-shell"
+echo "Installed mav-eval from $PACKAGE_DIR"
+echo "If your shell cannot find 'mav-eval', run: uv tool update-shell"

@@ -21,7 +21,7 @@ RUST_IMAGE = f"{RUST_IMAGE_TAG}@{RUST_IMAGE_DIGEST}"
 ZIG_VERSION = "0.15.2"
 CARGO_ZIGBUILD_VERSION = "0.22.3"
 DEFAULT_REPO_URL = os.environ.get(
-    "AGENT_EVALS_REPO_URL", "https://github.com/zed-industries/zed.git"
+    "AGENT_EVALS_REPO_URL", "https://github.com/mav-industries/mav.git"
 )
 
 

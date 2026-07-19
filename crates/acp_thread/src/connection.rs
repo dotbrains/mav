@@ -1103,7 +1103,7 @@ mod test_support {
                     id: AgentModelId::new("visual-test-model"),
                     name: "Visual Test Model".into(),
                     description: Some("A stub model for visual testing".into()),
-                    icon: Some(AgentModelIcon::Named(ui::IconName::ZedAssistant)),
+                    icon: Some(AgentModelIcon::Named(ui::IconName::MavAssistant)),
                     is_latest: false,
                     cost: None,
                     disabled: None,

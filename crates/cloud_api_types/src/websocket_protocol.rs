@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 pub const PROTOCOL_VERSION: u32 = 0;
 
 /// The name of the header used to indicate the protocol version in use.
-pub const PROTOCOL_VERSION_HEADER_NAME: &str = "x-zed-protocol-version";
+pub const PROTOCOL_VERSION_HEADER_NAME: &str = "x-mav-protocol-version";
 
 /// A message from Cloud to the Zed client.
 #[derive(Debug, Serialize, Deserialize)]

@@ -15,7 +15,7 @@ use workspace::notifications::{NotificationId, show_app_notification};
 use wprcontrol::*;
 
 actions!(
-    zed,
+    mav,
     [
         /// Starts recording an ETW (Event Tracing for Windows) trace.
         RecordEtwTrace,
@@ -167,7 +167,7 @@ fn start_etw_recording(cx: &mut App, heap_pid: Option<u32>) {
         show_etw_notification(cx, "ETW recording is already in progress");
         return;
     }
-    let save_dialog = cx.prompt_for_new_path(&PathBuf::default(), Some("zed-trace.etl"));
+    let save_dialog = cx.prompt_for_new_path(&PathBuf::default(), Some("mav-trace.etl"));
     cx.spawn(async move |cx| {
         let output_path = match save_dialog.await {
             Ok(Ok(Some(path))) => path,
@@ -572,7 +572,7 @@ pub struct EtwSession {
 }
 
 pub fn launch_etw_recording(heap_pid: Option<u32>, output_path: &Path) -> Result<EtwSession> {
-    let sock_path = std::env::temp_dir().join(format!("zed-etw-{}.sock", std::process::id()));
+    let sock_path = std::env::temp_dir().join(format!("mav-etw-{}.sock", std::process::id()));
 
     _ = std::fs::remove_file(&sock_path);
     let listener = net::UnixListener::bind(&sock_path).context("Bind Unix socket for ETW IPC")?;
@@ -580,7 +580,7 @@ pub fn launch_etw_recording(heap_pid: Option<u32>, output_path: &Path) -> Result
     let exe_path = std::env::current_exe().context("Failed to get current exe path")?;
     let pid_arg = heap_pid.map_or(-1i64, |pid| pid as i64);
     let args = format!(
-        "--record-etw-trace --etw-zed-pid {} --etw-output \"{}\" --etw-socket \"{}\"",
+        "--record-etw-trace --etw-mav-pid {} --etw-output \"{}\" --etw-socket \"{}\"",
         pid_arg,
         output_path.display(),
         sock_path.display(),

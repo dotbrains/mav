@@ -1990,7 +1990,7 @@ impl ConversationView {
                         } else {
                             "New message"
                         },
-                        IconName::ZedAssistant,
+                        IconName::MavAssistant,
                         window,
                         cx,
                     );
@@ -5726,7 +5726,7 @@ pub(crate) mod tests {
         ) -> Task<gpui::Result<Rc<dyn AgentConnection>>> {
             Task::ready(Err(anyhow!(
                 "extracting downloaded asset for \
-                 https://github.com/zed-industries/codex-acp/releases/download/v0.9.4/\
+                 https://github.com/mav-industries/codex-acp/releases/download/v0.9.4/\
                  codex-acp-0.9.4-aarch64-pc-windows-msvc.zip: \
                  failed to iterate over archive: Invalid gzip header"
             )))

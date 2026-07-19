@@ -18,7 +18,7 @@ use agent_ui::AgentPanel;
 use anyhow::{Context as _, Result};
 use clap::Parser;
 use cli::FORCE_CLI_MODE_ENV_VAR_NAME;
-use client::{Client, ProxySettings, RefreshLlmTokenListener, UserStore, parse_zed_link};
+use client::{Client, ProxySettings, RefreshLlmTokenListener, UserStore, parse_mav_link};
 use collab_ui::channel_view::ChannelView;
 use collections::HashMap;
 use crashes::InitCrashHandler;
@@ -1795,7 +1795,7 @@ fn parse_url_arg(arg: &str, cx: &App) -> String {
                 || arg.starts_with("mav://")
                 || arg.starts_with("mav-cli://")
                 || arg.starts_with("ssh://")
-                || parse_zed_link(arg, cx).is_some()
+                || parse_mav_link(arg, cx).is_some()
             {
                 arg.into()
             } else {

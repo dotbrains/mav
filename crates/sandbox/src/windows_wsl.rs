@@ -56,7 +56,7 @@ const BWRAP_UNUSABLE_EXIT_CODE: i32 = 42;
 
 /// Prefix of the probe script's single result line, so it can be picked out
 /// of any stdout noise printed by the login shell's profile scripts.
-const PROBE_RESULT_PREFIX: &str = "zed-wsl-probe:";
+const PROBE_RESULT_PREFIX: &str = "mav-wsl-probe:";
 
 /// Marks a failure of the Windows WSL sandboxing *environment*: WSL is missing
 /// or won't start, there's no usable `bwrap`, or the probe / path-resolution
@@ -620,7 +620,7 @@ async fn resolve_uncached_paths(
         "-c".to_string(),
         PATH_RESOLUTION_SCRIPT.to_string(),
         // argv[0] for the script; the path triples follow as "$@".
-        "zed-resolve-paths".to_string(),
+        "mav-resolve-paths".to_string(),
     ];
     args.extend(path_resolution_args(
         mappings.iter().map(|mapping| &mapping.0),
@@ -1155,7 +1155,7 @@ mod tests {
 
     #[test]
     fn probe_output_reports_interop_and_bwrap_path() {
-        let probe = parse_probe_output("zed-wsl-probe: interop /usr/bin/bwrap\n").unwrap();
+        let probe = parse_probe_output("mav-wsl-probe: interop /usr/bin/bwrap\n").unwrap();
         assert_eq!(
             probe,
             EnvironmentProbe {
@@ -1165,7 +1165,7 @@ mod tests {
         );
 
         let probe =
-            parse_probe_output("zed-wsl-probe: no-interop /home/me/.nix-profile/bin/bwrap\n")
+            parse_probe_output("mav-wsl-probe: no-interop /home/me/.nix-profile/bin/bwrap\n")
                 .unwrap();
         assert_eq!(
             probe,
@@ -1191,15 +1191,15 @@ mod tests {
     fn probe_output_rejects_missing_or_malformed_result_line() {
         assert!(parse_probe_output("").is_err());
         assert!(parse_probe_output("profile noise only\n").is_err());
-        assert!(parse_probe_output("zed-wsl-probe: interop\n").is_err());
-        assert!(parse_probe_output("zed-wsl-probe: maybe /usr/bin/bwrap\n").is_err());
+        assert!(parse_probe_output("mav-wsl-probe: interop\n").is_err());
+        assert!(parse_probe_output("mav-wsl-probe: maybe /usr/bin/bwrap\n").is_err());
     }
 
     #[test]
     fn probe_output_rejects_non_absolute_bwrap_path() {
         // `command -v` reports a bare name for shell functions and aliases,
         // which `wsl --exec` could never run.
-        assert!(parse_probe_output("zed-wsl-probe: interop bwrap\n").is_err());
+        assert!(parse_probe_output("mav-wsl-probe: interop bwrap\n").is_err());
     }
 
     #[test]
@@ -1643,7 +1643,7 @@ mod tests {
         assert!(!format!("{mixed_distros:#}").contains(WSL_SANDBOX_UNAVAILABLE_PREFIX));
 
         let missing_path =
-            path_to_wsl(Path::new(r"C:\zed-test\definitely\does\not\exist-2769")).unwrap_err();
+            path_to_wsl(Path::new(r"C:\mav-test\definitely\does\not\exist-2769")).unwrap_err();
         assert!(
             missing_path
                 .downcast_ref::<WslSandboxUnavailable>()

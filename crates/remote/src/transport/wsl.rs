@@ -197,7 +197,7 @@ impl WslRemoteConnection {
         };
 
         let binary_name = format!(
-            "zed-remote-server-{}-{}",
+            "mav-remote-server-{}-{}",
             release_channel.dev_name(),
             version_str
         );

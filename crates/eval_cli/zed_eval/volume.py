@@ -136,7 +136,7 @@ def resolve_run_id(args: argparse.Namespace) -> str:
 
     Commands like `status`/`logs` accept no run id at all, in which case we use
     the most recently launched run recorded in the local index so a bare
-    `zed-eval status` answers "how's my latest run doing?".
+    `mav-eval status` answers "how's my latest run doing?".
     """
     run_id = getattr(args, "run_id", None)
     if run_id:
@@ -164,7 +164,7 @@ def command_runs(args: argparse.Namespace) -> int:
     if not entries:
         print(
             "No runs recorded locally yet. Launch a run, or use "
-            "`zed-eval list --details` to query runs on the volume."
+            "`mav-eval list --details` to query runs on the volume."
         )
         return 0
     print_table(entries, RECENT_RUN_COLUMNS)

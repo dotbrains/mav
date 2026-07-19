@@ -66,7 +66,7 @@ def build_harness_command(run_request: dict[str, Any], jobs_dir: str) -> list[st
     benchmark = _benchmark_block(run_request)
     build_id = run_request.get("build_id")
     if not build_id:
-        raise ValueError("zed benchmarks require build_id")
+        raise ValueError("mav benchmarks require build_id")
     volume_name = run_request["volume_name"]
     api_secret_name = run_request["api_secret_name"]
     run_id = run_request["run_id"]

@@ -749,7 +749,7 @@ pub fn builtin_skill_content(skill_file_path: &Path) -> Option<&'static str> {
 /// rest of Zed's skills support ships.
 ///
 /// In test builds, `paths::home_dir()` is hardcoded to a fixed path
-/// (e.g. `/Users/zed`), so all tests using this function operate on the
+/// (e.g. `/Users/mav`), so all tests using this function operate on the
 /// same simulated home directory. Each test should use its own `FakeFs`
 /// instance to keep skill setups from leaking across tests.
 pub fn global_skills_dir() -> PathBuf {
@@ -799,19 +799,19 @@ pub fn is_agents_skills_path(path: &Path) -> bool {
     false
 }
 
-/// The `zed://` scheme used by share links.
-const SKILL_SHARE_LINK_SCHEME: &str = "zed";
-/// The host (the part after `zed://`) that identifies a skill share link.
+/// The `mav://` scheme used by share links.
+const SKILL_SHARE_LINK_SCHEME: &str = "mav";
+/// The host (the part after `mav://`) that identifies a skill share link.
 const SKILL_SHARE_LINK_HOST: &str = "skill";
 /// The query parameter that carries the embedded `SKILL.md` payload.
 const SKILL_SHARE_LINK_DATA_PARAM: &str = "data";
 
-/// The `zed://` deep-link prefix for a shared skill. Opening a link with this
+/// The `mav://` deep-link prefix for a shared skill. Opening a link with this
 /// prefix prompts the recipient to review and install the embedded skill.
 pub const SKILL_SHARE_LINK_PREFIX: &str =
     concatcp!(SKILL_SHARE_LINK_SCHEME, "://", SKILL_SHARE_LINK_HOST);
 
-/// Build a shareable `zed://skill?data=…` link that fully embeds the given
+/// Build a shareable `mav://skill?data=…` link that fully embeds the given
 /// `SKILL.md` file contents.
 ///
 /// The contents are base64url-encoded (no padding) so the link is
@@ -827,7 +827,7 @@ pub fn encode_skill_share_link(skill_file_content: &str) -> String {
     url.into()
 }
 
-/// Recover the `SKILL.md` contents embedded in a `zed://skill?data=…` link
+/// Recover the `SKILL.md` contents embedded in a `mav://skill?data=…` link
 /// produced by [`encode_skill_share_link`].
 pub fn decode_skill_share_link(link: &str) -> Result<String> {
     use base64::Engine as _;
@@ -2170,7 +2170,7 @@ description: A skill with no body content
             "---\nname: my-skill\ndescription: Does a thing.\n---\n\n## Steps\n\nDo the thing.\n";
         let link = encode_skill_share_link(content);
         let data = link
-            .strip_prefix("zed://skill?data=")
+            .strip_prefix("mav://skill?data=")
             .expect("link should start with the skill share prefix");
         // base64url (no-pad) output must not require percent-encoding.
         assert!(!data.contains('+') && !data.contains('/') && !data.contains('='));
@@ -2179,9 +2179,9 @@ description: A skill with no body content
 
     #[test]
     fn decode_skill_share_link_rejects_non_skill_links() {
-        assert!(decode_skill_share_link("zed://settings/agent.skills").is_err());
-        assert!(decode_skill_share_link("zed://skill").is_err());
-        assert!(decode_skill_share_link("zed://skill?other=1").is_err());
-        assert!(decode_skill_share_link("zed://skill?data=!!!notbase64").is_err());
+        assert!(decode_skill_share_link("mav://settings/agent.skills").is_err());
+        assert!(decode_skill_share_link("mav://skill").is_err());
+        assert!(decode_skill_share_link("mav://skill?other=1").is_err());
+        assert!(decode_skill_share_link("mav://skill?data=!!!notbase64").is_err());
     }
 }

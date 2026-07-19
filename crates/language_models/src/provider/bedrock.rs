@@ -591,7 +591,7 @@ impl BedrockModel {
                             secret_access_key,
                             session_token,
                             None,
-                            "zed-bedrock-provider",
+                            "mav-bedrock-provider",
                         );
                         config_builder = config_builder.credentials_provider(aws_creds);
                     }

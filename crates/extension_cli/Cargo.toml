@@ -9,7 +9,7 @@ license = "LicenseRef-PolyForm-Shield-1.0.0"
 workspace = true
 
 [[bin]]
-name = "zed-extension"
+name = "mav-extension"
 path = "src/main.rs"
 
 [dependencies]

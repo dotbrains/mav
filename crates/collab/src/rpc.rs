@@ -1114,7 +1114,7 @@ pub struct ProtocolVersion(u32);
 impl Header for ProtocolVersion {
     fn name() -> &'static HeaderName {
         static ZED_PROTOCOL_VERSION: OnceLock<HeaderName> = OnceLock::new();
-        ZED_PROTOCOL_VERSION.get_or_init(|| HeaderName::from_static("x-zed-protocol-version"))
+        ZED_PROTOCOL_VERSION.get_or_init(|| HeaderName::from_static("x-mav-protocol-version"))
     }
 
     fn decode<'i, I>(values: &mut I) -> Result<Self, axum::headers::Error>
@@ -1141,7 +1141,7 @@ pub struct AppVersionHeader(Version);
 impl Header for AppVersionHeader {
     fn name() -> &'static HeaderName {
         static ZED_APP_VERSION: OnceLock<HeaderName> = OnceLock::new();
-        ZED_APP_VERSION.get_or_init(|| HeaderName::from_static("x-zed-app-version"))
+        ZED_APP_VERSION.get_or_init(|| HeaderName::from_static("x-mav-app-version"))
     }
 
     fn decode<'i, I>(values: &mut I) -> Result<Self, axum::headers::Error>
@@ -1170,7 +1170,7 @@ pub struct ReleaseChannelHeader(String);
 impl Header for ReleaseChannelHeader {
     fn name() -> &'static HeaderName {
         static ZED_RELEASE_CHANNEL: OnceLock<HeaderName> = OnceLock::new();
-        ZED_RELEASE_CHANNEL.get_or_init(|| HeaderName::from_static("x-zed-release-channel"))
+        ZED_RELEASE_CHANNEL.get_or_init(|| HeaderName::from_static("x-mav-release-channel"))
     }
 
     fn decode<'i, I>(values: &mut I) -> Result<Self, axum::headers::Error>
@@ -3391,7 +3391,7 @@ async fn join_channel_internal(
 ) -> Result<()> {
     let joined_room = {
         let mut db = session.db().await;
-        // If zed quits without leaving the room, and the user re-opens zed before the
+        // If mav quits without leaving the room, and the user re-opens mav before the
         // RECONNECT_TIMEOUT, we need to make sure that we kick the user out of the previous
         // room they were in.
         if let Some(connection) = db.stale_room_connection(session.user_id()).await? {

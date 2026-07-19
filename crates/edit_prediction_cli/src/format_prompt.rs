@@ -824,7 +824,7 @@ mod tests {
         Example {
             spec: edit_prediction::example_spec::ExampleSpec {
                 name: "test".to_string(),
-                repository_url: "https://github.com/zed-industries/zed.git".to_string(),
+                repository_url: "https://github.com/mav-industries/mav.git".to_string(),
                 revision: "HEAD".to_string(),
                 tags: Vec::new(),
                 reasoning: None,
@@ -1559,7 +1559,7 @@ mod tests {
             &Example {
                 spec: edit_prediction::example_spec::ExampleSpec {
                     name: "test".to_string(),
-                    repository_url: "https://github.com/zed-industries/zed.git".to_string(),
+                    repository_url: "https://github.com/mav-industries/mav.git".to_string(),
                     revision: "HEAD".to_string(),
                     tags: Vec::new(),
                     reasoning: None,
@@ -1641,7 +1641,7 @@ mod tests {
             &Example {
                 spec: edit_prediction::example_spec::ExampleSpec {
                     name: "test".to_string(),
-                    repository_url: "https://github.com/zed-industries/zed.git".to_string(),
+                    repository_url: "https://github.com/mav-industries/mav.git".to_string(),
                     revision: "HEAD".to_string(),
                     tags: Vec::new(),
                     reasoning: None,

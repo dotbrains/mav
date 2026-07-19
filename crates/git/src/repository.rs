@@ -3881,9 +3881,9 @@ fn parse_upstream_track(upstream_track: &str) -> Result<UpstreamTracking> {
 fn checkpoint_author_envs() -> HashMap<String, String> {
     HashMap::from_iter([
         ("GIT_AUTHOR_NAME".to_string(), "Zed".to_string()),
-        ("GIT_AUTHOR_EMAIL".to_string(), "hi@zed.dev".to_string()),
+        ("GIT_AUTHOR_EMAIL".to_string(), "hi@mav.dev".to_string()),
         ("GIT_COMMITTER_NAME".to_string(), "Zed".to_string()),
-        ("GIT_COMMITTER_EMAIL".to_string(), "hi@zed.dev".to_string()),
+        ("GIT_COMMITTER_EMAIL".to_string(), "hi@mav.dev".to_string()),
     ])
 }
 
@@ -3917,9 +3917,9 @@ mod tests {
             .env("GIT_CONFIG_GLOBAL", "")
             .env("GIT_CONFIG_SYSTEM", "")
             .env("GIT_AUTHOR_NAME", "test")
-            .env("GIT_AUTHOR_EMAIL", "test@zed.dev")
+            .env("GIT_AUTHOR_EMAIL", "test@mav.dev")
             .env("GIT_COMMITTER_NAME", "test")
-            .env("GIT_COMMITTER_EMAIL", "test@zed.dev")
+            .env("GIT_COMMITTER_EMAIL", "test@mav.dev")
             .output()
             .expect("failed to run git command");
         assert!(
@@ -4744,14 +4744,14 @@ mod tests {
     fn test_branches_parsing() {
         // suppress "help: octal escapes are not supported, `\0` is always null"
         #[allow(clippy::octal_escapes)]
-        let input = "*\0060964da10574cd9bf06463a53bf6e0769c5c45e\0\0refs/heads/zed-patches\0refs/remotes/origin/zed-patches\0\01733187470\0John Doe\0generated protobuf\n";
+        let input = "*\0060964da10574cd9bf06463a53bf6e0769c5c45e\0\0refs/heads/mav-patches\0refs/remotes/origin/mav-patches\0\01733187470\0John Doe\0generated protobuf\n";
         assert_eq!(
             parse_branch_input(input).unwrap(),
             vec![Branch {
                 is_head: true,
-                ref_name: "refs/heads/zed-patches".into(),
+                ref_name: "refs/heads/mav-patches".into(),
                 upstream: Some(Upstream {
-                    ref_name: "refs/remotes/origin/zed-patches".into(),
+                    ref_name: "refs/remotes/origin/mav-patches".into(),
                     tracking: UpstreamTracking::Tracked(UpstreamTrackingStatus {
                         ahead: 0,
                         behind: 0
@@ -5446,7 +5446,7 @@ mod tests {
             "remote",
             "add",
             "origin",
-            "https://github.com/zed-industries/zed.git",
+            "https://github.com/mav-industries/mav.git",
         ])
         .await
         .unwrap();
@@ -5463,7 +5463,7 @@ mod tests {
         assert_eq!(remote_urls.len(), 2);
         assert_eq!(
             remote_urls.get("origin").unwrap(),
-            "https://github.com/zed-industries/zed.git"
+            "https://github.com/mav-industries/mav.git"
         );
         assert_eq!(
             remote_urls.get("upstream").unwrap(),

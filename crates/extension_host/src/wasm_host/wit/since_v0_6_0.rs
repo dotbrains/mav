@@ -23,16 +23,16 @@ wasmtime::component::bindgen!({
         "worktree": ExtensionWorktree,
         "project": ExtensionProject,
         "key-value-store": ExtensionKeyValueStore,
-        "zed:extension/common": latest::zed::extension::common,
-        "zed:extension/http-client": latest::zed::extension::http_client,
-        "zed:extension/nodejs": latest::zed::extension::nodejs,
-        "zed:extension/process": latest::zed::extension::process,
-        "zed:extension/slash-command": latest::zed::extension::slash_command,
-        "zed:extension/context-server": latest::zed::extension::context_server,
+        "mav:extension/common": latest::mav::extension::common,
+        "mav:extension/http-client": latest::mav::extension::http_client,
+        "mav:extension/nodejs": latest::mav::extension::nodejs,
+        "mav:extension/process": latest::mav::extension::process,
+        "mav:extension/slash-command": latest::mav::extension::slash_command,
+        "mav:extension/context-server": latest::mav::extension::context_server,
     },
 });
 
-pub use self::zed::extension::*;
+pub use self::mav::extension::*;
 
 mod settings {
     #![allow(dead_code)]
@@ -138,7 +138,7 @@ impl From<github::GithubReleaseOptions> for latest::github::GithubReleaseOptions
     }
 }
 
-impl zed::extension::github::Host for WasmState {
+impl mav::extension::github::Host for WasmState {
     async fn github_release_by_tag_name(
         &mut self,
         repo: String,
@@ -722,7 +722,7 @@ impl TryFrom<latest::DebugAdapterBinary> for DebugAdapterBinary {
     }
 }
 
-impl zed::extension::dap::Host for WasmState {
+impl mav::extension::dap::Host for WasmState {
     async fn resolve_tcp_template(
         &mut self,
         template: dap::TcpArgumentsTemplate,

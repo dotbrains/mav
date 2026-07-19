@@ -255,7 +255,7 @@ pub struct ExtensionIndexLanguageEntry {
 }
 
 actions!(
-    zed,
+    mav,
     [
         /// Reloads all installed extensions.
         ReloadExtensions

@@ -38,7 +38,7 @@ LLM_PROVIDERS_SECRET_NAME = os.environ.get(
     "AGENT_EVALS_LLM_PROVIDERS_SECRET", config.DEFAULT_LLM_PROVIDERS_SECRET_NAME
 )
 REPO_URL = os.environ.get(
-    "AGENT_EVALS_REPO_URL", "https://github.com/zed-industries/zed.git"
+    "AGENT_EVALS_REPO_URL", "https://github.com/mav-industries/mav.git"
 )
 ZIG_URL = (
     f"https://ziglang.org/download/{ZIG_VERSION}/zig-x86_64-linux-{ZIG_VERSION}.tar.xz"
@@ -223,7 +223,7 @@ def build_eval_cli(build_request: dict[str, Any]) -> dict[str, Any]:
     zig_version = output_of(["zig", "version"])
     cargo_zigbuild_version = output_of(["cargo-zigbuild", "--version"])
 
-    workdir = pathlib.Path("/build/zed")
+    workdir = pathlib.Path("/build/mav")
     if workdir.exists():
         shutil.rmtree(workdir)
     workdir.mkdir(parents=True, exist_ok=True)
@@ -459,7 +459,7 @@ def cleanup_scheduled() -> dict[str, Any]:
     volumes={"/data": volume},
 )
 def cleanup_artifacts(request: dict[str, Any]) -> dict[str, Any]:
-    """On-demand prune (the `zed-eval cleanup` command), supporting --dry-run
+    """On-demand prune (the `mav-eval cleanup` command), supporting --dry-run
     and retention overrides."""
     return _run_cleanup(
         dry_run=bool(request.get("dry_run")),

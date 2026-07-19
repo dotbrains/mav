@@ -98,7 +98,7 @@ JUDGE_PROXY_ENSURE_SCRIPT = """\
 #!/bin/bash
 if ! (exec 3<>/dev/tcp/127.0.0.1/${ZED_JUDGE_PROXY_PORT:-8089}) 2>/dev/null; then
     nohup python3 /usr/local/lib/zed_judge_proxy.py \\
-        >>/tmp/zed-judge-proxy.log 2>&1 </dev/null &
+        >>/tmp/mav-judge-proxy.log 2>&1 </dev/null &
     sleep 1
 fi
 """

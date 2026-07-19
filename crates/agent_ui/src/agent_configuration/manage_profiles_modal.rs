@@ -765,7 +765,7 @@ impl ManageProfilesModal {
                                         .inset(true)
                                         .spacing(ListItemSpacing::Sparse)
                                         .start_slot(
-                                            Icon::new(IconName::ZedAssistant)
+                                            Icon::new(IconName::MavAssistant)
                                                 .size(IconSize::Small)
                                                 .color(Color::Muted),
                                         )

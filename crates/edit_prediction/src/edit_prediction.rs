@@ -104,7 +104,7 @@ use crate::prediction::EditPredictionResult;
 pub use crate::prediction::{EditPrediction, EditPredictionId, EditPredictionInputs};
 pub use language_model::ApiKeyState;
 pub use telemetry_events::EditPredictionRating;
-pub use zed_edit_prediction_delegate::ZedEditPredictionDelegate;
+pub use zed_edit_prediction_delegate::MavEditPredictionDelegate;
 
 actions!(
     edit_prediction,
@@ -2473,7 +2473,7 @@ fn currently_following(project: &Entity<Project>, cx: &App) -> bool {
 
 fn is_ep_store_provider(provider: EditPredictionProvider) -> bool {
     match provider {
-        EditPredictionProvider::Zed
+        EditPredictionProvider::Mav
         | EditPredictionProvider::Mercury
         | EditPredictionProvider::Ollama
         | EditPredictionProvider::OpenAiCompatibleApi => true,
@@ -2497,7 +2497,7 @@ impl EditPredictionStore {
     ) {
         let (needs_acceptance_tracking, max_pending_predictions) =
             match all_language_settings(None, cx).edit_predictions.provider {
-                EditPredictionProvider::Zed | EditPredictionProvider::Mercury => (true, 2),
+                EditPredictionProvider::Mav | EditPredictionProvider::Mercury => (true, 2),
                 EditPredictionProvider::Ollama => (false, 1),
                 EditPredictionProvider::OpenAiCompatibleApi => (false, 2),
                 EditPredictionProvider::None
@@ -3534,9 +3534,9 @@ pub fn init(cx: &mut App) {
 }
 
 fn is_zed_industries_repo(url: &str) -> bool {
-    url.strip_prefix("https://github.com/zed-industries/")
-        .or_else(|| url.strip_prefix("http://github.com/zed-industries/"))
-        .or_else(|| url.strip_prefix("git@github.com:zed-industries/"))
-        .or_else(|| url.strip_prefix("ssh://git@github.com/zed-industries/"))
+    url.strip_prefix("https://github.com/mav-industries/")
+        .or_else(|| url.strip_prefix("http://github.com/mav-industries/"))
+        .or_else(|| url.strip_prefix("git@github.com:mav-industries/"))
+        .or_else(|| url.strip_prefix("ssh://git@github.com/mav-industries/"))
         .is_some_and(|repo| !repo.is_empty())
 }

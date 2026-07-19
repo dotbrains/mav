@@ -3656,7 +3656,7 @@ impl Pane {
             log::warn!(
                 "Pinned tab count ({}) exceeds actual tab count ({}). \
                 This should not happen. If possible, add reproduction steps, \
-                in a comment, to https://github.com/zed-industries/zed/issues/33342",
+                in a comment, to https://github.com/mav-industries/mav/issues/33342",
                 self.pinned_tab_count,
                 tab_count
             );

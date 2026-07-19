@@ -1158,8 +1158,8 @@ mod tests {
 
         // URL case
         assert_word("github.com");
-        assert_not_word("zed-industries/zed");
-        assert_not_word("zed-industries\\zed");
+        assert_not_word("mav-industries/mav");
+        assert_not_word("mav-industries\\mav");
         assert_not_word("a=1&b=2");
         assert_not_word("foo?b=2");
 
@@ -1171,7 +1171,7 @@ mod tests {
         assert_word("ƀƁƂƃƄƅƆƇƈƉƊƋƌƍƎƏ");
         // Cyrillic
         assert_word("АБВГДЕЖЗИЙКЛМНОП");
-        // Vietnamese (https://github.com/zed-industries/zed/issues/23245)
+        // Vietnamese (https://github.com/mav-industries/mav/issues/23245)
         assert_word("ThậmchíđếnkhithuachạychúngcònnhẫntâmgiếtnốtsốđôngtùchínhtrịởYênBáivàCaoBằng");
         // Bengali
         assert_word("গিয়েছিলেন");
@@ -1186,7 +1186,7 @@ mod tests {
         assert_not_word("()[]{}<>");
 
         // Non-breaking ("Glue") characters, see https://www.unicode.org/reports/tr14/
-        // (https://github.com/zed-industries/zed/issues/59664)
+        // (https://github.com/mav-industries/mav/issues/59664)
         assert_word("\u{202F}"); // NNBSP " "
         assert_word("\u{00A0}"); // NBSP " "
         assert_word("\u{2011}"); // NBH "‑"

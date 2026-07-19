@@ -68,7 +68,7 @@ class ZedPierAgent(BaseInstalledAgent):
 
     @staticmethod
     def name() -> str:
-        return "zed"
+        return "mav"
 
     def _container_binary_path(self) -> str:
         path = self._get_env("EVAL_CLI_CONTAINER_PATH")

@@ -13,7 +13,7 @@
 //! - run a bridge process inside the sandbox that:
 //!   - listens on `localhost:<port>` and forwards reads/writes to the socket
 //!   - then, runs the untrusted command
-//! - on the zed side, we listen to the socket and forward reads/writes to the
+//! - on the mav side, we listen to the socket and forward reads/writes to the
 //!   internal HTTP proxy
 //!
 //! If networking is fully blocked or fully allowed, we don't bother with the
@@ -34,8 +34,8 @@ use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
 
-const BRIDGE_FLAG: &str = "--zed-linux-sandbox-bridge";
-const PROXY_SOCKET_SANDBOX_PATH_PREFIX: &str = "/tmp/zed-sandbox";
+const BRIDGE_FLAG: &str = "--mav-linux-sandbox-bridge";
+const PROXY_SOCKET_SANDBOX_PATH_PREFIX: &str = "/tmp/mav-sandbox";
 const SANDBOX_SETUP_FAILED_EXIT_CODE: i32 = 126;
 const PUMP_BUFFER_SIZE: usize = 64 * 1024;
 
@@ -433,7 +433,7 @@ pub fn run_launcher_if_invoked() {
     let invocation = match invocation {
         Ok(invocation) => invocation,
         Err(error) => {
-            eprintln!("zed: malformed sandbox bridge invocation: {error:#}");
+            eprintln!("mav: malformed sandbox bridge invocation: {error:#}");
             std::process::exit(127);
         }
     };
@@ -487,18 +487,18 @@ fn run_bridge(invocation: BridgeInvocation) -> ! {
     let listener = match TcpListener::bind((Ipv4Addr::LOCALHOST, invocation.port)) {
         Ok(listener) => listener,
         Err(error) => {
-            eprintln!("zed: failed to bind sandbox proxy bridge: {error}");
+            eprintln!("mav: failed to bind sandbox proxy bridge: {error}");
             std::process::exit(SANDBOX_SETUP_FAILED_EXIT_CODE);
         }
     };
 
     let socket_path = invocation.socket_path.clone();
     if let Err(error) = thread::Builder::new()
-        .name("zed-sandbox-bridge".to_string())
+        .name("mav-sandbox-bridge".to_string())
         .stack_size(128 * 1024)
         .spawn(move || run_bridge_listener(listener, socket_path))
     {
-        eprintln!("zed: failed to spawn sandbox proxy bridge: {error}");
+        eprintln!("mav: failed to spawn sandbox proxy bridge: {error}");
         std::process::exit(SANDBOX_SETUP_FAILED_EXIT_CODE);
     }
 
@@ -508,7 +508,7 @@ fn run_bridge(invocation: BridgeInvocation) -> ! {
     {
         Ok(child) => child,
         Err(error) => {
-            eprintln!("zed: failed to spawn sandboxed command: {error}");
+            eprintln!("mav: failed to spawn sandboxed command: {error}");
             std::process::exit(SANDBOX_SETUP_FAILED_EXIT_CODE);
         }
     };
@@ -522,7 +522,7 @@ fn run_bridge(invocation: BridgeInvocation) -> ! {
             std::process::exit(128 + signal);
         }
         Err(error) => {
-            eprintln!("zed: failed to wait for sandboxed command: {error}");
+            eprintln!("mav: failed to wait for sandboxed command: {error}");
             std::process::exit(SANDBOX_SETUP_FAILED_EXIT_CODE);
         }
     }
@@ -534,14 +534,14 @@ fn run_bridge_listener(listener: TcpListener, socket_path: PathBuf) {
             Ok(stream) => {
                 let socket_path = socket_path.clone();
                 if let Err(error) = thread::Builder::new()
-                    .name("zed-sandbox-bridge-conn".to_string())
+                    .name("mav-sandbox-bridge-conn".to_string())
                     .stack_size(128 * 1024)
                     .spawn(move || forward_bridge_connection(stream, socket_path))
                 {
-                    eprintln!("zed: failed to spawn sandbox bridge connection thread: {error}");
+                    eprintln!("mav: failed to spawn sandbox bridge connection thread: {error}");
                 }
             }
-            Err(error) => eprintln!("zed: sandbox bridge accept failed: {error}"),
+            Err(error) => eprintln!("mav: sandbox bridge accept failed: {error}"),
         }
     }
 }
@@ -551,7 +551,7 @@ fn forward_bridge_connection(tcp_stream: TcpStream, socket_path: PathBuf) {
         Ok(stream) => stream,
         Err(error) => {
             eprintln!(
-                "zed: sandbox bridge failed to connect to proxy socket {}: {error}",
+                "mav: sandbox bridge failed to connect to proxy socket {}: {error}",
                 socket_path.display()
             );
             return;
@@ -564,14 +564,14 @@ fn copy_bidirectional(tcp_stream: TcpStream, unix_stream: UnixStream) {
     let tcp_read = match tcp_stream.try_clone() {
         Ok(stream) => stream,
         Err(error) => {
-            eprintln!("zed: sandbox bridge failed to clone TCP stream: {error}");
+            eprintln!("mav: sandbox bridge failed to clone TCP stream: {error}");
             return;
         }
     };
     let unix_read = match unix_stream.try_clone() {
         Ok(stream) => stream,
         Err(error) => {
-            eprintln!("zed: sandbox bridge failed to clone Unix stream: {error}");
+            eprintln!("mav: sandbox bridge failed to clone Unix stream: {error}");
             return;
         }
     };
@@ -579,19 +579,19 @@ fn copy_bidirectional(tcp_stream: TcpStream, unix_stream: UnixStream) {
     let tcp_write = tcp_stream;
     let unix_write = unix_stream;
     let to_proxy = match thread::Builder::new()
-        .name("zed-sandbox-bridge-out".to_string())
+        .name("mav-sandbox-bridge-out".to_string())
         .stack_size(128 * 1024)
         .spawn(move || copy_one_way(tcp_read, unix_write))
     {
         Ok(handle) => handle,
         Err(error) => {
-            eprintln!("zed: failed to spawn sandbox bridge pump thread: {error}");
+            eprintln!("mav: failed to spawn sandbox bridge pump thread: {error}");
             return;
         }
     };
     copy_one_way(unix_read, tcp_write);
     if to_proxy.join().is_err() {
-        eprintln!("zed: sandbox bridge pump thread panicked");
+        eprintln!("mav: sandbox bridge pump thread panicked");
     }
 }
 
@@ -706,7 +706,7 @@ mod tests {
         );
         assert!(!allowed.iter().any(|arg| arg == "--unshare-net"));
 
-        let socket = PathBuf::from("/tmp/zed-proxy.sock");
+        let socket = PathBuf::from("/tmp/mav-proxy.sock");
         let restricted = build_bwrap_args(
             &[],
             &[],
@@ -737,9 +737,9 @@ mod tests {
 
     #[test]
     fn test_bridge_args_round_trip() {
-        let sandbox_socket_path = "/tmp/zed-sandbox-1234-0.sock";
+        let sandbox_socket_path = "/tmp/mav-sandbox-1234-0.sock";
         let argv = bridge_argv(
-            "/path/to/zed",
+            "/path/to/mav",
             vec![
                 BRIDGE_FLAG,
                 sandbox_socket_path,
@@ -766,13 +766,13 @@ mod tests {
 
     #[test]
     fn test_wrap_invocation_uses_bridge_for_restricted_network() {
-        let socket = PathBuf::from("/tmp/zed-proxy.sock");
+        let socket = PathBuf::from("/tmp/mav-proxy.sock");
         let permissions = SandboxPermissions {
             network: NetworkAccess::LocalhostPort(8080),
             allow_fs_write: false,
         };
         let args = build_wrapped_args_for_test(
-            "/path/to/zed",
+            "/path/to/mav",
             permissions,
             "/bin/sh",
             &["-c".to_string(), "echo hi".to_string()],
@@ -787,7 +787,7 @@ mod tests {
         assert!(windows_contains(
             &args,
             &[
-                "/path/to/zed",
+                "/path/to/mav",
                 BRIDGE_FLAG,
                 &sandbox_destination,
                 "8080",
@@ -833,7 +833,7 @@ mod tests {
     /// Returns the in-sandbox destination of the proxy socket `--bind`, if any.
     fn proxy_socket_bind_destination(args: &[String]) -> Option<String> {
         args.windows(3).find_map(|window| {
-            if window[0] == "--bind" && window[1] == "/tmp/zed-proxy.sock" {
+            if window[0] == "--bind" && window[1] == "/tmp/mav-proxy.sock" {
                 Some(window[2].clone())
             } else {
                 None

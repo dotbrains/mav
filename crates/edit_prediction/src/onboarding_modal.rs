@@ -67,7 +67,7 @@ impl ZedPredictModal {
                             let this = weak_entity.clone();
                             move |_window, cx| {
                                 ZedPredictUpsell::set_dismissed(true, cx);
-                                set_edit_prediction_provider(EditPredictionProvider::Zed, cx);
+                                set_edit_prediction_provider(EditPredictionProvider::Mav, cx);
                                 this.update(cx, |_, cx| cx.emit(DismissEvent)).ok();
                             }
                         }),

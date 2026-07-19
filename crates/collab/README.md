@@ -1,14 +1,14 @@
 # Zed Server
 
-This crate is what we run at https://collab.zed.dev.
+This crate is what we run at https://collab.mav.dev.
 
-It contains our back-end logic for collaboration, to which we connect from the Zed client via a websocket after authenticating via https://zed.dev, which is a separate repo running on Vercel.
+It contains our back-end logic for collaboration, to which we connect from the Zed client via a websocket after authenticating via https://mav.dev, which is a separate repo running on Vercel.
 
 # Local Development
 
 ## Database setup
 
-Before you can run the collab server locally, you'll need to set up a zed Postgres database. Follow the steps sequentially:
+Before you can run the collab server locally, you'll need to set up a mav Postgres database. Follow the steps sequentially:
 
 1. Ensure you have postgres installed. If not, install with `brew install postgresql@15`.
 2. Follow the steps on Brew's formula and verify your `$PATH` contains `/opt/homebrew/opt/postgresql@15/bin`.
@@ -19,7 +19,7 @@ Before you can run the collab server locally, you'll need to set up a zed Postgr
 script/bootstrap
 ```
 
-This script will set up the `zed` Postgres database, and populate it with some users. It requires internet access, because it fetches some users from the GitHub API.
+This script will set up the `mav` Postgres database, and populate it with some users. It requires internet access, because it fetches some users from the GitHub API.
 
 The script will create several _admin_ users, who you'll sign in as by default when developing locally. The GitHub logins for the default users are specified in the `seed.default.json` file.
 
@@ -28,7 +28,7 @@ To use a different set of admin users, create `crates/collab/seed.json`.
 ```json
 {
   "admins": ["yourgithubhere"],
-  "channels": ["zed"]
+  "channels": ["mav"]
 }
 ```
 
@@ -43,7 +43,7 @@ foreman start
 In a second terminal, run two or more instances of Zed.
 
 ```sh
-script/zed-local -2
+script/mav-local -2
 ```
 
 This script starts one to four instances of Zed, depending on the `-2`, `-3` or `-4` flags. Each instance will be connected to the local `collab` server, signed in as a different user from `seed.json` or `seed.default.json`.
@@ -52,8 +52,8 @@ This script starts one to four instances of Zed, depending on the `-2`, `-3` or 
 
 We run two instances of collab:
 
-- Staging (https://staging-collab.zed.dev)
-- Production (https://collab.zed.dev)
+- Staging (https://staging-collab.mav.dev)
+- Production (https://collab.mav.dev)
 
 Both of these run on the Kubernetes cluster hosted in Digital Ocean.
 

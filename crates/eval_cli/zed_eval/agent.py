@@ -42,7 +42,7 @@ class ZedAgent(BaseInstalledAgent):
 
     @staticmethod
     def name() -> str:
-        return "zed"
+        return "mav"
 
     async def _detect_workdir(self, environment: BaseEnvironment) -> str:
         return await detect_workdir(
@@ -208,7 +208,7 @@ class ZedAgent(BaseInstalledAgent):
                 await self.exec_as_agent(
                     environment,
                     command=(
-                        'ZED_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zed"; '
+                        'ZED_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/mav"; '
                         + cmd
                     ),
                 )
@@ -223,10 +223,10 @@ class ZedAgent(BaseInstalledAgent):
                 environment,
                 command=(
                     "set -euo pipefail; "
-                    'ZED_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zed"; '
+                    'ZED_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/mav"; '
                     'ESLINT_DIR="$ZED_DATA_DIR/languages/eslint/vscode-eslint-2.4.4"; '
                     'mkdir -p "$ESLINT_DIR"; '
-                    'curl -fsSL "https://github.com/zed-industries/vscode-eslint/archive/refs/tags/release/2.4.4.tar.gz" '
+                    'curl -fsSL "https://github.com/mav-industries/vscode-eslint/archive/refs/tags/release/2.4.4.tar.gz" '
                     '| tar -xz -C "$ESLINT_DIR"; '
                     'mv "$ESLINT_DIR"/vscode-eslint-release-2.4.4 "$ESLINT_DIR/vscode-eslint"; '
                     'cd "$ESLINT_DIR/vscode-eslint" && npm install && npm run compile'
@@ -333,7 +333,7 @@ class ZedAgent(BaseInstalledAgent):
             trial_config = json.loads(config_path.read_text())
         except (OSError, ValueError) as exc:
             print(
-                f"[zed-eval] agent budget: could not read {config_path}: {exc!r}",
+                f"[mav-eval] agent budget: could not read {config_path}: {exc!r}",
                 flush=True,
             )
             return None
@@ -364,7 +364,7 @@ class ZedAgent(BaseInstalledAgent):
             data = tomllib.loads(task_toml.read_text())
         except (OSError, ValueError) as exc:
             print(
-                f"[zed-eval] agent budget: could not parse {task_toml}: {exc!r}",
+                f"[mav-eval] agent budget: could not parse {task_toml}: {exc!r}",
                 flush=True,
             )
             return None
@@ -384,7 +384,7 @@ class ZedAgent(BaseInstalledAgent):
                 from harbor.constants import PACKAGE_CACHE_DIR
             except ImportError as exc:
                 print(
-                    f"[zed-eval] agent budget: harbor PACKAGE_CACHE_DIR "
+                    f"[mav-eval] agent budget: harbor PACKAGE_CACHE_DIR "
                     f"unavailable: {exc!r}",
                     flush=True,
                 )
@@ -443,7 +443,7 @@ class ZedAgent(BaseInstalledAgent):
                 configured_timeout = int(configured_timeout_raw)
             except ValueError:
                 print(
-                    "[zed-eval] ignoring non-integer EVAL_CLI_TIMEOUT="
+                    "[mav-eval] ignoring non-integer EVAL_CLI_TIMEOUT="
                     f"{configured_timeout_raw!r}",
                     flush=True,
                 )
@@ -462,7 +462,7 @@ class ZedAgent(BaseInstalledAgent):
             timeout_arg = min(ceiling, int(budget_sec - EVAL_CLI_FINALIZE_BUFFER_SEC))
             timeout_arg = max(timeout_arg, EVAL_CLI_MIN_TIMEOUT_SEC)
             print(
-                f"[zed-eval] eval-cli --timeout {timeout_arg}s (harbor agent "
+                f"[mav-eval] eval-cli --timeout {timeout_arg}s (harbor agent "
                 f"budget {int(budget_sec)}s - {EVAL_CLI_FINALIZE_BUFFER_SEC}s "
                 f"finalize buffer; EVAL_CLI_TIMEOUT="
                 f"{configured_timeout if configured_timeout is not None else 'unset'})",
@@ -471,7 +471,7 @@ class ZedAgent(BaseInstalledAgent):
         elif configured_timeout is not None:
             timeout_arg = configured_timeout
             print(
-                f"[zed-eval] eval-cli --timeout {timeout_arg}s (harbor agent "
+                f"[mav-eval] eval-cli --timeout {timeout_arg}s (harbor agent "
                 "budget unavailable; using EVAL_CLI_TIMEOUT)",
                 flush=True,
             )
@@ -503,7 +503,7 @@ class ZedAgent(BaseInstalledAgent):
                 parts,
                 "/logs/agent/eval-cli.txt",
                 timeout_message=(
-                    "[zed-eval] eval-cli timed out (exit 2); continuing to "
+                    "[mav-eval] eval-cli timed out (exit 2); continuing to "
                     "delivery/verification"
                 ),
                 line_buffered=True,

@@ -655,7 +655,7 @@ fn handle_api_response<T>(
                             ErrorSeverity::Critical
                         }
                         fn primary_action(&self) -> ErrorAction {
-                            ErrorAction::link("Update Zed", "https://zed.dev/releases")
+                            ErrorAction::link("Update Zed", "https://mav.dev/releases")
                         }
                     }
 

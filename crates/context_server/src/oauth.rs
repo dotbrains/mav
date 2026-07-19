@@ -34,7 +34,7 @@ use std::time::{Duration, SystemTime};
 use url::Url;
 
 /// The CIMD URL where Zed's OAuth client metadata document is hosted.
-pub const CIMD_URL: &str = "https://zed.dev/oauth/client-metadata.json";
+pub const CIMD_URL: &str = "https://mav.dev/oauth/client-metadata.json";
 
 /// Validate that a URL is safe to use as an OAuth endpoint.
 ///
@@ -1770,7 +1770,7 @@ mod tests {
         };
         let url = build_authorization_url(
             &metadata,
-            "https://zed.dev/oauth/client-metadata.json",
+            "https://mav.dev/oauth/client-metadata.json",
             "http://127.0.0.1:12345/callback",
             &["files:read".into(), "files:write".into()],
             "https://mcp.example.com",
@@ -1782,7 +1782,7 @@ mod tests {
         assert_eq!(pairs.get("response_type").unwrap(), "code");
         assert_eq!(
             pairs.get("client_id").unwrap(),
-            "https://zed.dev/oauth/client-metadata.json"
+            "https://mav.dev/oauth/client-metadata.json"
         );
         assert_eq!(
             pairs.get("redirect_uri").unwrap(),

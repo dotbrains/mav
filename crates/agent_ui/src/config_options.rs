@@ -1373,7 +1373,7 @@ mod tests {
 
     impl AgentServer for TestAgentServer {
         fn logo(&self) -> IconName {
-            IconName::ZedAssistant
+            IconName::MavAssistant
         }
 
         fn agent_id(&self) -> AgentId {

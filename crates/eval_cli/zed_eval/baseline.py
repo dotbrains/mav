@@ -3,7 +3,7 @@
 A "baseline" is a completed run promoted to the canonical reference for its
 `(experiment, model)` pair. It only qualifies if its build came from a *clean*
 commit reachable from `origin/main` (no local patch) — so baselines are both
-obviously discoverable (the `baselines/` tree + `zed-eval baseline list`) and
+obviously discoverable (the `baselines/` tree + `mav-eval baseline list`) and
 provably pinned to a commit on main. The judge preset is recorded but not gated,
 so non-leaderboard baselines are allowed.
 

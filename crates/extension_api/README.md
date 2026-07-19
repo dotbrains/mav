@@ -34,17 +34,17 @@ crate-type = ["cdylib"]
 To define your extension, create a type that implements the `Extension` trait, and register it.
 
 ```rust
-use zed_extension_api as zed;
+use zed_extension_api as mav;
 
 struct MyExtension {
     // ... state
 }
 
-impl zed::Extension for MyExtension {
+impl mav::Extension for MyExtension {
     // ...
 }
 
-zed::register_extension!(MyExtension);
+mav::register_extension!(MyExtension);
 ```
 
 ## Testing your extension
@@ -53,7 +53,7 @@ To run your extension in Zed as you're developing it:
 
 - Make sure you have [Rust installed](https://www.rust-lang.org/learn/get-started)
 - Have the `wasm32-wasip2` target installed (`rustup target add wasm32-wasip2`)
-- Open the extensions view using the `zed: extensions` action in the command palette.
+- Open the extensions view using the `mav: extensions` action in the command palette.
 - Click the `Install Dev Extension` button in the top right
 - Choose the path to your extension directory.
 

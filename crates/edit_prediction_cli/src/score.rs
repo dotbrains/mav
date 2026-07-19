@@ -872,7 +872,7 @@ mod tests {
         Example {
             spec: ExampleSpec {
                 name: "example".to_string(),
-                repository_url: "https://github.com/zed-industries/zed.git".to_string(),
+                repository_url: "https://github.com/mav-industries/mav.git".to_string(),
                 revision: "revision".to_string(),
                 tags: Vec::new(),
                 reasoning: None,

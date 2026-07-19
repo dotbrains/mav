@@ -1098,7 +1098,7 @@ async fn test_visible_entries_as_strings(cx: &mut TestAppContext) {
                 metadata: ThreadMetadata {
                     thread_id: ThreadId::new(),
                     session_id: Some(acp::SessionId::new(Arc::from("t-1"))),
-                    agent_id: AgentId::new("zed-agent"),
+                    agent_id: AgentId::new("mav-agent"),
                     worktree_paths: WorktreePaths::default(),
                     title: Some("Completed thread".into()),
                     title_override: None,
@@ -1125,7 +1125,7 @@ async fn test_visible_entries_as_strings(cx: &mut TestAppContext) {
                 metadata: ThreadMetadata {
                     thread_id: ThreadId::new(),
                     session_id: Some(acp::SessionId::new(Arc::from("t-2"))),
-                    agent_id: AgentId::new("zed-agent"),
+                    agent_id: AgentId::new("mav-agent"),
                     worktree_paths: WorktreePaths::default(),
                     title: Some("Running thread".into()),
                     title_override: None,
@@ -1152,7 +1152,7 @@ async fn test_visible_entries_as_strings(cx: &mut TestAppContext) {
                 metadata: ThreadMetadata {
                     thread_id: ThreadId::new(),
                     session_id: Some(acp::SessionId::new(Arc::from("t-3"))),
-                    agent_id: AgentId::new("zed-agent"),
+                    agent_id: AgentId::new("mav-agent"),
                     worktree_paths: WorktreePaths::default(),
                     title: Some("Error thread".into()),
                     title_override: None,
@@ -1180,7 +1180,7 @@ async fn test_visible_entries_as_strings(cx: &mut TestAppContext) {
                 metadata: ThreadMetadata {
                     thread_id: ThreadId::new(),
                     session_id: Some(acp::SessionId::new(Arc::from("t-4"))),
-                    agent_id: AgentId::new("zed-agent"),
+                    agent_id: AgentId::new("mav-agent"),
                     worktree_paths: WorktreePaths::default(),
                     title: Some("Waiting thread".into()),
                     title_override: None,
@@ -1208,7 +1208,7 @@ async fn test_visible_entries_as_strings(cx: &mut TestAppContext) {
                 metadata: ThreadMetadata {
                     thread_id: notified_thread_id,
                     session_id: Some(acp::SessionId::new(Arc::from("t-5"))),
-                    agent_id: AgentId::new("zed-agent"),
+                    agent_id: AgentId::new("mav-agent"),
                     worktree_paths: WorktreePaths::default(),
                     title: Some("Notified thread".into()),
                     title_override: None,
@@ -7272,31 +7272,31 @@ async fn test_clicking_absorbed_worktree_thread_activates_worktree_workspace(
 // but the sidebar rebuild's lookups all miss.
 //
 // Real-world setup: a single multi-root workspace whose roots are
-// `[/cloud, /worktrees/zed/wt_a/zed]`, where:
+// `[/cloud, /worktrees/mav/wt_a/mav]`, where:
 //   - `/cloud` is a standalone git repo (main == folder).
-//   - `/worktrees/zed/wt_a/zed` is a linked worktree of `/zed`.
+//   - `/worktrees/mav/wt_a/mav` is a linked worktree of `/mav`.
 //
 // Once git scans complete the project group key is
-// `[/cloud, /zed]` — the main paths of the two roots. A thread
+// `[/cloud, /mav]` — the main paths of the two roots. A thread
 // created in this workspace is written with
-// `main=[/cloud, /zed], folder=[/cloud, /worktrees/zed/wt_a/zed]`
+// `main=[/cloud, /mav], folder=[/cloud, /worktrees/mav/wt_a/mav]`
 // and the sidebar finds it via `entries_for_main_worktree_path`.
 //
 // If some other code path (stale data on reload, a path-less archive
 // restored via the project picker, a legacy write …) persists the
 // thread with `main == folder` instead, the stored
 // `main_worktree_paths` is
-// `[/cloud, /worktrees/zed/wt_a/zed]` ≠ `[/cloud, /zed]`. The three
+// `[/cloud, /worktrees/mav/wt_a/mav]` ≠ `[/cloud, /mav]`. The three
 // lookups in `rebuild_contents` all miss:
 //
-//   1. `entries_for_main_worktree_path([/cloud, /zed])` — the
+//   1. `entries_for_main_worktree_path([/cloud, /mav])` — the
 //      thread's stored main doesn't equal the group key.
-//   2. `entries_for_path([/cloud, /zed])` — the thread's folder paths
+//   2. `entries_for_path([/cloud, /mav])` — the thread's folder paths
 //      don't equal the group key either.
 //   3. The linked-worktree fallback iterates the group's workspaces'
 //      `linked_worktrees()` snapshots. Those yield *sibling* linked
 //      worktrees of the repo, not the workspace's own roots, so the
-//      thread's folder `/worktrees/zed/wt_a/zed` doesn't match.
+//      thread's folder `/worktrees/mav/wt_a/mav` doesn't match.
 //
 // The row falls out of the sidebar entirely — matching the user's
 // symptom of a thread visible in the agent panel but missing from
@@ -7333,10 +7333,10 @@ async fn test_sidebar_keeps_multi_root_thread_with_stale_main_paths(cx: &mut Tes
     )
     .await;
 
-    // Separate /zed repo whose linked worktree will form the second
-    // workspace root. /zed itself is NOT opened as a workspace root.
+    // Separate /mav repo whose linked worktree will form the second
+    // workspace root. /mav itself is NOT opened as a workspace root.
     fs.insert_tree(
-        "/zed",
+        "/mav",
         serde_json::json!({
             ".git": {},
             "src": {},
@@ -7344,18 +7344,18 @@ async fn test_sidebar_keeps_multi_root_thread_with_stale_main_paths(cx: &mut Tes
     )
     .await;
     fs.insert_tree(
-        "/worktrees/zed/wt_a/zed",
+        "/worktrees/mav/wt_a/mav",
         serde_json::json!({
-            ".git": "gitdir: /zed/.git/worktrees/wt_a",
+            ".git": "gitdir: /mav/.git/worktrees/wt_a",
             "src": {},
         }),
     )
     .await;
     fs.add_linked_worktree_for_repo(
-        Path::new("/zed/.git"),
+        Path::new("/mav/.git"),
         false,
         git::repository::Worktree {
-            path: std::path::PathBuf::from("/worktrees/zed/wt_a/zed"),
+            path: std::path::PathBuf::from("/worktrees/mav/wt_a/mav"),
             ref_name: Some("refs/heads/wt_a".into()),
             sha: "aaa".into(),
             is_main: false,
@@ -7367,10 +7367,10 @@ async fn test_sidebar_keeps_multi_root_thread_with_stale_main_paths(cx: &mut Tes
     cx.update(|cx| <dyn fs::Fs>::set_global(fs.clone(), cx));
 
     // Single multi-root project with both /cloud and the linked
-    // worktree of /zed.
+    // worktree of /mav.
     let project = project::Project::test(
         fs.clone(),
-        ["/cloud".as_ref(), "/worktrees/zed/wt_a/zed".as_ref()],
+        ["/cloud".as_ref(), "/worktrees/mav/wt_a/mav".as_ref()],
         cx,
     )
     .await;
@@ -7385,22 +7385,22 @@ async fn test_sidebar_keeps_multi_root_thread_with_stale_main_paths(cx: &mut Tes
 
     // Sanity-check the shapes the rest of the test depends on.
     let group_key = workspace.read_with(cx, |ws, cx| ws.project_group_key(cx));
-    let expected_main_paths = PathList::new(&[PathBuf::from("/cloud"), PathBuf::from("/zed")]);
+    let expected_main_paths = PathList::new(&[PathBuf::from("/cloud"), PathBuf::from("/mav")]);
     assert_eq!(
         group_key.path_list(),
         &expected_main_paths,
         "expected the multi-root workspace's project group key to normalize to \
-         [/cloud, /zed] (main of the standalone repo + main of the linked worktree)"
+         [/cloud, /mav] (main of the standalone repo + main of the linked worktree)"
     );
 
     let folder_paths = PathList::new(&[
         PathBuf::from("/cloud"),
-        PathBuf::from("/worktrees/zed/wt_a/zed"),
+        PathBuf::from("/worktrees/mav/wt_a/mav"),
     ]);
     let workspace_root_paths = workspace.read_with(cx, |ws, cx| PathList::new(&ws.root_paths(cx)));
     assert_eq!(
         workspace_root_paths, folder_paths,
-        "expected the workspace's root paths to equal [/cloud, /worktrees/zed/wt_a/zed]"
+        "expected the workspace's root paths to equal [/cloud, /worktrees/mav/wt_a/mav]"
     );
 
     let session_id = acp::SessionId::new(Arc::from("multi-root-stale-paths"));

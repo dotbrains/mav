@@ -481,7 +481,7 @@ mod tests {
         // (`/var/folders/...`) overflow the `sun_path` limit for Unix sockets.
         // `TempDir` still cleans up on drop, even if the test panics.
         let temp_dir = tempfile::Builder::new()
-            .prefix("zed-sock-")
+            .prefix("mav-sock-")
             .tempdir_in("/tmp")
             .unwrap();
         let socket_path = temp_dir.path().join("agent.sock");
@@ -690,7 +690,7 @@ mod tests {
     #[test]
     fn test_generate_seatbelt_config_emits_one_subpath_per_writable_directory() {
         let project_dir = PathBuf::from("/Users/test/projects/myproject");
-        let scratch_dir = PathBuf::from("/private/tmp/zed-agent-command");
+        let scratch_dir = PathBuf::from("/private/tmp/mav-agent-command");
         let config = generate_seatbelt_config(
             &[project_dir.as_path(), scratch_dir.as_path()],
             &[],
@@ -700,7 +700,7 @@ mod tests {
         .unwrap();
 
         assert!(config.contains("/Users/test/projects/myproject"));
-        assert!(config.contains("/private/tmp/zed-agent-command"));
+        assert!(config.contains("/private/tmp/mav-agent-command"));
         assert!(!config.contains("; Allow unrestricted filesystem writes"));
         assert!(!config.contains("(allow network*)"));
     }
@@ -936,7 +936,7 @@ mod tests {
         use std::process::Command;
 
         let project_dir = tempfile::tempdir().unwrap();
-        let test_file = PathBuf::from("/tmp/zed-sandbox-write-test");
+        let test_file = PathBuf::from("/tmp/mav-sandbox-write-test");
         let _ = std::fs::remove_file(&test_file);
 
         let (program, args, _config_file) = wrap_invocation(
@@ -976,7 +976,7 @@ mod tests {
         let project_dir = tempfile::tempdir().unwrap();
         let forbidden_file = std::env::home_dir()
             .unwrap()
-            .join(".zed-sandbox-forbidden-write-test");
+            .join(".mav-sandbox-forbidden-write-test");
         let _ = std::fs::remove_file(&forbidden_file);
 
         let (program, args, _config_file) = wrap_invocation(

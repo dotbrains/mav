@@ -298,7 +298,7 @@ impl DevContainerManifest {
         let mut hasher = DefaultHasher::new();
         let prefix = match &self.dev_container().name {
             Some(name) => &safe_id_lower(name),
-            None => "zed-dc",
+            None => "mav-dc",
         };
         let prefix = prefix.get(..6).unwrap_or(prefix);
         let prefix = prefix.trim_matches(|c: char| !c.is_alphanumeric());
@@ -428,7 +428,7 @@ impl DevContainerManifest {
         let root_image_tag = self.get_base_image_from_config().await?;
         let root_image = self.docker_client.inspect(&root_image_tag).await?;
 
-        let temp_base = std::env::temp_dir().join("devcontainer-zed");
+        let temp_base = std::env::temp_dir().join("devcontainer-mav");
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_millis())
@@ -1038,7 +1038,7 @@ RUN sed -i -E 's/((^|\s)PATH=)([^\$]*)$/\1\${{PATH:-\3}}/g' /etc/profile || true
                 volumes: HashMap::new(),
             };
 
-            let temp_base = std::env::temp_dir().join("devcontainer-zed");
+            let temp_base = std::env::temp_dir().join("devcontainer-mav");
             let config_location = temp_base.join("docker_compose_build.json");
 
             let config_json = serde_json_lenient::to_string(&build_override).map_err(|e| {
@@ -1135,7 +1135,7 @@ RUN sed -i -E 's/((^|\s)PATH=)([^\$]*)$/\1\${{PATH:-\3}}/g' /etc/profile || true
                     volumes: HashMap::new(),
                 };
 
-                let temp_base = std::env::temp_dir().join("devcontainer-zed");
+                let temp_base = std::env::temp_dir().join("devcontainer-mav");
                 let config_location = temp_base.join("docker_compose_build.json");
 
                 let config_json = serde_json_lenient::to_string(&build_override).map_err(|e| {
@@ -1199,7 +1199,7 @@ RUN sed -i -E 's/((^|\s)PATH=)([^\$]*)$/\1\${{PATH:-\3}}/g' /etc/profile || true
     ) -> Result<PathBuf, DevContainerError> {
         let config =
             self.build_runtime_override(main_service_name, network_mode_service, resources)?;
-        let temp_base = std::env::temp_dir().join("devcontainer-zed");
+        let temp_base = std::env::temp_dir().join("devcontainer-mav");
         let config_location = temp_base.join("docker_compose_runtime.json");
 
         let config_json = serde_json_lenient::to_string(&config).map_err(|e| {
@@ -2030,7 +2030,7 @@ RUN sed -i -E 's/((^|\s)PATH=)([^\$]*)$/\1\${PATH:-\3}/g' /etc/profile || true
         self.dev_container()
             .customizations
             .as_ref()
-            .map(|c| c.zed.extensions.clone())
+            .map(|c| c.mav.extensions.clone())
             .unwrap_or_default()
     }
 
@@ -3708,7 +3708,7 @@ mod test {
                     "GitHub.vscode-pull-request-github",
                   ],
                 },
-                "zed": {
+                "mav": {
                   "extensions": ["vue", "ruby"],
                 },
                 "codespaces": {
@@ -5238,7 +5238,7 @@ ENV DOCKER_BUILDKIT=1
                     "GitHub.vscode-pull-request-github",
                   ],
                 },
-                "zed": {
+                "mav": {
                   "extensions": ["vue", "ruby"],
                 },
                 "codespaces": {

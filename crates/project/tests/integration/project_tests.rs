@@ -257,7 +257,7 @@ async fn test_editorconfig_support(cx: &mut gpui::TestAppContext) {
             tab_width = 10
             max_line_length = off
         "#,
-        ".zed": {
+        ".mav": {
             "settings.json": r#"{
                 "tab_size": 8,
                 "hard_tabs": false,
@@ -326,7 +326,7 @@ async fn test_editorconfig_support(cx: &mut gpui::TestAppContext) {
     let settings_d = settings_for("d/d.rs", cx).await;
     let settings_e = settings_for("e/e.rs", cx).await;
     let settings_readme = settings_for("README.json", cx).await;
-    // .editorconfig overrides .zed/settings
+    // .editorconfig overrides .mav/settings
     assert_eq!(Some(settings_a.tab_size), NonZeroU32::new(3));
     assert_eq!(settings_a.hard_tabs, true);
     assert_eq!(settings_a.ensure_final_newline_on_save, true);
@@ -344,13 +344,13 @@ async fn test_editorconfig_support(cx: &mut gpui::TestAppContext) {
     assert_eq!(Some(settings_e.tab_size), NonZeroU32::new(5));
     assert_eq!(settings_e.hard_tabs, false);
     // An empty value opts out of the inherited `max_line_length = 120`,
-    // falling back to .zed/settings.json instead of rejecting the whole file.
+    // falling back to .mav/settings.json instead of rejecting the whole file.
     assert_eq!(settings_e.preferred_line_length, 64);
 
     // "indent_size" is not set, so "tab_width" is used
     assert_eq!(Some(settings_c.tab_size), NonZeroU32::new(10));
 
-    // When max_line_length is "off", default to .zed/settings.json
+    // When max_line_length is "off", default to .mav/settings.json
     assert_eq!(settings_b.preferred_line_length, 64);
     assert_eq!(settings_c.preferred_line_length, 64);
 
@@ -929,7 +929,7 @@ async fn test_git_provider_project_setting(cx: &mut gpui::TestAppContext) {
     fs.insert_tree(
         path!("/dir"),
         json!({
-            ".zed": {
+            ".mav": {
                 "settings.json": r#"{
                     "git_hosting_providers": [
                         {
@@ -960,7 +960,7 @@ async fn test_git_provider_project_setting(cx: &mut gpui::TestAppContext) {
     });
 
     fs.atomic_write(
-        Path::new(path!("/dir/.zed/settings.json")).to_owned(),
+        Path::new(path!("/dir/.mav/settings.json")).to_owned(),
         "{}".into(),
     )
     .await
@@ -988,7 +988,7 @@ async fn test_managing_project_specific_settings(cx: &mut gpui::TestAppContext) 
     fs.insert_tree(
         path!("/dir"),
         json!({
-            ".zed": {
+            ".mav": {
                 "settings.json": r#"{ "tab_size": 8 }"#,
                 "tasks.json": r#"[{
                     "label": "cargo check all",
@@ -1000,7 +1000,7 @@ async fn test_managing_project_specific_settings(cx: &mut gpui::TestAppContext) 
                 "a.rs": "fn a() {\n    A\n}"
             },
             "b": {
-                ".zed": {
+                ".mav": {
                     "settings.json": r#"{ "tab_size": 2 }"#,
                     "tasks.json": r#"[{
                         "label": "cargo check",
@@ -1030,8 +1030,8 @@ async fn test_managing_project_specific_settings(cx: &mut gpui::TestAppContext) 
 
     let topmost_local_task_source_kind = TaskSourceKind::Worktree {
         id: worktree_id,
-        directory_in_worktree: rel_path(".zed").into(),
-        id_base: "local worktree tasks from directory \".zed\"".into(),
+        directory_in_worktree: rel_path(".mav").into(),
+        id_base: "local worktree tasks from directory \".mav\"".into(),
     };
 
     let buffer_a = project
@@ -1074,8 +1074,8 @@ async fn test_managing_project_specific_settings(cx: &mut gpui::TestAppContext) 
             (
                 TaskSourceKind::Worktree {
                     id: worktree_id,
-                    directory_in_worktree: rel_path("b/.zed").into(),
-                    id_base: "local worktree tasks from directory \"b/.zed\"".into()
+                    directory_in_worktree: rel_path("b/.mav").into(),
+                    id_base: "local worktree tasks from directory \"b/.mav\"".into()
                 },
                 "cargo check".to_string(),
                 vec!["check".to_string()],
@@ -1155,8 +1155,8 @@ async fn test_managing_project_specific_settings(cx: &mut gpui::TestAppContext) 
             (
                 TaskSourceKind::Worktree {
                     id: worktree_id,
-                    directory_in_worktree: rel_path("b/.zed").into(),
-                    id_base: "local worktree tasks from directory \"b/.zed\"".into()
+                    directory_in_worktree: rel_path("b/.mav").into(),
+                    id_base: "local worktree tasks from directory \"b/.mav\"".into()
                 },
                 "cargo check".to_string(),
                 vec!["check".to_string()],
@@ -1187,13 +1187,13 @@ async fn test_invalid_local_tasks_shows_toast_with_doc_link(cx: &mut gpui::TestA
     init_test(cx);
     TaskStore::init(None);
 
-    // We need to start with a valid `.zed/tasks.json` file as otherwise the
+    // We need to start with a valid `.mav/tasks.json` file as otherwise the
     // event is emitted before we havd a chance to setup the event subscription.
     let fs = FakeFs::new(cx.executor());
     fs.insert_tree(
         path!("/dir"),
         json!({
-            ".zed": {
+            ".mav": {
                 "tasks.json": r#"[{ "label": "valid task", "command": "echo" }]"#,
             },
             "file.rs": ""
@@ -1204,10 +1204,10 @@ async fn test_invalid_local_tasks_shows_toast_with_doc_link(cx: &mut gpui::TestA
     let project = Project::test(fs.clone(), [path!("/dir").as_ref()], cx).await;
     let saw_toast = Rc::new(RefCell::new(false));
 
-    // Update the `.zed/tasks.json` file with an invalid variable, so we can
+    // Update the `.mav/tasks.json` file with an invalid variable, so we can
     // later assert that the `Event::Toast` even is emitted.
     fs.save(
-        path!("/dir/.zed/tasks.json").as_ref(),
+        path!("/dir/.mav/tasks.json").as_ref(),
         &r#"[{ "label": "test $ZED_FOO", "command": "echo" }]"#.into(),
         Default::default(),
     )
@@ -1225,7 +1225,7 @@ async fn test_invalid_local_tasks_shows_toast_with_doc_link(cx: &mut gpui::TestA
             } => {
                 assert!(notification_id.starts_with("local-tasks-"));
                 assert!(message.contains("ZED_FOO"));
-                assert_eq!(*url, "https://zed.dev/docs/tasks");
+                assert_eq!(*url, "https://mav.dev/docs/tasks");
                 *saw_toast.borrow_mut() = true;
             }
             _ => {}
@@ -1249,7 +1249,7 @@ async fn test_fallback_to_single_worktree_tasks(cx: &mut gpui::TestAppContext) {
     fs.insert_tree(
         path!("/dir"),
         json!({
-            ".zed": {
+            ".mav": {
                 "tasks.json": r#"[{
                     "label": "test worktree root",
                     "command": "echo $ZED_WORKTREE_ROOT"
@@ -1324,8 +1324,8 @@ async fn test_fallback_to_single_worktree_tasks(cx: &mut gpui::TestAppContext) {
         vec![(
             TaskSourceKind::Worktree {
                 id: worktree_id,
-                directory_in_worktree: rel_path(".zed").into(),
-                id_base: "local worktree tasks from directory \".zed\"".into(),
+                directory_in_worktree: rel_path(".mav").into(),
+                id_base: "local worktree tasks from directory \".mav\"".into(),
             },
             "echo /dir".to_string(),
         )]
@@ -1384,7 +1384,7 @@ async fn test_running_multiple_instances_of_a_single_server_in_one_worktree(
     fs.insert_tree(
         path!("/the-root"),
         json!({
-            ".zed": {
+            ".mav": {
                 "settings.json": r#"
                 {
                     "languages": {
@@ -2062,7 +2062,7 @@ async fn test_language_server_relative_path(cx: &mut gpui::TestAppContext) {
     fs.insert_tree(
         path!("/the-root"),
         json!({
-            ".zed": {
+            ".mav": {
                 "settings.json": settings_json_contents.to_string(),
             },
             ".relative_path": {
@@ -2139,7 +2139,7 @@ async fn test_language_server_tilde_path(cx: &mut gpui::TestAppContext) {
     fs.insert_tree(
         path!("/root"),
         json!({
-            ".zed": {
+            ".mav": {
                 "settings.json": settings_json_contents.to_string(),
             },
             "src": {
@@ -13556,14 +13556,14 @@ async fn test_initial_scan_complete(cx: &mut gpui::TestAppContext) {
         json!({
             "a": {
                 ".git": {},
-                ".zed": {
+                ".mav": {
                     "tasks.json": r#"[{"label": "task-a", "command": "echo a"}]"#
                 },
                 "src": { "main.rs": "" }
             },
             "b": {
                 ".git": {},
-                ".zed": {
+                ".mav": {
                     "tasks.json": r#"[{"label": "task-b", "command": "echo b"}]"#
                 },
                 "src": { "lib.rs": "" }
@@ -13818,9 +13818,9 @@ fn git_cmd(work_dir: &Path) -> Command {
         .env("GIT_CONFIG_GLOBAL", "")
         .env("GIT_CONFIG_SYSTEM", "")
         .env("GIT_AUTHOR_NAME", "test")
-        .env("GIT_AUTHOR_EMAIL", "test@zed.dev")
+        .env("GIT_AUTHOR_EMAIL", "test@mav.dev")
         .env("GIT_COMMITTER_NAME", "test")
-        .env("GIT_COMMITTER_EMAIL", "test@zed.dev");
+        .env("GIT_COMMITTER_EMAIL", "test@mav.dev");
     cmd
 }
 

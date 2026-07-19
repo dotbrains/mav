@@ -106,7 +106,7 @@ def import_modal_app(args: argparse.Namespace):
 class AppNotDeployedError(RuntimeError):
     """Raised when a Modal function lookup fails because the app (or that
     specific function) has not been deployed. Surfaced as a clean CLI error
-    pointing the user at `zed-eval deploy`.
+    pointing the user at `mav-eval deploy`.
     """
 
 
@@ -116,7 +116,7 @@ def deploy_app(args: argparse.Namespace) -> None:
     Deploying replaces the live app and cancels any in-flight eval runs, so it
     must happen exclusively via the `deploy` subcommand. Every other command
     just looks up already-deployed functions with `deployed_function`. After
-    changing harness code, run `zed-eval deploy` once.
+    changing harness code, run `mav-eval deploy` once.
     """
     modal_app = import_modal_app(args)
     print(f"Deploying Modal app '{args.app_name}'...")
@@ -141,7 +141,7 @@ def deployed_function(args: argparse.Namespace, function_name: str):
     except NotFoundError as error:
         raise AppNotDeployedError(
             f"app '{args.app_name}' not deployed (or function "
-            f"'{function_name}' missing) — run 'zed-eval deploy' first"
+            f"'{function_name}' missing) — run 'mav-eval deploy' first"
         ) from error
     return function
 

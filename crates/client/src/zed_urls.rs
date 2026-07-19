@@ -2,7 +2,7 @@
 //!
 //! These URLs will adapt to the configured server URL in order to construct
 //! links appropriate for the environment (e.g., by linking to a local copy of
-//! zed.dev in development).
+//! mav.dev in development).
 
 use gpui::App;
 use release_channel::ReleaseChannel;
@@ -29,12 +29,12 @@ fn docs_url(cx: &App) -> String {
     }
 }
 
-/// Returns the URL to the account page on zed.dev.
+/// Returns the URL to the account page on mav.dev.
 pub fn account_url(cx: &App) -> String {
     format!("{server_url}/account", server_url = server_url(cx))
 }
 
-/// Returns the URL to the start trial page on zed.dev.
+/// Returns the URL to the start trial page on mav.dev.
 pub fn start_trial_url(cx: &App) -> String {
     format!(
         "{server_url}/account/start-trial",
@@ -42,7 +42,7 @@ pub fn start_trial_url(cx: &App) -> String {
     )
 }
 
-/// Returns the URL to the upgrade page on zed.dev.
+/// Returns the URL to the upgrade page on mav.dev.
 pub fn upgrade_to_zed_pro_url(cx: &App) -> String {
     format!("{server_url}/account/upgrade", server_url = server_url(cx))
 }
@@ -52,7 +52,7 @@ pub fn terms_of_service(cx: &App) -> String {
     format!("{server_url}/terms-of-service", server_url = server_url(cx))
 }
 
-/// Returns the URL to Zed AI's privacy and security docs.
+/// Returns the URL to Mav AI's privacy and security docs.
 pub fn ai_privacy_and_security(cx: &App) -> String {
     format!(
         "{docs_url}/ai/privacy-and-security",
@@ -78,5 +78,5 @@ pub fn acp_registry_blog(cx: &App) -> String {
 }
 
 pub fn shared_agent_thread_url(session_id: &str) -> String {
-    format!("zed://agent/shared/{}", session_id)
+    format!("mav://agent/shared/{}", session_id)
 }

@@ -142,9 +142,9 @@ let
         lld
         (cargo-bundle.overrideAttrs (
           new: old: {
-            version = "0.6.1-zed";
+            version = "0.6.1-mav";
             src = fetchFromGitHub {
-              owner = "zed-industries";
+              owner = "mav-industries";
               repo = "cargo-bundle";
               rev = "2be2669972dff3ddd4daf89a2cb29d2d06cad7c7";
               hash = "sha256-cSvW0ND148AGdIGWg/ku0yIacVgW+9f1Nsi+kAQxVrI=";

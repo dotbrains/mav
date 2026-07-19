@@ -15,13 +15,13 @@ use settings::{EditPredictionDataCollectionChoice, update_settings_file};
 
 use crate::{BufferEditPrediction, EditPredictionStore};
 
-pub struct ZedEditPredictionDelegate {
+pub struct MavEditPredictionDelegate {
     store: Entity<EditPredictionStore>,
     project: Entity<Project>,
     singleton_buffer: Option<Entity<Buffer>>,
 }
 
-impl ZedEditPredictionDelegate {
+impl MavEditPredictionDelegate {
     pub fn new(
         project: Entity<Project>,
         singleton_buffer: Option<Entity<Buffer>>,
@@ -47,9 +47,9 @@ impl ZedEditPredictionDelegate {
     }
 }
 
-impl EditPredictionDelegate for ZedEditPredictionDelegate {
+impl EditPredictionDelegate for MavEditPredictionDelegate {
     fn name() -> &'static str {
-        "zed-predict"
+        "mav-predict"
     }
 
     fn display_name() -> &'static str {

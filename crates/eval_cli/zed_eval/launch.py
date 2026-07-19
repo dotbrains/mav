@@ -213,8 +213,8 @@ def command_rejudge(args: argparse.Namespace) -> int:
     print(f"Judge:      {rejudge_request['judge_preset']}")
     print(f"Spawned rejudge controller: {modal_call_id(call)}")
     print("\nNext steps (run id alone is enough):")
-    print(f"  zed-eval status {rejudge_request['run_id']}")
-    print(f"  zed-eval report {rejudge_request['run_id']} --fetch")
+    print(f"  mav-eval status {rejudge_request['run_id']}")
+    print(f"  mav-eval report {rejudge_request['run_id']} --fetch")
     return 0
 
 
@@ -401,9 +401,9 @@ def launch_prepared_run(
         "\nNext steps (run id alone is enough; namespace/experiment are resolved "
         "from this machine's local run index):"
     )
-    print(f"  zed-eval status {run_id}")
-    print(f"  zed-eval logs {run_id}")
-    print(f"  zed-eval report {run_id} --fetch")
+    print(f"  mav-eval status {run_id}")
+    print(f"  mav-eval logs {run_id}")
+    print(f"  mav-eval report {run_id} --fetch")
 
 
 def resolve_benchmark_judge(

@@ -914,7 +914,7 @@ impl AcpConnection {
         // `ConnectionTo<Agent>` once the transport handshake is ready.
         let (connection_tx, connection_rx) = futures::channel::oneshot::channel();
         let connection_future =
-            connect_client_future("zed", transport, dispatch_tx.clone(), connection_tx);
+            connect_client_future("mav", transport, dispatch_tx.clone(), connection_tx);
         let io_task = cx.background_spawn(async move {
             if let Err(err) = connection_future.await {
                 log::error!("ACP connection error: {err}");
@@ -968,7 +968,7 @@ impl AcpConnection {
                         cx.update(|cx| cx.has_flag::<AcpBetaFeatureFlag>()),
                     ))
                     .client_info(
-                        acp::Implementation::new("zed", version)
+                        acp::Implementation::new("mav", version)
                             .title(release_channel.map(ToOwned::to_owned)),
                     ),
             )
@@ -2451,7 +2451,7 @@ pub mod test_support {
 
         let (connection_tx, connection_rx) = futures::channel::oneshot::channel();
         let client_future = connect_client_future(
-            "zed-test",
+            "mav-test",
             client_transport,
             dispatch_tx.clone(),
             connection_tx,
@@ -3498,7 +3498,7 @@ mod tests {
 
         let (connection_tx, connection_rx) = futures::channel::oneshot::channel();
         let client_future = connect_client_future(
-            "zed-test",
+            "mav-test",
             client_transport,
             dispatch_tx.clone(),
             connection_tx,

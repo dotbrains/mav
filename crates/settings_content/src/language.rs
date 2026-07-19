@@ -83,7 +83,7 @@ pub enum EditPredictionProvider {
     None,
     #[default]
     Copilot,
-    Zed,
+    Mav,
     Codestral,
     Ollama,
     OpenAiCompatibleApi,
@@ -93,7 +93,7 @@ pub enum EditPredictionProvider {
 impl EditPredictionProvider {
     pub fn is_zed(&self) -> bool {
         match self {
-            EditPredictionProvider::Zed => true,
+            EditPredictionProvider::Mav => true,
             EditPredictionProvider::None
             | EditPredictionProvider::Copilot
             | EditPredictionProvider::Codestral
@@ -105,7 +105,7 @@ impl EditPredictionProvider {
 
     pub fn display_name(&self) -> Option<&'static str> {
         match self {
-            EditPredictionProvider::Zed => Some("Zed AI"),
+            EditPredictionProvider::Mav => Some("Mav AI"),
             EditPredictionProvider::Copilot => Some("GitHub Copilot"),
             EditPredictionProvider::Codestral => Some("Codestral"),
             EditPredictionProvider::Mercury => Some("Mercury"),

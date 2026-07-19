@@ -664,7 +664,7 @@ fn handle_postprocessing() -> Result<()> {
         .expect("has output")
         .as_table_mut()
         .expect("output is table");
-    let zed_html = output.remove("zed-html").expect("zed-html output defined");
+    let zed_html = output.remove("mav-html").expect("mav-html output defined");
     let default_description = zed_html
         .get("default-description")
         .expect("Default description not found")

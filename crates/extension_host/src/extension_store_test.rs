@@ -224,9 +224,9 @@ async fn test_extension_store(cx: &mut TestAppContext) {
         "/the-extension-dir",
         json!({
             "installed": {
-                "zed-monokai": {
+                "mav-monokai": {
                     "extension.json": r#"{
-                        "id": "zed-monokai",
+                        "id": "mav-monokai",
                         "name": "Zed Monokai",
                         "version": "2.0.0",
                         "themes": {
@@ -271,9 +271,9 @@ async fn test_extension_store(cx: &mut TestAppContext) {
                         }"#,
                     }
                 },
-                "zed-ruby": {
+                "mav-ruby": {
                     "extension.json": r#"{
-                        "id": "zed-ruby",
+                        "id": "mav-ruby",
                         "name": "Zed Ruby",
                         "version": "1.0.0",
                         "grammars": {
@@ -316,10 +316,10 @@ async fn test_extension_store(cx: &mut TestAppContext) {
     let mut expected_index = ExtensionIndex {
         extensions: [
             (
-                "zed-ruby".into(),
+                "mav-ruby".into(),
                 ExtensionIndexEntry {
                     manifest: Arc::new(ExtensionManifest {
-                        id: "zed-ruby".into(),
+                        id: "mav-ruby".into(),
                         name: "Zed Ruby".into(),
                         version: "1.0.0".into(),
                         schema_version: SchemaVersion::ZERO,
@@ -352,10 +352,10 @@ async fn test_extension_store(cx: &mut TestAppContext) {
                 },
             ),
             (
-                "zed-monokai".into(),
+                "mav-monokai".into(),
                 ExtensionIndexEntry {
                     manifest: Arc::new(ExtensionManifest {
-                        id: "zed-monokai".into(),
+                        id: "mav-monokai".into(),
                         name: "Zed Monokai".into(),
                         version: "2.0.0".into(),
                         schema_version: SchemaVersion::ZERO,
@@ -389,7 +389,7 @@ async fn test_extension_store(cx: &mut TestAppContext) {
             (
                 "ERB".into(),
                 ExtensionIndexLanguageEntry {
-                    extension: "zed-ruby".into(),
+                    extension: "mav-ruby".into(),
                     path: "languages/erb".into(),
                     grammar: Some("embedded_template".into()),
                     hidden: false,
@@ -403,7 +403,7 @@ async fn test_extension_store(cx: &mut TestAppContext) {
             (
                 "Ruby".into(),
                 ExtensionIndexLanguageEntry {
-                    extension: "zed-ruby".into(),
+                    extension: "mav-ruby".into(),
                     path: "languages/ruby".into(),
                     grammar: Some("ruby".into()),
                     hidden: false,
@@ -421,28 +421,28 @@ async fn test_extension_store(cx: &mut TestAppContext) {
             (
                 "Monokai Dark".into(),
                 ExtensionIndexThemeEntry {
-                    extension: "zed-monokai".into(),
+                    extension: "mav-monokai".into(),
                     path: "themes/monokai.json".into(),
                 },
             ),
             (
                 "Monokai Light".into(),
                 ExtensionIndexThemeEntry {
-                    extension: "zed-monokai".into(),
+                    extension: "mav-monokai".into(),
                     path: "themes/monokai.json".into(),
                 },
             ),
             (
                 "Monokai Pro Dark".into(),
                 ExtensionIndexThemeEntry {
-                    extension: "zed-monokai".into(),
+                    extension: "mav-monokai".into(),
                     path: "themes/monokai-pro.json".into(),
                 },
             ),
             (
                 "Monokai Pro Light".into(),
                 ExtensionIndexThemeEntry {
-                    extension: "zed-monokai".into(),
+                    extension: "mav-monokai".into(),
                     path: "themes/monokai-pro.json".into(),
                 },
             ),
@@ -509,10 +509,10 @@ async fn test_extension_store(cx: &mut TestAppContext) {
     });
 
     fs.insert_tree(
-        "/the-extension-dir/installed/zed-gruvbox",
+        "/the-extension-dir/installed/mav-gruvbox",
         json!({
             "extension.json": r#"{
-                "id": "zed-gruvbox",
+                "id": "mav-gruvbox",
                 "name": "Zed Gruvbox",
                 "version": "1.0.0",
                 "themes": {
@@ -537,10 +537,10 @@ async fn test_extension_store(cx: &mut TestAppContext) {
     .await;
 
     expected_index.extensions.insert(
-        "zed-gruvbox".into(),
+        "mav-gruvbox".into(),
         ExtensionIndexEntry {
             manifest: Arc::new(ExtensionManifest {
-                id: "zed-gruvbox".into(),
+                id: "mav-gruvbox".into(),
                 name: "Zed Gruvbox".into(),
                 version: "1.0.0".into(),
                 schema_version: SchemaVersion::ZERO,
@@ -567,7 +567,7 @@ async fn test_extension_store(cx: &mut TestAppContext) {
     expected_index.themes.insert(
         "Gruvbox".into(),
         ExtensionIndexThemeEntry {
-            extension: "zed-gruvbox".into(),
+            extension: "mav-gruvbox".into(),
             path: "themes/gruvbox.json".into(),
         },
     );
@@ -676,12 +676,12 @@ async fn test_extension_store(cx: &mut TestAppContext) {
 
     store.update(cx, |store, cx| {
         store
-            .uninstall_extension("zed-ruby".into(), cx)
+            .uninstall_extension("mav-ruby".into(), cx)
             .detach_and_log_err(cx);
     });
 
     cx.executor().advance_clock(RELOAD_DEBOUNCE_DURATION);
-    expected_index.extensions.remove("zed-ruby");
+    expected_index.extensions.remove("mav-ruby");
     expected_index.languages.remove("Ruby");
     expected_index.languages.remove("ERB");
 

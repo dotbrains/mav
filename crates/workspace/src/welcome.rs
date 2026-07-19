@@ -30,7 +30,7 @@ pub struct OpenRecentProject {
 }
 
 actions!(
-    zed,
+    mav,
     [
         /// Show the Zed welcome screen
         ShowWelcome
@@ -347,7 +347,7 @@ impl WelcomePage {
                 h_flex()
                     .gap_1p5()
                     .child(
-                        Icon::new(IconName::ZedAssistant)
+                        Icon::new(IconName::MavAssistant)
                             .color(Color::Muted)
                             .size(IconSize::Small),
                     )
@@ -686,8 +686,8 @@ mod tests {
     #[test]
     fn test_project_name_multiple() {
         // PathList sorts lexicographically, so filenames appear in alpha order
-        let paths = PathList::new(&["/home/user/zed", "/home/user/api"]);
-        assert_eq!(project_name(&paths), "api, zed");
+        let paths = PathList::new(&["/home/user/mav", "/home/user/api"]);
+        assert_eq!(project_name(&paths), "api, mav");
     }
 
     #[test]

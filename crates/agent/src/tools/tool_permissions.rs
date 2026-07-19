@@ -67,12 +67,12 @@ pub async fn canonicalize_worktree_roots<C: gpui::AppContext>(
 ///
 /// This is needed for paths where the leaf (or intermediate directories) don't
 /// exist yet but an ancestor may be a symlink. For example, when creating
-/// `.zed/settings.json` where `.zed` is a symlink to an external directory.
+/// `.mav/settings.json` where `.mav` is a symlink to an external directory.
 ///
 /// Note: intermediate directories *can* be symlinks (not just leaf entries),
 /// so we must walk the full ancestor chain. For example:
-///   `ln -s /external/config /project/.zed`
-/// makes `.zed` an intermediate symlink directory.
+///   `ln -s /external/config /project/.mav`
+/// makes `.mav` an intermediate symlink directory.
 async fn canonicalize_with_ancestors(path: &Path, fs: &dyn Fs) -> Option<PathBuf> {
     let mut current: Option<&Path> = Some(path);
     let mut suffix_components = Vec::new();
@@ -285,28 +285,28 @@ pub async fn resolve_creatable_global_skill_descendant_path(
 }
 
 /// Returns the kind of sensitive settings or agent skills location this path targets, if any:
-/// either inside a `.zed/` local-settings directory, inside `.agents/skills/`, or inside
+/// either inside a `.mav/` local-settings directory, inside `.agents/skills/`, or inside
 /// the global config dir.
 ///
 /// `canonical_worktree_roots` should be the result of
 /// [`canonicalize_worktree_roots`]; it's used to re-check the local
-/// `.zed/` and `.agents/skills/` protections against the canonical form
+/// `.mav/` and `.agents/skills/` protections against the canonical form
 /// of `path`, which catches two classes of bypass that the raw-component
 /// scan misses:
 ///
 ///   1. `..` traversal, e.g. `.agents/foo/../skills/SKILL.md`. The raw
 ///      components are `[.agents, foo, .., skills, SKILL.md]`, so the
 ///      consecutive-pair match in [`is_agents_skills_path`] fails.
-///   2. Intra-project symlinks, e.g. a symlink `safe -> .zed` followed
+///   2. Intra-project symlinks, e.g. a symlink `safe -> .mav` followed
 ///      by `safe/settings.json`. `resolve_project_path` correctly classes
 ///      this as *not* a symlink escape (it stays inside the project), so
 ///      the raw-path check is our only line of defense and it doesn't see
-///      `.zed` either.
+///      `.mav` either.
 ///
 /// After canonicalizing we strip the matching worktree root before
 /// re-scanning components, so that a worktree literally rooted at a path
-/// like `~/projects/.zed/foo` doesn't classify every file inside it as
-/// `.zed/` local-settings — only files that have `.zed` (or
+/// like `~/projects/.mav/foo` doesn't classify every file inside it as
+/// `.mav/` local-settings — only files that have `.mav` (or
 /// `.agents/skills`) inside the worktree are flagged.
 pub async fn sensitive_settings_kind(
     path: &Path,
@@ -317,7 +317,7 @@ pub async fn sensitive_settings_kind(
 
     // Fast path: scan the raw path components before any I/O. Covers the
     // common case where the agent passes a path that literally contains
-    // `.zed/` or `.agents/skills/`.
+    // `.mav/` or `.agents/skills/`.
     if path.components().any(|component| {
         component_matches_ignore_ascii_case(component.as_os_str(), local_settings_folder)
     }) {

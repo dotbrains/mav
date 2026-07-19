@@ -175,7 +175,7 @@ pub(crate) static JOBS: LazyLock<[Job; 22]> = LazyLock::new(|| {
         Job::move_file(p("Zed.exe"), p("old\\Zed.exe")),
         Job::mkdir(p("old\\bin")),
         Job::move_file(p("bin\\Zed.exe"), p("old\\bin\\Zed.exe")),
-        Job::move_file(p("bin\\zed"), p("old\\bin\\zed")),
+        Job::move_file(p("bin\\mav"), p("old\\bin\\mav")),
         //
         // TODO: remove after a few weeks once everyone is on the new version and this file never exists
         Job::move_if_exists(p("OpenConsole.exe"), p("old\\OpenConsole.exe")),
@@ -191,7 +191,7 @@ pub(crate) static JOBS: LazyLock<[Job; 22]> = LazyLock::new(|| {
         // Copy new files
         Job::move_file(p("install\\Zed.exe"), p("Zed.exe")),
         Job::move_file(p("install\\bin\\Zed.exe"), p("bin\\Zed.exe")),
-        Job::move_file(p("install\\bin\\zed"), p("bin\\zed")),
+        Job::move_file(p("install\\bin\\mav"), p("bin\\mav")),
         //
         Job::mkdir_if_exists(p("x64"), p("install\\x64")),
         Job::mkdir_if_exists(p("arm64"), p("install\\arm64")),
@@ -281,7 +281,7 @@ fn release_file_handles(app_dir: &Path) -> Result<()> {
     let files_to_release = [
         app_dir.join("Zed.exe"),
         app_dir.join("bin\\Zed.exe"),
-        app_dir.join("bin\\zed"),
+        app_dir.join("bin\\mav"),
         app_dir.join("conpty.dll"),
     ];
 

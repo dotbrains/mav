@@ -33361,7 +33361,7 @@ async fn test_paste_url_from_other_app_creates_markdown_link_over_selected_text(
 ) {
     init_test(cx, |_| {});
 
-    let url = "https://zed.dev";
+    let url = "https://mav.dev";
 
     let markdown_language = Arc::new(Language::new(
         LanguageConfig {
@@ -33519,7 +33519,7 @@ async fn test_paste_url_from_zed_copy_creates_markdown_link_over_selected_text(
 ) {
     init_test(cx, |_| {});
 
-    let url = "https://zed.dev";
+    let url = "https://mav.dev";
 
     let markdown_language = Arc::new(Language::new(
         LanguageConfig {
@@ -33558,7 +33558,7 @@ async fn test_paste_url_from_other_app_replaces_existing_url_without_creating_ma
 ) {
     init_test(cx, |_| {});
 
-    let url = "https://zed.dev";
+    let url = "https://mav.dev";
 
     let markdown_language = Arc::new(Language::new(
         LanguageConfig {
@@ -33570,14 +33570,14 @@ async fn test_paste_url_from_other_app_replaces_existing_url_without_creating_ma
 
     let mut cx = EditorTestContext::new(cx).await;
     cx.update_buffer(|buffer, cx| buffer.set_language(Some(markdown_language), cx));
-    cx.set_state("Please visit zed's homepage: «https://www.apple.comˇ»");
+    cx.set_state("Please visit mav's homepage: «https://www.apple.comˇ»");
 
     cx.update_editor(|editor, window, cx| {
         cx.write_to_clipboard(ClipboardItem::new_string(url.to_string()));
         editor.paste(&Paste, window, cx);
     });
 
-    cx.assert_editor_state(&format!("Please visit zed's homepage: {url}ˇ"));
+    cx.assert_editor_state(&format!("Please visit mav's homepage: {url}ˇ"));
 }
 
 #[gpui::test]
@@ -33644,7 +33644,7 @@ async fn test_paste_url_from_other_app_without_creating_markdown_link_in_non_mar
 ) {
     init_test(cx, |_| {});
 
-    let url = "https://zed.dev";
+    let url = "https://mav.dev";
 
     let markdown_language = Arc::new(Language::new(
         LanguageConfig {
@@ -33674,7 +33674,7 @@ async fn test_paste_url_from_other_app_creates_markdown_link_selectively_in_mult
 ) {
     init_test(cx, |_| {});
 
-    let url = "https://zed.dev";
+    let url = "https://mav.dev";
 
     let markdown_language = Arc::new(Language::new(
         LanguageConfig {
@@ -35883,7 +35883,7 @@ async fn test_local_worktree_trust(cx: &mut TestAppContext) {
     fs.insert_tree(
         path!("/project"),
         json!({
-            ".zed": {
+            ".mav": {
                 "settings.json": r#"{"languages":{"Rust":{"language_servers":["override-rust-analyzer"]}}}"#
             },
             "main.rs": "fn main() {}"
@@ -35980,7 +35980,7 @@ async fn test_local_worktree_trust(cx: &mut TestAppContext) {
             )
             .language_servers,
             ["...".to_string()],
-            "local .zed/settings.json must not apply before trust approval"
+            "local .mav/settings.json must not apply before trust approval"
         )
     });
 
@@ -36013,7 +36013,7 @@ async fn test_local_worktree_trust(cx: &mut TestAppContext) {
             )
             .language_servers,
             ["override-rust-analyzer".to_string()],
-            "local .zed/settings.json should apply after trust approval"
+            "local .mav/settings.json should apply after trust approval"
         )
     });
     let _fake_language_server = fake_language_server.await.unwrap();

@@ -218,10 +218,10 @@ impl ReleaseChannel {
     /// This also has to match the bundle identifier for Mav on macOS.
     pub fn app_id(&self) -> &'static str {
         match self {
-            ReleaseChannel::Dev => "dev.zed.Mav-Dev",
-            ReleaseChannel::Nightly => "dev.zed.Mav-Nightly",
-            ReleaseChannel::Preview => "dev.zed.Mav-Preview",
-            ReleaseChannel::Stable => "dev.zed.Mav",
+            ReleaseChannel::Dev => "dev.mav.Mav-Dev",
+            ReleaseChannel::Nightly => "dev.mav.Mav-Nightly",
+            ReleaseChannel::Preview => "dev.mav.Mav-Preview",
+            ReleaseChannel::Stable => "dev.mav.Mav",
         }
     }
 

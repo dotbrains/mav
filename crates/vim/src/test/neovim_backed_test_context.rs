@@ -36,14 +36,14 @@ impl SharedState {
     pub fn assert_matches(&self) {
         if self.neovim != self.editor || self.neovim_mode != self.editor_mode {
             panic!(
-                indoc! {"Test failed (zed does not match nvim behavior)
+                indoc! {"Test failed (mav does not match nvim behavior)
                     # initial state:
                     {}
                     # keystrokes:
                     {}
                     # neovim ({}):
                     {}
-                    # zed ({}):
+                    # mav ({}):
                     {}"},
                 self.initial,
                 self.recent_keystrokes,
@@ -80,7 +80,7 @@ impl SharedState {
                 {}
                 # neovim ({}):
                 {}
-                # zed ({}):
+                # mav ({}):
                 {}"},
             message,
             self.initial,
@@ -122,7 +122,7 @@ impl SharedClipboard {
                 {}
                 # currently expected: {:?}
                 # neovim register \"{}: {:?}
-                # zed register \"{}: {:?}"},
+                # mav register \"{}: {:?}"},
             message,
             self.state.initial,
             self.state.recent_keystrokes,

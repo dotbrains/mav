@@ -336,7 +336,7 @@ fn unique_temp_socket_directory() -> PathBuf {
         .map(|duration| duration.as_nanos())
         .unwrap_or(0);
     std::env::temp_dir().join(format!(
-        "zed-proxy-{}-{nanos}-{counter}",
+        "mav-proxy-{}-{nanos}-{counter}",
         std::process::id()
     ))
 }

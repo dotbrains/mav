@@ -43,8 +43,8 @@ class ZedJudgeProxyVerifier(Verifier):
                 "with socket.create_connection(('127.0.0.1', port), timeout=5):\n"
                 "    pass\n"
                 "ZED_PROXY_CHECK_EOF\n"
-                "if [ -f /tmp/zed-judge-proxy.log ]; then "
-                "tail -2 /tmp/zed-judge-proxy.log; fi\n"
+                "if [ -f /tmp/mav-judge-proxy.log ]; then "
+                "tail -2 /tmp/mav-judge-proxy.log; fi\n"
             ),
             user="root",
             env=env,

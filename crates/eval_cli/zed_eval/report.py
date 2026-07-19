@@ -435,7 +435,7 @@ def locate_job_dir(args: Any) -> Path:
         command_fetch(args)
     if not candidate.exists():
         raise ValueError(
-            f"no fetched job at {candidate}. Run `zed-eval fetch {run_id} "
+            f"no fetched job at {candidate}. Run `mav-eval fetch {run_id} "
             f"--experiment-name <benchmark>` first, or pass --job-dir."
         )
     return candidate

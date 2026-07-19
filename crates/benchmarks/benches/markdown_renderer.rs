@@ -157,7 +157,7 @@ fn push_sentence(markdown: &mut String, rng: &mut StdRng) {
                 markdown.push(')');
             }
             4 => {
-                markdown.push_str("https://zed.dev/");
+                markdown.push_str("https://mav.dev/");
                 markdown.push_str(random_identifier(rng));
             }
             _ => markdown.push_str(random_word(rng)),

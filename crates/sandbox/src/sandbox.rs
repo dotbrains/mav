@@ -911,7 +911,7 @@ mod tests {
         assert_eq!(upstream.host, "lower");
         assert_eq!(upstream.port, 1111);
         assert!(upstream.bypasses("internal.example", 443));
-        assert!(!upstream.bypasses("zed.dev", 443));
+        assert!(!upstream.bypasses("mav.dev", 443));
     }
 
     #[test]

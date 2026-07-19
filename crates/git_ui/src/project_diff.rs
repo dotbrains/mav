@@ -1898,7 +1898,7 @@ fn render_send_review_to_agent_button(review_count: usize, focus_handle: &FocusH
         format!("Send Review to Agent ({})", review_count),
     )
     .start_icon(
-        Icon::new(IconName::ZedAssistant)
+        Icon::new(IconName::MavAssistant)
             .size(IconSize::Small)
             .color(Color::Muted),
     )
@@ -2045,7 +2045,7 @@ impl Render for BranchDiffToolbar {
                 this.child(Divider::vertical()).child(
                     Button::new("review-diff", "Review Diff")
                         .start_icon(
-                            Icon::new(IconName::ZedAssistant)
+                            Icon::new(IconName::MavAssistant)
                                 .size(IconSize::Small)
                                 .color(Color::Muted),
                         )

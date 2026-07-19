@@ -1417,7 +1417,7 @@ mod test {
             "
         });
 
-        // https://github.com/zed-industries/zed/issues/6274
+        // https://github.com/mav-industries/mav/issues/6274
         cx.set_shared_state(indoc! {
             "Theˇ quick brown
 

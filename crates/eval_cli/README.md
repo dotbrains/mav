@@ -9,7 +9,7 @@ checked out and model API keys are provided via environment variables.
 Zed editor: a full agentic loop with tool calls, subagents, and retries, without
 a GUI.
 
-This directory also contains `zed_eval/`, the Python `zed-eval` package used to
+This directory also contains `zed_eval/`, the Python `mav-eval` package used to
 build this binary, launch remote benchmark runs on Modal/Harbor/Pier, and fetch
 results. For normal benchmark orchestration, start with
 [`zed_eval/README.md`](zed_eval/README.md).
@@ -64,17 +64,17 @@ and `thread.json` to the output directory.
 
 ## Running benchmarks
 
-Most benchmark runs should use the Python `zed-eval` CLI instead of invoking
+Most benchmark runs should use the Python `mav-eval` CLI instead of invoking
 `eval-cli` directly. From the repository root:
 
 ```sh
-crates/eval_cli/script/install-zed-eval
-zed-eval doctor --create-volume
-zed-eval run rf --from local --n-tasks 2
+crates/eval_cli/script/install-mav-eval
+mav-eval doctor --create-volume
+mav-eval run rf --from local --n-tasks 2
 ```
 
 For one-off source runs without installing the tool globally, use
-`crates/eval_cli/script/zed-eval <args>`.
+`crates/eval_cli/script/mav-eval <args>`.
 
 See [`zed_eval/README.md`](zed_eval/README.md) for supported benchmarks, remote
 builds, Modal setup, reporting, rejudging, baselines, and Harbor/Pier installed

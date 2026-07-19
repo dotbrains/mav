@@ -53,7 +53,7 @@ def resolve_source(
     """Unify the source selectors into
     `(base_sha, clean_source, source_label, pre_resolved_base_sha)`.
 
-    Precedence: `--from` wins over `--zed-version` / `--base-sha`.
+    Precedence: `--from` wins over `--mav-version` / `--base-sha`.
 
       --from local         -> current HEAD + tracked patch (dev iteration)
       --from <ref/tag/sha>  -> clean build of that ref, resolved canonically

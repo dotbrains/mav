@@ -90,12 +90,12 @@ spec:
             - name: ZED_CLIENT_CHECKSUM_SEED
               valueFrom:
                 secretKeyRef:
-                  name: zed-client
+                  name: mav-client
                   key: checksum-seed
             - name: ZED_CLOUD_INTERNAL_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: zed-cloud
+                  name: mav-cloud
                   key: internal-api-key
             - name: LIVEKIT_SERVER
               valueFrom:

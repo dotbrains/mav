@@ -458,7 +458,7 @@ fn send_feedback(
     cx.background_spawn(async move {
         let body = FeedbackRequest {
             request_id,
-            provider_name: "zed",
+            provider_name: "mav",
             user_action: action,
             provider_version: app_version.to_string(),
         };

@@ -1126,7 +1126,7 @@ mod tests {
 
     #[test]
     fn test_merge_settings_preserves_display_names_for_similar_models() {
-        // Regression test for https://github.com/zed-industries/zed/issues/43646
+        // Regression test for https://github.com/mav-industries/mav/issues/43646
         // When multiple models share the same base name (e.g., qwen2.5-coder:1.5b and qwen2.5-coder:3b),
         // each model should get its own display_name from settings, not a random one.
 

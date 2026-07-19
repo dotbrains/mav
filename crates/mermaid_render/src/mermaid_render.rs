@@ -58,7 +58,7 @@
 //!    it's not possible to color nodes individually, and not all parts of the
 //!    diagrams are correctly themed.
 //! 2. `postprocess::accent_colors` injects custom CSS classes (e.g.
-//!    `zed-accent-0`) to specific elements, based on the diagram type and
+//!    `mav-accent-0`) to specific elements, based on the diagram type and
 //!    node.
 //! 3. `postprocess::inject_css` injects CSS rules for the classes applied by
 //!    `accent_colors`

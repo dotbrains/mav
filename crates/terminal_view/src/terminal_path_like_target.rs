@@ -602,7 +602,7 @@ mod tests {
     mod issues {
         use super::*;
 
-        // https://github.com/zed-industries/zed/issues/28407
+        // https://github.com/mav-industries/mav/issues/28407
         #[gpui::test]
         async fn issue_28407_siblings(cx: &mut TestAppContext) {
             test_path_likes!(
@@ -627,9 +627,9 @@ mod tests {
             )
         }
 
-        // https://github.com/zed-industries/zed/issues/28407
-        // See https://github.com/zed-industries/zed/issues/34027
-        // See https://github.com/zed-industries/zed/issues/33498
+        // https://github.com/mav-industries/mav/issues/28407
+        // See https://github.com/mav-industries/mav/issues/34027
+        // See https://github.com/mav-industries/mav/issues/33498
         #[gpui::test]
         async fn issue_28407_nesting(cx: &mut TestAppContext) {
             test_path_likes!(
@@ -683,7 +683,7 @@ mod tests {
             )
         }
 
-        // https://github.com/zed-industries/zed/issues/28339
+        // https://github.com/mav-industries/mav/issues/28339
         #[gpui::test]
         async fn issue_28339(cx: &mut TestAppContext) {
             test_path_likes!(
@@ -740,7 +740,7 @@ mod tests {
             )
         }
 
-        // https://github.com/zed-industries/zed/issues/28339
+        // https://github.com/mav-industries/mav/issues/28339
         #[gpui::test]
         async fn issue_28339_remote(cx: &mut TestAppContext) {
             test_path_likes!(
@@ -791,7 +791,7 @@ mod tests {
             )
         }
 
-        // https://github.com/zed-industries/zed/issues/34027
+        // https://github.com/mav-industries/mav/issues/34027
         #[gpui::test]
         async fn issue_34027(cx: &mut TestAppContext) {
             test_path_likes!(
@@ -817,7 +817,7 @@ mod tests {
             )
         }
 
-        // https://github.com/zed-industries/zed/issues/34027
+        // https://github.com/mav-industries/mav/issues/34027
         #[gpui::test]
         async fn issue_34027_siblings(cx: &mut TestAppContext) {
             test_path_likes!(
@@ -845,7 +845,7 @@ mod tests {
             )
         }
 
-        // https://github.com/zed-industries/zed/issues/34027
+        // https://github.com/mav-industries/mav/issues/34027
         #[gpui::test]
         async fn issue_34027_nesting(cx: &mut TestAppContext) {
             test_path_likes!(
@@ -911,7 +911,7 @@ mod tests {
             )
         }
 
-        // https://github.com/zed-industries/zed/issues/34027
+        // https://github.com/mav-industries/mav/issues/34027
         #[gpui::test]
         async fn issue_34027_non_worktree_local_file(cx: &mut TestAppContext) {
             test_path_likes!(
@@ -938,7 +938,7 @@ mod tests {
             )
         }
 
-        // https://github.com/zed-industries/zed/issues/34027
+        // https://github.com/mav-industries/mav/issues/34027
         #[gpui::test]
         async fn issue_34027_non_worktree_remote_file(cx: &mut TestAppContext) {
             test_path_likes!(
@@ -966,7 +966,7 @@ mod tests {
             )
         }
 
-        // https://github.com/zed-industries/zed/issues/39159
+        // https://github.com/mav-industries/mav/issues/39159
         #[gpui::test]
         async fn issue_39159_remote_absolute_path_outside_worktree(cx: &mut TestAppContext) {
             test_path_likes!(
@@ -999,7 +999,7 @@ mod tests {
             )
         }
 
-        // See https://github.com/zed-industries/zed/issues/34027
+        // See https://github.com/mav-industries/mav/issues/34027
         #[gpui::test]
         #[should_panic(expected = "Tooltip mismatch")]
         async fn issue_34027_gaps(cx: &mut TestAppContext) {
@@ -1026,7 +1026,7 @@ mod tests {
             )
         }
 
-        // See https://github.com/zed-industries/zed/issues/34027
+        // See https://github.com/mav-industries/mav/issues/34027
         #[gpui::test]
         #[should_panic(expected = "Tooltip mismatch")]
         async fn issue_34027_overlap(cx: &mut TestAppContext) {

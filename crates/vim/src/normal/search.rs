@@ -688,7 +688,7 @@ impl Vim {
 }
 
 impl Replacement {
-    // convert a vim query into something more usable by zed.
+    // convert a vim query into something more usable by mav.
     // we don't attempt to fully convert between the two regex syntaxes,
     // but we do flip \( and \) to ( and ) (and vice-versa) in the pattern,
     // convert \0..\9 to $0..$9 in the replacement so that common idioms work,

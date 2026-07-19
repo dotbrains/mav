@@ -4753,8 +4753,8 @@ impl RepositorySnapshot {
     /// The main worktree is the original checkout that other worktrees were
     /// created from.
     ///
-    /// For example, if you had both `~/code/zed` and `~/code/worktrees/zed-2`,
-    /// then `~/code/zed` is the main worktree and `~/code/worktrees/zed-2` is a linked worktree.
+    /// For example, if you had both `~/code/mav` and `~/code/worktrees/mav-2`,
+    /// then `~/code/mav` is the main worktree and `~/code/worktrees/mav-2` is a linked worktree.
     ///
     /// Submodules also return `true` here, since they are not linked worktrees.
     pub fn is_main_worktree(&self) -> bool {
@@ -8997,7 +8997,7 @@ async fn remove_empty_managed_worktree_ancestors(fs: &dyn Fs, child_path: &Path,
 ///   normal checkout, or `.bare` for a bare clone), the parent directory is
 ///   returned. Both of these are internal Git directories; the parent is the
 ///   meaningful project root.
-/// - Otherwise (e.g. `zed.git` for a bare clone), `common_dir` itself is
+/// - Otherwise (e.g. `mav.git` for a bare clone), `common_dir` itself is
 ///   returned — it is already a meaningful on-disk path.
 pub fn repo_identity_path(common_dir: &Path) -> &Path {
     let is_dot_entry = common_dir

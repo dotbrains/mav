@@ -1,4 +1,4 @@
-package zed:extension;
+package mav:extension;
 
 world extension {
     import github;

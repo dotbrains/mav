@@ -80,27 +80,27 @@ pub(crate) fn parse_path_half_height(e: &BytesStart<'_>) -> Option<f64> {
     Some(y.abs())
 }
 
-// These arrays are basically just optimized versions of `format!("zed-accent-{i}")`
+// These arrays are basically just optimized versions of `format!("mav-accent-{i}")`
 const ACCENT_CLASSES: [&str; 8] = [
-    "zed-accent-0",
-    "zed-accent-1",
-    "zed-accent-2",
-    "zed-accent-3",
-    "zed-accent-4",
-    "zed-accent-5",
-    "zed-accent-6",
-    "zed-accent-7",
+    "mav-accent-0",
+    "mav-accent-1",
+    "mav-accent-2",
+    "mav-accent-3",
+    "mav-accent-4",
+    "mav-accent-5",
+    "mav-accent-6",
+    "mav-accent-7",
 ];
 
 const CHART_COLOR_CLASSES: [&str; 8] = [
-    "zed-chart-0",
-    "zed-chart-1",
-    "zed-chart-2",
-    "zed-chart-3",
-    "zed-chart-4",
-    "zed-chart-5",
-    "zed-chart-6",
-    "zed-chart-7",
+    "mav-chart-0",
+    "mav-chart-1",
+    "mav-chart-2",
+    "mav-chart-3",
+    "mav-chart-4",
+    "mav-chart-5",
+    "mav-chart-6",
+    "mav-chart-7",
 ];
 
 pub(crate) fn accent_class_name(index: usize) -> &'static str {

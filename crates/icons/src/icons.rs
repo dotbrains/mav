@@ -294,7 +294,7 @@ pub enum IconName {
     XCircleFilled,
     ZedAgent,
     ZedAgentTwo,
-    ZedAssistant,
+    MavAssistant,
     ZedPredict,
     ZedPredictDisabled,
     ZedPredictDown,

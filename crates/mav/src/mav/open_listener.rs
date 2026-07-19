@@ -4,7 +4,7 @@ use agent_ui::ExternalSourcePrompt;
 use anyhow::{Context as _, Result, anyhow};
 use cli::{CliRequest, CliResponse, CliResponseSink};
 use cli::{IpcHandshake, ipc};
-use client::{MavLink, parse_zed_link};
+use client::{MavLink, parse_mav_link};
 use db::kvp::KeyValueStore;
 use editor::Editor;
 use fs::Fs;
@@ -193,7 +193,7 @@ impl OpenRequest {
                 this.parse_git_commit_url(commit_path)?
             } else if url.starts_with("ssh://") {
                 this.parse_ssh_file_path(&url, cx)?
-            } else if let Some(zed_link) = parse_zed_link(&url, cx) {
+            } else if let Some(zed_link) = parse_mav_link(&url, cx) {
                 match zed_link {
                     MavLink::Channel { channel_id } => {
                         this.join_channel = Some(channel_id);

@@ -30,7 +30,7 @@ use util::{paths::PathExt, shell::ShellKind};
 /// Path to the program used for askpass
 ///
 /// On Unix and remote servers, this defaults to the current executable.
-/// On Windows, this must be set to the CLI variant of zed via set_askpass_program(),
+/// On Windows, this must be set to the CLI variant of mav via set_askpass_program(),
 /// because SSH_ASKPASS must point to a directly executable binary. The CLI binary
 /// handles the ZED_ASKPASS_SOCKET env var to communicate with Zed over a Unix socket
 /// without needing a wrapper script.
@@ -222,10 +222,10 @@ impl PasswordProxy {
         >,
         executor: BackgroundExecutor,
     ) -> Result<Self> {
-        let temp_dir = tempfile::Builder::new().prefix("zed-askpass").tempdir()?;
+        let temp_dir = tempfile::Builder::new().prefix("mav-askpass").tempdir()?;
         let askpass_socket = temp_dir.path().join("askpass.sock");
         let current_exec =
-            std::env::current_exe().context("Failed to determine current zed executable path.")?;
+            std::env::current_exe().context("Failed to determine current mav executable path.")?;
 
         let askpass_program = ASKPASS_PROGRAM.get_or_init(|| current_exec);
 

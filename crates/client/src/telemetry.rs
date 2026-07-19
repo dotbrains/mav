@@ -568,7 +568,7 @@ impl Telemetry {
         match &mut event {
             Event::Flexible(event) => event
                 .event_properties
-                .insert("event_source".into(), "zed".into()),
+                .insert("event_source".into(), "mav".into()),
         };
 
         if state.flush_events_task.is_none() {
@@ -646,7 +646,7 @@ impl Telemetry {
                     .as_ref(),
             )
             .header("Content-Type", "application/json")
-            .header("x-zed-checksum", checksum)
+            .header("x-mav-checksum", checksum)
             .body(json_bytes.into())?)
     }
 

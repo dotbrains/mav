@@ -1141,7 +1141,7 @@ mod tests {
     fn test_build_npm_command_args_inserts_prefix_before_subcommand() {
         let args = build_npm_command_args(
             None,
-            Some(Path::new("/tmp/zed-prefix")),
+            Some(Path::new("/tmp/mav-prefix")),
             Path::new("/tmp/cache"),
             None,
             None,
@@ -1154,7 +1154,7 @@ mod tests {
             args,
             vec![
                 "--prefix".to_string(),
-                "/tmp/zed-prefix".to_string(),
+                "/tmp/mav-prefix".to_string(),
                 "exec".to_string(),
                 "--cache=/tmp/cache".to_string(),
                 "--yes".to_string(),
@@ -1168,7 +1168,7 @@ mod tests {
     fn test_build_npm_command_args_keeps_entrypoint_before_prefix() {
         let args = build_npm_command_args(
             Some(Path::new("/tmp/npm-cli.js")),
-            Some(Path::new("/tmp/zed-prefix")),
+            Some(Path::new("/tmp/mav-prefix")),
             Path::new("/tmp/cache"),
             None,
             None,
@@ -1182,7 +1182,7 @@ mod tests {
             vec![
                 "/tmp/npm-cli.js".to_string(),
                 "--prefix".to_string(),
-                "/tmp/zed-prefix".to_string(),
+                "/tmp/mav-prefix".to_string(),
                 "exec".to_string(),
                 "--cache=/tmp/cache".to_string(),
                 "--yes".to_string(),
