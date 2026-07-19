@@ -571,7 +571,6 @@
      594	crates/context_server/src/client.rs
      593	crates/http_proxy/tests/end_to_end.rs
      591	crates/language_model_core/src/request.rs
-     591	crates/edit_prediction_cli/src/retrieve_context.rs
      588	crates/languages/src/cpp.rs
      588	crates/extension_host/src/wasm_host/wit/since_v0_1_0.rs
      587	crates/proto/proto/mav.proto
