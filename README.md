@@ -12,12 +12,11 @@
 
 `mav` keeps the desktop runtime, extension host, bundled languages, themes, 
 settings, packaging scripts, and reproducible developer environments in one 
-repository. It is intended for dotbrains-maintained builds, local experimentation,
-and extension work without carrying unrelated upstream project material.
+repository.
 
 ```console
 $ gh auth login
-$ git clone https://github.com/dotbrains/mav.git
+$ gh repo clone dotbrains/mav
 $ cd mav
 $ flox activate
 $ cargo run -p mav --bin mav
@@ -33,12 +32,12 @@ See [docs/README.md](docs/README.md) for the full documentation index,
 
 ## Install
 
-This repository is private. Authenticate with GitHub before cloning or fetching
+Authenticate with GitHub before cloning or fetching
 release artifacts:
 
 ```sh
 gh auth login
-git clone https://github.com/dotbrains/mav.git
+gh repo clone dotbrains/mav
 cd mav
 ```
 
