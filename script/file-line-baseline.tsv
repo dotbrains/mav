@@ -561,7 +561,6 @@
      637	crates/paths/src/paths.rs
      634	crates/open_ai/src/responses.rs
      629	crates/json_schema_store/src/json_schema_store.rs
-     624	crates/vim/src/test/neovim_connection.rs
      616	crates/gpui/examples/shadow.rs
      612	crates/ui/src/components/button/button.rs
      611	crates/gpui/src/tab_stop.rs

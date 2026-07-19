@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 #[cfg(feature = "neovim")]
 use std::{
     cmp,
@@ -21,7 +20,6 @@ use nvim_rs::{
 };
 #[cfg(feature = "neovim")]
 use parking_lot::ReentrantMutex;
-use serde::{Deserialize, Serialize};
 #[cfg(feature = "neovim")]
 use tokio::{
     process::{Child, ChildStdin, Command},
@@ -31,23 +29,30 @@ use tokio::{
 use crate::state::Mode;
 use collections::VecDeque;
 
+#[path = "neovim_connection/data.rs"]
+mod data;
+#[cfg(feature = "neovim")]
+#[path = "neovim_connection/handler.rs"]
+mod handler;
+#[cfg(not(feature = "neovim"))]
+#[path = "neovim_connection/replay.rs"]
+mod replay;
+
+use data::NeovimData;
+#[cfg(not(feature = "neovim"))]
+use data::read_test_data;
+#[cfg(feature = "neovim")]
+use data::write_test_data;
+#[cfg(feature = "neovim")]
+use handler::NvimHandler;
+
 // Neovim doesn't like to be started simultaneously from multiple threads. We use this lock
 // to ensure we are only constructing one neovim connection at a time.
 #[cfg(feature = "neovim")]
 static NEOVIM_LOCK: ReentrantMutex<()> = ReentrantMutex::new(());
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub enum NeovimData {
-    Put { state: String },
-    Key(String),
-    Get { state: String, mode: Mode },
-    ReadRegister { name: char, value: String },
-    Exec { command: String },
-    SetOption { value: String },
-}
-
 pub struct NeovimConnection {
-    data: VecDeque<NeovimData>,
+    pub(super) data: VecDeque<NeovimData>,
     #[cfg(feature = "neovim")]
     test_case_id: String,
     #[cfg(feature = "neovim")]
@@ -102,7 +107,7 @@ impl NeovimConnection {
             #[cfg(feature = "neovim")]
             data: Default::default(),
             #[cfg(not(feature = "neovim"))]
-            data: Self::read_test_data(&test_case_id),
+            data: read_test_data(&test_case_id),
             #[cfg(feature = "neovim")]
             test_case_id,
             #[cfg(feature = "neovim")]
@@ -151,18 +156,6 @@ impl NeovimConnection {
             .input(&key)
             .await
             .expect("Could not input keystroke");
-    }
-
-    #[cfg(not(feature = "neovim"))]
-    pub async fn send_keystroke(&mut self, keystroke_text: &str) {
-        if matches!(self.data.front(), Some(NeovimData::Get { .. })) {
-            self.data.pop_front();
-        }
-        assert_eq!(
-            self.data.pop_front(),
-            Some(NeovimData::Key(keystroke_text.to_string())),
-            "operation does not match recorded script. re-record with --features=neovim"
-        );
     }
 
     #[cfg(feature = "neovim")]
@@ -234,23 +227,6 @@ impl NeovimConnection {
         })
     }
 
-    #[cfg(not(feature = "neovim"))]
-    pub async fn set_state(&mut self, marked_text: &str) {
-        if let Some(NeovimData::Get { mode, state: text }) = self.data.front() {
-            if *mode == Mode::Normal && *text == marked_text {
-                return;
-            }
-            self.data.pop_front();
-        }
-        assert_eq!(
-            self.data.pop_front(),
-            Some(NeovimData::Put {
-                state: marked_text.to_string()
-            }),
-            "operation does not match recorded script. re-record with --features=neovim"
-        );
-    }
-
     #[cfg(feature = "neovim")]
     pub async fn set_option(&mut self, value: &str) {
         self.nvim
@@ -263,20 +239,6 @@ impl NeovimConnection {
         })
     }
 
-    #[cfg(not(feature = "neovim"))]
-    pub async fn set_option(&mut self, value: &str) {
-        if let Some(NeovimData::Get { .. }) = self.data.front() {
-            self.data.pop_front();
-        };
-        assert_eq!(
-            self.data.pop_front(),
-            Some(NeovimData::SetOption {
-                value: value.to_string(),
-            }),
-            "operation does not match recorded script. re-record with --features=neovim"
-        );
-    }
-
     #[cfg(feature = "neovim")]
     pub async fn exec(&mut self, value: &str) {
         self.nvim.command_output(value).await.unwrap();
@@ -284,34 +246,6 @@ impl NeovimConnection {
         self.data.push_back(NeovimData::Exec {
             command: value.to_string(),
         })
-    }
-
-    #[cfg(not(feature = "neovim"))]
-    pub async fn exec(&mut self, value: &str) {
-        if let Some(NeovimData::Get { .. }) = self.data.front() {
-            self.data.pop_front();
-        };
-        assert_eq!(
-            self.data.pop_front(),
-            Some(NeovimData::Exec {
-                command: value.to_string(),
-            }),
-            "operation does not match recorded script. re-record with --features=neovim"
-        );
-    }
-
-    #[cfg(not(feature = "neovim"))]
-    pub async fn read_register(&mut self, register: char) -> String {
-        if let Some(NeovimData::Get { .. }) = self.data.front() {
-            self.data.pop_front();
-        };
-        if let Some(NeovimData::ReadRegister { name, value }) = self.data.pop_front()
-            && name == register
-        {
-            return value;
-        }
-
-        panic!("operation does not match recorded script. re-record with --features=neovim")
     }
 
     #[cfg(feature = "neovim")]
@@ -464,52 +398,6 @@ impl NeovimConnection {
 
         (mode, ranges)
     }
-
-    #[cfg(not(feature = "neovim"))]
-    pub async fn state(&mut self) -> (Mode, String) {
-        if let Some(NeovimData::Get { state: raw, mode }) = self.data.front() {
-            (*mode, raw.to_string())
-        } else {
-            panic!("operation does not match recorded script. re-record with --features=neovim");
-        }
-    }
-
-    fn test_data_path(test_case_id: &str) -> PathBuf {
-        let mut data_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        data_path.push("test_data");
-        data_path.push(format!("{}.json", test_case_id));
-        data_path
-    }
-
-    #[cfg(not(feature = "neovim"))]
-    fn read_test_data(test_case_id: &str) -> VecDeque<NeovimData> {
-        let path = Self::test_data_path(test_case_id);
-        let json = std::fs::read_to_string(path).expect(
-            "Could not read test data. Is it generated? Try running test with '--features neovim'",
-        );
-
-        let mut result = VecDeque::new();
-        for line in json.lines() {
-            result.push_back(
-                serde_json::from_str(line)
-                    .expect("invalid test data. regenerate it with '--features neovim'"),
-            );
-        }
-        result
-    }
-
-    #[cfg(feature = "neovim")]
-    fn write_test_data(test_case_id: &str, data: &VecDeque<NeovimData>) {
-        let path = Self::test_data_path(test_case_id);
-        let mut json = Vec::new();
-        for entry in data {
-            serde_json::to_writer(&mut json, entry).unwrap();
-            json.push(b'\n');
-        }
-        std::fs::create_dir_all(path.parent().unwrap())
-            .expect("could not create test data directory");
-        std::fs::write(path, json).expect("could not write out test data");
-    }
 }
 
 #[cfg(feature = "neovim")]
@@ -531,34 +419,7 @@ impl DerefMut for NeovimConnection {
 #[cfg(feature = "neovim")]
 impl Drop for NeovimConnection {
     fn drop(&mut self) {
-        Self::write_test_data(&self.test_case_id, &self.data);
-    }
-}
-
-#[cfg(feature = "neovim")]
-#[derive(Clone)]
-struct NvimHandler {}
-
-#[cfg(feature = "neovim")]
-#[async_trait]
-impl Handler for NvimHandler {
-    type Writer = nvim_rs::compat::tokio::Compat<ChildStdin>;
-
-    async fn handle_request(
-        &self,
-        _event_name: String,
-        _arguments: Vec<Value>,
-        _neovim: Neovim<Self::Writer>,
-    ) -> Result<Value, Value> {
-        unimplemented!();
-    }
-
-    async fn handle_notify(
-        &self,
-        _event_name: String,
-        _arguments: Vec<Value>,
-        _neovim: Neovim<Self::Writer>,
-    ) {
+        write_test_data(&self.test_case_id, &self.data);
     }
 }
 
