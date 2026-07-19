@@ -1,7 +1,7 @@
    38819	crates/editor/src/editor_tests.rs
    16246	crates/workspace/src/workspace.rs
    15288	crates/project/src/lsp_store.rs
-   14876	crates/sidebar/src/sidebar_tests.rs
+   13589	crates/sidebar/src/sidebar_tests.rs
    14706	crates/project/tests/integration/project_tests.rs
    13566	crates/agent_ui/src/agent_panel.rs
    12396	crates/editor/src/editor.rs
