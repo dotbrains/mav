@@ -505,7 +505,6 @@
      728	crates/remote_connection/src/remote_connection.rs
      727	crates/project/src/lsp_store/log_store.rs
      724	crates/agent_ui/src/terminal_thread_metadata_store.rs
-     723	crates/edit_prediction_metrics/src/kept_rate.rs
      722	crates/editor/src/document_colors.rs
      721	crates/language_models/src/provider/open_ai_compatible.rs
      720	crates/theme_selector/src/theme_selector.rs
