@@ -1,13 +1,13 @@
 mod app_menu;
+#[cfg(any(test, feature = "bench"))]
+mod bench_dispatcher;
+#[cfg(test)]
+mod bench_dispatcher_tests;
 mod keyboard;
 mod keystroke;
-
 #[cfg(all(target_os = "linux", feature = "wayland"))]
 #[expect(missing_docs)]
 pub mod layer_shell;
-
-#[cfg(any(test, feature = "bench"))]
-mod bench_dispatcher;
 
 #[cfg(any(test, feature = "test-support"))]
 mod test;

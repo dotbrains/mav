@@ -665,4 +665,3 @@
      504	crates/project/src/task_store.rs
      503	crates/mav/src/mav/quick_action_bar/repl_menu.rs
      501	crates/picker/src/render/window_controls.rs
-     501	crates/gpui/src/platform/bench_dispatcher.rs
