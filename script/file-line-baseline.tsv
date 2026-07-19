@@ -534,7 +534,6 @@
      629	crates/json_schema_store/src/json_schema_store.rs
      616	crates/gpui/examples/shadow.rs
      602	crates/collab/seed/github_users.json
-     598	crates/settings_content/src/language_model.rs
      598	crates/repl/src/kernels/wsl_kernel.rs
      598	crates/language_models/src/language_models.rs
      598	crates/editor/src/diagnostics.rs
