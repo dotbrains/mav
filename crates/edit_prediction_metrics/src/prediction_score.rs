@@ -1,5 +1,10 @@
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet};
+mod context_documents;
+mod helpers;
+
+use context_documents::{apply_patch_to_documents, path_matches};
+use helpers::{compute_cursor_metrics, score_against_no_expected_patch};
+use std::collections::BTreeSet;
 use std::error::Error;
 use std::fmt;
 use std::path::Path;
@@ -12,7 +17,6 @@ use crate::{
         EditableContextCoverage, Excerpt, PatchLocationMatch, editable_context_coverage,
         patch_location_match,
     },
-    patch::{Hunk, Patch, PatchLine},
     patch_metrics::{
         ClassificationMetrics, DeltaChrFMetrics, braces_disbalance, count_patch_token_changes,
         delta_chr_f, delta_chr_f_beta, exact_lines_match, has_isolated_whitespace_changes,
@@ -343,18 +347,6 @@ fn score_against_expected_patch(
     }
 }
 
-fn score_against_no_expected_patch(
-    input: PredictionScoringInput<'_>,
-    actual_patch: &str,
-) -> ExpectedPatchScore {
-    let expected = PreparedExpectedPatch {
-        patch: String::new(),
-        text: input.original_text.to_string(),
-        cursor_editable_region_offset: None,
-    };
-    score_against_expected_patch(input, &expected, actual_patch)
-}
-
 fn zero_content_score() -> ContentScore {
     ContentScore {
         delta_chr_f_metrics: DeltaChrFMetrics {
@@ -495,236 +487,6 @@ fn score_content_on_context(
     })
 }
 
-fn apply_patch_to_documents(patch: &str, context: &[Excerpt]) -> BTreeMap<usize, String> {
-    let patch = Patch::parse_unified_diff(patch);
-    let mut hunks_by_document: BTreeMap<usize, Vec<Hunk>> = BTreeMap::new();
-
-    for hunk in patch.hunks.into_iter().filter(hunk_has_change) {
-        if let Some(document_ix) = find_hunk_document(&hunk, context) {
-            hunks_by_document.entry(document_ix).or_default().push(hunk);
-        }
-    }
-
-    hunks_by_document
-        .into_iter()
-        .filter_map(|(document_ix, hunks)| {
-            let document = context.get(document_ix)?;
-            let document_patch = diff_for_document_hunks(document, &hunks);
-            let text = apply_diff_to_string(&document_patch, &document.content).ok()?;
-            Some((document_ix, text))
-        })
-        .collect()
-}
-
-fn find_hunk_document(hunk: &Hunk, context: &[Excerpt]) -> Option<usize> {
-    context
-        .iter()
-        .enumerate()
-        .find_map(|(document_ix, document)| {
-            if !path_matches(&hunk.filename, &document.path) {
-                return None;
-            }
-
-            let document_patch = diff_for_document_hunks(document, std::slice::from_ref(hunk));
-            apply_diff_to_string(&document_patch, &document.content)
-                .is_ok()
-                .then_some(document_ix)
-        })
-}
-
-fn diff_for_document_hunks(document: &Excerpt, hunks: &[Hunk]) -> String {
-    let mut diff = String::new();
-    diff.push_str(&format!("--- a/{}\n", document.path));
-    diff.push_str(&format!("+++ b/{}\n", document.path));
-
-    for hunk in hunks {
-        let old_start = adjust_hunk_start(hunk.old_start, &document.row_range);
-        let new_start = adjust_hunk_start(hunk.new_start, &document.row_range);
-        let old_count = hunk
-            .lines
-            .iter()
-            .filter(|line| matches!(line, PatchLine::Context(_) | PatchLine::Deletion(_)))
-            .count();
-        let new_count = hunk
-            .lines
-            .iter()
-            .filter(|line| matches!(line, PatchLine::Context(_) | PatchLine::Addition(_)))
-            .count();
-        diff.push_str(&format!(
-            "@@ -{},{} +{},{} @@\n",
-            old_start, old_count, new_start, new_count
-        ));
-        for line in &hunk.lines {
-            match line {
-                PatchLine::Context(text) => {
-                    diff.push(' ');
-                    diff.push_str(text);
-                    diff.push('\n');
-                }
-                PatchLine::Addition(text) => {
-                    diff.push('+');
-                    diff.push_str(text);
-                    diff.push('\n');
-                }
-                PatchLine::Deletion(text) => {
-                    diff.push('-');
-                    diff.push_str(text);
-                    diff.push('\n');
-                }
-                PatchLine::Garbage(text) => {
-                    diff.push_str(text);
-                    diff.push('\n');
-                }
-            }
-        }
-    }
-
-    diff
-}
-
-fn adjust_hunk_start(start: isize, row_range: &std::ops::Range<u32>) -> isize {
-    let Ok(start_row) = u32::try_from(start.saturating_sub(1)) else {
-        return start;
-    };
-
-    if row_range.start <= start_row && start_row <= row_range.end {
-        start.saturating_sub(row_range.start as isize)
-    } else {
-        start
-    }
-}
-
-fn hunk_has_change(hunk: &Hunk) -> bool {
-    hunk.lines
-        .iter()
-        .any(|line| matches!(line, PatchLine::Addition(_) | PatchLine::Deletion(_)))
-}
-
-fn path_matches(patch_path: &str, document_path: &str) -> bool {
-    patch_path == document_path
-        || strip_first_path_component(patch_path).is_some_and(|stripped| stripped == document_path)
-}
-
-fn strip_first_path_component(path: &str) -> Option<&str> {
-    path.split_once('/')
-        .map(|(_, rest)| rest)
-        .filter(|rest| !rest.is_empty())
-}
-
-fn compute_cursor_metrics(
-    expected_cursor_editable_region_offset: Option<usize>,
-    actual_cursor: Option<ActualPredictionCursor>,
-) -> (Option<usize>, Option<bool>) {
-    match (expected_cursor_editable_region_offset, actual_cursor) {
-        (Some(expected), Some(actual)) => {
-            let distance = expected.abs_diff(actual.editable_region_offset.unwrap_or_default());
-            let exact_match = distance == 0;
-            (Some(distance), Some(exact_match))
-        }
-        (None, None) => (None, None),
-        (Some(_), None) | (None, Some(_)) => (None, Some(false)),
-    }
-}
-
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_kept_rate_is_computed_when_best_delta_chr_f_score_is_zero() {
-        let original_text = "";
-        let actual_patch = "--- a/file.txt\n+++ b/file.txt\n@@ -0,0 +1 @@\n+bbbbbb\n";
-        let expected_patch = "--- a/file.txt\n+++ b/file.txt\n@@ -0,0 +1 @@\n+cccccc\n";
-        let expected_patches = [PreparedExpectedPatch {
-            patch: expected_patch.to_string(),
-            text: "cccccc".to_string(),
-            cursor_editable_region_offset: None,
-        }];
-
-        let score = score_prediction(PredictionScoringInput {
-            original_text,
-            expected_patches: &expected_patches,
-            actual_patch: Some(actual_patch),
-            actual_cursor: None,
-            reversal_context: None,
-            cumulative_logprob: None,
-            avg_logprob: None,
-            context: None,
-        });
-
-        assert_eq!(score.delta_chr_f, 0.0);
-        assert_eq!(score.kept_rate, Some(0.0));
-    }
-
-    #[test]
-    fn test_scores_related_file_patch_against_context_document() {
-        let original_text = "fn main() {}\n";
-        let expected_patch = "--- a/src/lib.rs\n+++ b/src/lib.rs\n@@ -11,3 +11,3 @@\n fn value() {\n-    1\n+    2\n }\n";
-        let actual_patch = "--- a/project/src/lib.rs\n+++ b/project/src/lib.rs\n@@ -11,3 +11,3 @@\n fn value() {\n-    1\n+    2\n }\n";
-        let expected_patches = [PreparedExpectedPatch {
-            patch: expected_patch.to_string(),
-            text: original_text.to_string(),
-            cursor_editable_region_offset: None,
-        }];
-        let context = [
-            Excerpt {
-                path: "src/main.rs".to_string(),
-                row_range: 0..1,
-                content: original_text.to_string(),
-            },
-            Excerpt {
-                path: "src/lib.rs".to_string(),
-                row_range: 10..13,
-                content: "fn value() {\n    1\n}\n".to_string(),
-            },
-        ];
-
-        let score = score_prediction(PredictionScoringInput {
-            original_text,
-            expected_patches: &expected_patches,
-            actual_patch: Some(actual_patch),
-            actual_cursor: None,
-            reversal_context: None,
-            cumulative_logprob: None,
-            avg_logprob: None,
-            context: Some(&context),
-        });
-
-        assert_eq!(score.delta_chr_f, 100.0);
-        assert_eq!(score.exact_lines_tp, 2);
-        assert_eq!(score.jump_location.unwrap().files_f1, 1.0);
-    }
-
-    #[test]
-    fn test_missing_related_file_prediction_counts_as_false_negative() {
-        let original_text = "fn main() {}\n";
-        let expected_patch = "--- a/src/lib.rs\n+++ b/src/lib.rs\n@@ -11,3 +11,3 @@\n fn value() {\n-    1\n+    2\n }\n";
-        let expected_patches = [PreparedExpectedPatch {
-            patch: expected_patch.to_string(),
-            text: original_text.to_string(),
-            cursor_editable_region_offset: None,
-        }];
-        let context = [Excerpt {
-            path: "src/lib.rs".to_string(),
-            row_range: 10..13,
-            content: "fn value() {\n    1\n}\n".to_string(),
-        }];
-
-        let score = score_prediction(PredictionScoringInput {
-            original_text,
-            expected_patches: &expected_patches,
-            actual_patch: None,
-            actual_cursor: None,
-            reversal_context: None,
-            cumulative_logprob: None,
-            avg_logprob: None,
-            context: Some(&context),
-        });
-
-        assert!(score.delta_chr_f < 100.0);
-        assert_eq!(score.exact_lines_fn, 2);
-        let location = score.jump_location.unwrap();
-        assert_eq!(location.files_fn, 1);
-        assert_eq!(location.lines_fn, 1);
-    }
-}
+#[path = "prediction_score/tests.rs"]
+mod tests;

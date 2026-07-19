@@ -502,7 +502,6 @@
      731	crates/settings_profile_selector/src/settings_profile_selector.rs
      731	crates/gpui_web/src/window.rs
      730	crates/grammars/src/go/injections.scm
-     730	crates/edit_prediction_metrics/src/prediction_score.rs
      728	crates/remote_connection/src/remote_connection.rs
      727	crates/project/src/lsp_store/log_store.rs
      724	crates/agent_ui/src/terminal_thread_metadata_store.rs
