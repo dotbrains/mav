@@ -610,7 +610,6 @@
      559	crates/vim/src/replace.rs
      558	crates/project_panel/src/undo.rs
      557	crates/vim/test_data/test_f_and_t.json
-     556	crates/agent/src/tools/evals/write_file.rs
      553	crates/proto/proto/debugger.proto
      552	crates/open_path_prompt/src/open_path_prompt_tests.rs
      552	crates/gpui/examples/testing.rs
