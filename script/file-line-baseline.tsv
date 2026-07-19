@@ -537,7 +537,6 @@
      598	crates/repl/src/kernels/wsl_kernel.rs
      598	crates/language_models/src/language_models.rs
      598	crates/editor/src/diagnostics.rs
-     594	crates/context_server/src/client.rs
      593	crates/http_proxy/tests/end_to_end.rs
      588	crates/languages/src/cpp.rs
      588	crates/extension_host/src/wasm_host/wit/since_v0_1_0.rs
