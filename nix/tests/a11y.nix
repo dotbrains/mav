@@ -245,52 +245,52 @@ pkgs.testers.nixosTest {
     };
 
   testScript = ''
-machine.wait_for_x()
-machine.wait_for_unit("graphical.target")
+    machine.wait_for_x()
+    machine.wait_for_unit("graphical.target")
 
-# Let the desktop and Orca settle
-machine.sleep(5)
+    # Let the desktop and Orca settle
+    machine.sleep(5)
 
-# Launch the a11y example, capturing logs to a file
-machine.succeed(
-    "su - user -c 'DISPLAY=:0 WAYLAND_DISPLAY= RUST_LOG=gpui=info gpui-a11y-example > /tmp/gpui.log 2>&1 &'"
-)
+    # Launch the a11y example, capturing logs to a file
+    machine.succeed(
+        "su - user -c 'DISPLAY=:0 WAYLAND_DISPLAY= RUST_LOG=gpui=info gpui-a11y-example > /tmp/gpui.log 2>&1 &'"
+    )
 
-# Wait for the window to appear
-machine.wait_until_succeeds("su - user -c 'DISPLAY=:0 xdotool search --name \"GPUI Accessibility Demo\"'", timeout=15)
+    # Wait for the window to appear
+    machine.wait_until_succeeds("su - user -c 'DISPLAY=:0 xdotool search --name \"GPUI Accessibility Demo\"'", timeout=15)
 
-# Wait for accessibility activation
-machine.wait_until_succeeds("grep -q 'Accessibility activated' /tmp/gpui.log", timeout=15)
-machine.log("Accessibility activation confirmed in logs")
+    # Wait for accessibility activation
+    machine.wait_until_succeeds("grep -q 'Accessibility activated' /tmp/gpui.log", timeout=15)
+    machine.log("Accessibility activation confirmed in logs")
 
-# Give AccessKit time to register on AT-SPI
-machine.sleep(3)
+    # Give AccessKit time to register on AT-SPI
+    machine.sleep(3)
 
-# Run the AT-SPI test script
-machine.succeed(
-    "su - user -c 'DISPLAY=:0 GI_TYPELIB_PATH=${giTypelibPath} ${testPython}/bin/python3 ${atspiTestScript}/bin/a11y-atspi-test'"
-)
-machine.log("AT-SPI tests passed (first run)")
+    # Run the AT-SPI test script
+    machine.succeed(
+        "su - user -c 'DISPLAY=:0 GI_TYPELIB_PATH=${giTypelibPath} ${testPython}/bin/python3 ${atspiTestScript}/bin/a11y-atspi-test'"
+    )
+    machine.log("AT-SPI tests passed (first run)")
 
-# Kill the app, restart Orca, and re-run
-machine.execute("pkill -f gpui-a11y-example")
-machine.sleep(1)
-machine.succeed("su - user -c 'XDG_RUNTIME_DIR=/run/user/1000 systemctl --user restart orca'")
-machine.sleep(3)
+    # Kill the app, restart Orca, and re-run
+    machine.execute("pkill -f gpui-a11y-example")
+    machine.sleep(1)
+    machine.succeed("su - user -c 'XDG_RUNTIME_DIR=/run/user/1000 systemctl --user restart orca'")
+    machine.sleep(3)
 
-# Relaunch the app
-machine.succeed(
-    "su - user -c 'DISPLAY=:0 WAYLAND_DISPLAY= RUST_LOG=gpui=info gpui-a11y-example > /tmp/gpui2.log 2>&1 &'"
-)
-machine.wait_until_succeeds("su - user -c 'DISPLAY=:0 xdotool search --name \"GPUI Accessibility Demo\"'", timeout=15)
-machine.wait_until_succeeds("grep -q 'Accessibility activated' /tmp/gpui2.log", timeout=15)
-machine.log("Accessibility activation confirmed after Orca restart")
-machine.sleep(3)
+    # Relaunch the app
+    machine.succeed(
+        "su - user -c 'DISPLAY=:0 WAYLAND_DISPLAY= RUST_LOG=gpui=info gpui-a11y-example > /tmp/gpui2.log 2>&1 &'"
+    )
+    machine.wait_until_succeeds("su - user -c 'DISPLAY=:0 xdotool search --name \"GPUI Accessibility Demo\"'", timeout=15)
+    machine.wait_until_succeeds("grep -q 'Accessibility activated' /tmp/gpui2.log", timeout=15)
+    machine.log("Accessibility activation confirmed after Orca restart")
+    machine.sleep(3)
 
-# Run the AT-SPI test script again
-machine.succeed(
-    "su - user -c 'DISPLAY=:0 GI_TYPELIB_PATH=${giTypelibPath} ${testPython}/bin/python3 ${atspiTestScript}/bin/a11y-atspi-test'"
-)
-machine.log("AT-SPI tests passed (second run, after Orca restart)")
+    # Run the AT-SPI test script again
+    machine.succeed(
+        "su - user -c 'DISPLAY=:0 GI_TYPELIB_PATH=${giTypelibPath} ${testPython}/bin/python3 ${atspiTestScript}/bin/a11y-atspi-test'"
+    )
+    machine.log("AT-SPI tests passed (second run, after Orca restart)")
   '';
 }
