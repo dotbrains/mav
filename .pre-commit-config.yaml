@@ -1,0 +1,28 @@
+repos:
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --all -- --check
+        language: system
+        pass_filenames: false
+      - id: cargo-check-mav
+        name: cargo check mav
+        entry: cargo check -p zed --bin mav --locked
+        language: system
+        pass_filenames: false
+      - id: actionlint
+        name: actionlint
+        entry: actionlint
+        language: system
+        files: ^\.github/workflows/.*\.ya?ml$
+      - id: typos
+        name: typos
+        entry: typos
+        language: system
+        pass_filenames: false
+      - id: no-ubuntu-runners
+        name: require Blacksmith runners
+        entry: bash -c '! grep -R "runs-on: ubuntu-" .github/workflows'
+        language: system
+        pass_filenames: false

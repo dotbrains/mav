@@ -1,0 +1,42 @@
+# Getting Started
+
+`mav` is a private dotbrains workspace for building and maintaining a Zed-based editor distribution. The repository keeps the editor source, extension host, bundled extension examples, assets, Nix packaging, and development tooling. Public website content, community automation, hosted-service legal pages, and release machinery that is not needed for private development have been removed.
+
+## Prerequisites
+
+- macOS or Linux for local development.
+- GitHub access to `dotbrains/mav`.
+- Flox for the default development shell.
+- Nix with flakes enabled when validating package builds.
+- A working Rust toolchain. The Flox activation hook respects `rust-toolchain.toml`.
+
+## First Run
+
+```bash
+git clone https://github.com/dotbrains/mav.git
+cd mav
+flox activate
+cargo run -p zed --bin mav
+```
+
+The first build downloads Rust dependencies, native libraries, grammars, and extension fixtures. Expect the first build to take significantly longer than later incremental builds.
+
+## Repository Shape
+
+The workspace is intentionally large because the editor binary links through many internal crates. Do not prune crates based only on names. Use `cargo metadata` before removing any crate so reverse dependencies are visible.
+
+```bash
+cargo metadata --format-version=1 --no-deps
+cargo tree -p zed --edges normal,build
+```
+
+## Daily Loop
+
+```bash
+flox activate
+cargo fmt --all
+cargo check -p zed --bin mav
+cargo test -p extension_api
+```
+
+Use `nix develop` when you specifically need to debug the Nix shell or package closure. Use `flox activate` for the normal contributor path.

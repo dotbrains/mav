@@ -1,0 +1,28 @@
+schema-version = "1.13.0"
+
+[install]
+rustup.pkg-path = "rustup"
+cargo-nextest.pkg-path = "cargo-nextest"
+pkg-config.pkg-path = "pkg-config"
+cmake.pkg-path = "cmake"
+protobuf.pkg-path = "protobuf"
+nodejs.pkg-path = "nodejs_22"
+pnpm.pkg-path = "nodePackages.pnpm"
+nix.pkg-path = "nix"
+pre-commit.pkg-path = "pre-commit"
+actionlint.pkg-path = "actionlint"
+typos.pkg-path = "typos"
+lychee.pkg-path = "lychee"
+
+[vars]
+CARGO_TERM_COLOR = "always"
+RUST_BACKTRACE = "1"
+CARGO_INCREMENTAL = "0"
+
+[hook]
+on-activate = '''
+  rustup show active-toolchain >/dev/null 2>&1 || rustup toolchain install
+'''
+
+[options]
+systems = ["aarch64-darwin", "x86_64-darwin", "aarch64-linux", "x86_64-linux"]

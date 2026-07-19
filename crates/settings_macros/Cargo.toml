@@ -1,0 +1,23 @@
+[package]
+name = "settings_macros"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+license = "LicenseRef-PolyForm-Shield-1.0.0"
+
+[lib]
+path = "src/settings_macros.rs"
+proc-macro = true
+
+[lints]
+workspace = true
+
+[features]
+default = []
+
+[dependencies]
+quote.workspace = true
+syn.workspace = true
+
+[dev-dependencies]
+settings.workspace = true

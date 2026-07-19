@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hygiene:
+    name: hygiene
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - uses: flox/install-flox-action@v2
+      - name: format
+        run: flox activate -- cargo fmt --all -- --check
+      - name: manifest check
+        run: flox activate -- cargo check -p zed --bin mav --locked
+
+  nix:
+    name: nix
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - name: flake check
+        run: nix flake check --accept-flake-config
+
+  docs:
+    name: docs
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+      - uses: flox/install-flox-action@v2
+      - name: markdown links
+        run: flox activate -- lychee --offline README.md docs/**/*.md
