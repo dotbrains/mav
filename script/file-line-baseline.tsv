@@ -663,4 +663,3 @@
      506	crates/workspace/src/path_link.rs
      505	crates/agent/src/tests/test_tools.rs
      504	crates/project/src/task_store.rs
-     503	crates/mav/src/mav/quick_action_bar/repl_menu.rs
