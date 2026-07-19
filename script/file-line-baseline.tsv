@@ -601,7 +601,6 @@
      566	crates/remote/src/transport.rs
      565	crates/workspace/src/searchable.rs
      564	crates/workspace/src/security_modal.rs
-     564	crates/agent/src/tools/create_directory_tool.rs
      562	crates/livekit_client/src/livekit_client.rs
      559	crates/vim/src/replace.rs
      557	crates/vim/test_data/test_f_and_t.json
