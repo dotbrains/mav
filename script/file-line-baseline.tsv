@@ -537,7 +537,6 @@
      682	crates/edit_prediction_context/src/bm25_context.rs
      681	crates/language_model/src/registry.rs
      681	crates/benchmarks/benches/edit_file_tool.rs
-     666	crates/markdown/src/html/html_rendering.rs
      664	crates/ui/src/components/button/toggle_button.rs
      662	crates/picker/src/shape.rs
      662	crates/agent/src/tools/copy_path_tool.rs
