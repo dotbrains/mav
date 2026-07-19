@@ -625,7 +625,6 @@
      518	crates/theme_selector/src/icon_theme_selector.rs
      518	crates/gpui/src/platform/test/platform.rs
      517	crates/project/tests/integration/signature_help.rs
-     515	crates/project/src/lsp_store/code_lens.rs
      512	crates/project/src/bookmark_store.rs
      510	crates/workspace/src/persistence/model.rs
      510	crates/csv_preview/src/parser.rs
