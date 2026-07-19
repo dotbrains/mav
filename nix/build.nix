@@ -83,13 +83,13 @@ let
   gpu-lib = if withGLES then libglvnd else vulkan-loader;
   commonArgs =
     let
-      zedCargoLock = builtins.fromTOML (builtins.readFile ../crates/zed/Cargo.toml);
+      mavCargoLock = builtins.fromTOML (builtins.readFile ../crates/mav/Cargo.toml);
       stdenv' = stdenv;
     in
     rec {
-      pname = "zed-editor";
+      pname = "mav-editor";
       version =
-        zedCargoLock.package.version
+        mavCargoLock.package.version
         + "-nightly"
         + lib.optionalString (commitSha != null) "+${builtins.substring 0 7 commitSha}";
       src = builtins.path {
@@ -108,7 +108,7 @@ let
         pkg-config
         protobuf
         # Pin cargo-about to 0.8.2. Newer versions don't work with the current license identifiers
-        # See https://github.com/zed-industries/zed/pull/44012
+        # See the pinned cargo-about compatibility note in the upstream issue.
         (cargo-about.overrideAttrs (
           new: old: rec {
             version = "0.8.2";
@@ -202,7 +202,7 @@ let
         (darwinMinVersionHook "10.15")
       ];
 
-      cargoExtraArgs = "-p zed -p cli --locked --features=gpui_platform/runtime_shaders";
+      cargoExtraArgs = "-p mav -p cli --locked --features=gpui_platform/runtime_shaders";
 
       stdenv =
         pkgs:
@@ -228,9 +228,9 @@ let
             ../assets/fonts/ibm-plex-sans
           ];
         };
-        ZED_UPDATE_EXPLANATION = "Zed has been installed using Nix. Auto-updates have thus been disabled.";
+        MAV_UPDATE_EXPLANATION = "Mav has been installed using Nix. Auto-updates have thus been disabled.";
         RELEASE_VERSION = version;
-        ZED_COMMIT_SHA = lib.optionalString (commitSha != null) "${commitSha}";
+        MAV_COMMIT_SHA = lib.optionalString (commitSha != null) "${commitSha}";
         LK_CUSTOM_WEBRTC = pkgs.callPackage ./livekit-libwebrtc/package.nix { };
         PROTOC = "${protobuf}/bin/protoc";
 
@@ -314,11 +314,11 @@ craneLib.buildPackage (
     dontUseCmakeConfigure = true;
 
     # without the env var generate-licenses fails due to crane's fetchCargoVendor, see:
-    # https://github.com/zed-industries/zed/issues/19971#issuecomment-2688455390
+    # Keep this until generate-licenses works with crane's fetchCargoVendor output.
     # TODO: put this in a separate derivation that depends on src to avoid running it on every build
     preBuild = ''
       ALLOW_MISSING_LICENSES=yes bash script/generate-licenses
-      echo nightly > crates/zed/RELEASE_CHANNEL
+      echo nightly > crates/mav/RELEASE_CHANNEL
     '';
 
     installPhase =
@@ -326,21 +326,21 @@ craneLib.buildPackage (
         ''
           runHook preInstall
 
-          pushd crates/zed
+          pushd crates/mav
           sed -i "s/package.metadata.bundle-nightly/package.metadata.bundle/" Cargo.toml
           export CARGO_BUNDLE_SKIP_BUILD=true
           app_path="$(cargo bundle --profile $CARGO_PROFILE | xargs)"
           popd
 
           mkdir -p $out/Applications $out/bin
-          # Zed expects git next to its own binary
+          # Mav expects git next to its own binary
           ln -s ${git}/bin/git "$app_path/Contents/MacOS/git"
           mv $TARGET_DIR/cli "$app_path/Contents/MacOS/cli"
           mv "$app_path" $out/Applications/
 
           # Physical location of the CLI must be inside the app bundle as this is used
           # to determine which app to start
-          ln -s "$out/Applications/Zed Nightly.app/Contents/MacOS/cli" $out/bin/zed
+          ln -s "$out/Applications/Mav Nightly.app/Contents/MacOS/cli" $out/bin/mav
 
           runHook postInstall
         ''
@@ -349,26 +349,24 @@ craneLib.buildPackage (
           runHook preInstall
 
           mkdir -p $out/bin $out/libexec
-          cp $TARGET_DIR/zed $out/libexec/zed-editor
-          cp $TARGET_DIR/cli  $out/bin/zed
-          ln -s $out/bin/zed $out/bin/zeditor  # home-manager expects the CLI binary to be here
+          cp $TARGET_DIR/mav $out/libexec/mav-editor
+          cp $TARGET_DIR/cli  $out/bin/mav
 
+          install -D "crates/mav/resources/app-icon-nightly@2x.png" \
+            "$out/share/icons/hicolor/1024x1024@2x/apps/mav.png"
+          install -D crates/mav/resources/app-icon-nightly.png \
+            $out/share/icons/hicolor/512x512/apps/mav.png
 
-          install -D "crates/zed/resources/app-icon-nightly@2x.png" \
-            "$out/share/icons/hicolor/1024x1024@2x/apps/zed.png"
-          install -D crates/zed/resources/app-icon-nightly.png \
-            $out/share/icons/hicolor/512x512/apps/zed.png
-
-          # TODO: icons should probably be named "zed-nightly"
+          # TODO: icons should probably be named "mav-nightly"
           (
             export DO_STARTUP_NOTIFY="true"
-            export APP_CLI="zed"
-            export APP_ICON="zed"
-            export APP_NAME="Zed Nightly"
+            export APP_CLI="mav"
+            export APP_ICON="mav"
+            export APP_NAME="Mav Nightly"
             export APP_ARGS="%U"
             mkdir -p "$out/share/applications"
-            ${lib.getExe envsubst} < "crates/zed/resources/zed.desktop.in" > "$out/share/applications/dev.zed.Zed-Nightly.desktop"
-            chmod +x "$out/share/applications/dev.zed.Zed-Nightly.desktop"
+            ${lib.getExe envsubst} < "crates/mav/resources/mav.desktop.in" > "$out/share/applications/dev.mav.Mav-Nightly.desktop"
+            chmod +x "$out/share/applications/dev.mav.Mav-Nightly.desktop"
           )
 
           runHook postInstall
@@ -376,15 +374,15 @@ craneLib.buildPackage (
 
     # TODO: why isn't this also done on macOS?
     postFixup = lib.optionalString stdenv.hostPlatform.isLinux ''
-      wrapProgram $out/libexec/zed-editor --suffix PATH : ${lib.makeBinPath [ nodejs_22 ]}
+      wrapProgram $out/libexec/mav-editor --suffix PATH : ${lib.makeBinPath [ nodejs_22 ]}
     '';
 
     meta = {
       description = "High-performance, multiplayer code editor from the creators of Atom and Tree-sitter";
-      homepage = "https://zed.dev";
-      changelog = "https://zed.dev/releases/preview";
+      homepage = "https://mav.dev";
+      changelog = "https://mav.dev/releases/preview";
       license = lib.licenses.gpl3Only;
-      mainProgram = "zed";
+      mainProgram = "mav";
       platforms = lib.platforms.linux ++ lib.platforms.darwin;
     };
   }

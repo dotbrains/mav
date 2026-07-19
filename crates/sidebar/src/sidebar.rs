@@ -71,12 +71,12 @@ use workspace::{
 };
 
 use git_ui::worktree_service::{RemoteBranchName, worktree_create_targets};
-use zed_actions::agent::OpenSettings;
-use zed_actions::assistant::{ManageSkills, OpenGlobalAgentsMdRules, OpenProjectAgentsMdRules};
-use zed_actions::editor::{MoveDown, MoveUp};
-use zed_actions::{CreateWorktree, NewWorktreeBranchTarget, OpenRecent};
+use mav_actions::agent::OpenSettings;
+use mav_actions::assistant::{ManageSkills, OpenGlobalAgentsMdRules, OpenProjectAgentsMdRules};
+use mav_actions::editor::{MoveDown, MoveUp};
+use mav_actions::{CreateWorktree, NewWorktreeBranchTarget, OpenRecent};
 
-use zed_actions::sidebar::{FocusSidebarFilter, ToggleThreadSwitcher};
+use mav_actions::sidebar::{FocusSidebarFilter, ToggleThreadSwitcher};
 
 use crate::thread_switcher::{
     ThreadSwitcher, ThreadSwitcherEntry, ThreadSwitcherEvent, ThreadSwitcherSelection,
@@ -7728,9 +7728,9 @@ impl Sidebar {
                             .action("Add Remote Server…", Box::new(AddContextServer::remote()))
                             .action(
                                 "Install New Servers…",
-                                Box::new(zed_actions::Extensions {
+                                Box::new(mav_actions::Extensions {
                                     category_filter: Some(
-                                        zed_actions::ExtensionCategoryFilter::ContextServers,
+                                        mav_actions::ExtensionCategoryFilter::ContextServers,
                                     ),
                                     id: None,
                                 }),

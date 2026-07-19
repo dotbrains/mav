@@ -36,11 +36,11 @@ use ui::{
 };
 use util::ResultExt as _;
 
+use mav_actions::{OpenBrowser, OpenSettingsAt};
 use workspace::{
     HideStatusItem, StatusItemView, Toast, Workspace, create_and_open_local_file, item::ItemHandle,
     notifications::NotificationId,
 };
-use zed_actions::{OpenBrowser, OpenSettingsAt};
 
 use crate::{RatePredictions, rate_prediction_modal::PredictEditsRatePredictionsFeatureFlag};
 
@@ -386,7 +386,7 @@ impl Render for EditPredictionButton {
                                     source = "Edit Prediction Status Button"
                                 );
                                 window.dispatch_action(
-                                    zed_actions::OpenZedPredictOnboarding.boxed_clone(),
+                                    mav_actions::OpenZedPredictOnboarding.boxed_clone(),
                                     cx,
                                 );
                             })),

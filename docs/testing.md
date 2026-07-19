@@ -5,7 +5,7 @@ The full workspace test surface is large. Prefer targeted tests while developing
 ## Fast Checks
 
 ```bash
-cargo check -p zed --bin mav --locked
+cargo check -p mav --bin mav --locked
 cargo test -p extension_api
 cargo test -p language
 ```
@@ -30,6 +30,6 @@ pre-commit run --all-files
 
 ## Risk-Based Expansion
 
-Editing UI composition, workspace persistence, language services, extension host behavior, or platform backends should trigger tests for the touched crate plus `cargo check -p zed --bin mav --locked`.
+Editing UI composition, workspace persistence, language services, extension host behavior, or platform backends should trigger tests for the touched crate plus `cargo check -p mav --bin mav --locked`.
 
 Editing assets or settings should include a binary check because assets are embedded and validated through compile-time/runtime paths.

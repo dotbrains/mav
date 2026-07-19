@@ -8,6 +8,7 @@ use gpui::{
     WeakEntity, WindowHandle, prelude::*,
 };
 use itertools::Itertools as _;
+use mav_actions::OpenBrowser;
 use project::agent_server_store::{AgentId, AgentServerStore, ExternalAgentSource};
 use settings::{
     AgentConfigOptionValue, CustomAgentServerSettings, SettingsStore, update_settings_file,
@@ -18,7 +19,6 @@ use ui::{
 };
 use util::ResultExt as _;
 use workspace::{MultiWorkspace, Workspace, create_and_open_local_file};
-use zed_actions::OpenBrowser;
 
 use crate::SettingsWindow;
 
@@ -312,7 +312,7 @@ fn render_add_agent_popover(
                         original_window
                             .update(cx, |_, window, cx| {
                                 window.activate_window();
-                                window.dispatch_action(Box::new(zed_actions::AcpRegistry), cx);
+                                window.dispatch_action(Box::new(mav_actions::AcpRegistry), cx);
                             })
                             .log_err();
                     }

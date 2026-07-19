@@ -25,6 +25,7 @@ use gpui::{
     FocusHandle, Focusable, Render, Subscription, Task, WeakEntity, actions,
 };
 use language::{Anchor, Buffer, BufferId, Capability, OffsetRangeExt};
+use mav_actions::agent::ReviewBranchDiff;
 use multi_buffer::{MultiBuffer, PathKey};
 use project::{
     ConflictSet, Project, ProjectPath,
@@ -50,7 +51,6 @@ use workspace::{
     notifications::NotifyTaskExt,
     searchable::SearchableItemHandle,
 };
-use zed_actions::agent::ReviewBranchDiff;
 use ztracing::instrument;
 
 actions!(

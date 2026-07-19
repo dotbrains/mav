@@ -1,5 +1,5 @@
 {
-  description = "mav is a private dotbrains editor workspace for Zed core and extensions.";
+  description = "mav is a private dotbrains editor workspace for app core and extensions.";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -28,12 +28,4 @@
       ];
     };
 
-  nixConfig = {
-    extra-substituters = [
-      "https://zed.cachix.org"
-    ];
-    extra-trusted-public-keys = [
-      "zed.cachix.org-1:/pHQ6dpMsAZk2DiP4WCL0p9YDNKWj2Q5FL20bNmw1cU="
-    ];
-  };
 }

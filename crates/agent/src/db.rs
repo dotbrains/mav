@@ -9,6 +9,7 @@ use futures::{FutureExt, future::Shared};
 use gpui::{BackgroundExecutor, Global, Task};
 use indoc::indoc;
 use language_model::Speed;
+use mav_env_vars::MAV_STATELESS;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use sqlez::{
@@ -19,7 +20,6 @@ use sqlez::{
 use std::{io::ErrorKind, path::PathBuf, sync::Arc};
 use ui::{App, SharedString};
 use util::path_list::PathList;
-use zed_env_vars::ZED_STATELESS;
 
 pub type DbMessage = crate::Message;
 pub type DbSummary = crate::legacy_thread::DetailedSummaryState;
@@ -417,7 +417,7 @@ impl ThreadsDatabase {
     }
 
     pub fn new(executor: BackgroundExecutor) -> Result<Self> {
-        let connection = if *ZED_STATELESS {
+        let connection = if *MAV_STATELESS {
             Connection::open_memory(Some("THREAD_FALLBACK_DB"))
         } else if cfg!(any(feature = "test-support", test)) {
             // rust stores the name of the test on the current thread.

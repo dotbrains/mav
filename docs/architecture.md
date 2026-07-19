@@ -1,10 +1,10 @@
 # Architecture
 
-`mav` keeps the editor architecture intact while removing unrelated repository surface area. The main binary lives in `crates/zed`, but it composes dozens of workspace crates for rendering, editing, language intelligence, workspace state, extensions, Git, terminal integration, AI features, and platform support.
+`mav` keeps the editor architecture intact while removing unrelated repository surface area. The main binary lives in `crates/mav`, but it composes dozens of workspace crates for rendering, editing, language intelligence, workspace state, extensions, Git, terminal integration, AI features, and platform support.
 
 ```mermaid
 flowchart LR
-  mav["crates/zed bin:mav"] --> workspace["workspace/project/session"]
+  mav["crates/mav bin:mav"] --> workspace["workspace/project/session"]
   mav --> ui["gpui/ui/theme/assets"]
   mav --> editor["editor/language/lsp"]
   mav --> ext["extension_host/extension_api/extensions"]
@@ -16,7 +16,7 @@ flowchart LR
 
 ## Core Boundaries
 
-`crates/zed` is the composition crate. It wires the product together and owns the binary entrypoint.
+`crates/mav` is the composition crate. It wires the product together and owns the binary entrypoint.
 
 `crates/gpui*` owns the UI runtime and platform rendering backends.
 

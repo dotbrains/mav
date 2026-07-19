@@ -22,14 +22,14 @@ cargo fmt --all -- --check
 ## Build Checks
 
 ```bash
-cargo check -p zed --bin mav --locked
+cargo check -p mav --bin mav --locked
 ```
 
 For narrower work, check the crate you touched first, then check the binary:
 
 ```bash
 cargo check -p extension_host
-cargo check -p zed --bin mav --locked
+cargo check -p mav --bin mav --locked
 ```
 
 ## Pre-Commit
@@ -47,7 +47,7 @@ When changing Rust dependencies:
 
 ```bash
 cargo update -p <package>
-cargo check -p zed --bin mav --locked
+cargo check -p mav --bin mav --locked
 ```
 
 Commit `Cargo.toml` and `Cargo.lock` together. Do not hand-edit lockfile entries.

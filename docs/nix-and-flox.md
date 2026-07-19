@@ -6,7 +6,7 @@ Flox is the default contributor environment. It installs common tools and keeps 
 
 ```bash
 flox activate
-cargo check -p zed --bin mav --locked
+cargo check -p mav --bin mav --locked
 ```
 
 Nix is the package and reproducibility layer:

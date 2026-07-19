@@ -18,7 +18,7 @@ Run targeted checks for touched areas. For broad or manifest changes, run:
 ```bash
 flox activate
 cargo fmt --all -- --check
-cargo check -p zed --bin mav --locked
+cargo check -p mav --bin mav --locked
 nix flake check
 pre-commit run --all-files
 ```

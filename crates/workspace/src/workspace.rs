@@ -118,6 +118,7 @@ use settings::{
     update_settings_file,
 };
 
+use mav_actions::{Spawn, feedback::FileBugReport, theme::ToggleMode};
 use sqlez::{
     bindable::{Bind, Column, StaticColumnCount},
     statement::Statement,
@@ -161,7 +162,6 @@ pub use workspace_settings::{
     AutosaveSetting, EncodingDisplayOptions, FocusFollowsMouse, RestoreOnStartupBehavior,
     SidebarSettings, StatusBarSettings, TabBarSettings, ToolbarSettings, WorkspaceSettings,
 };
-use zed_actions::{Spawn, feedback::FileBugReport, theme::ToggleMode};
 
 pub(crate) fn workspace_card_gap(cx: &App) -> Pixels {
     gpui::px(WorkspaceSettings::get_global(cx).card_gap.max(0.0))
@@ -15932,9 +15932,9 @@ mod tests {
 
     #[gpui::test]
     async fn test_toggle_theme_mode_persists_and_updates_active_theme(cx: &mut TestAppContext) {
+        use mav_actions::theme::ToggleMode;
         use settings::{ThemeName, ThemeSelection};
         use theme::SystemAppearance;
-        use zed_actions::theme::ToggleMode;
 
         init_test(cx);
 

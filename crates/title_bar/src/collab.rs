@@ -11,6 +11,7 @@ use gpui::{
 use gpui::{App, Task, Window};
 use icons::IconName;
 use livekit_client::ConnectionQuality;
+use mav_actions::ShowCallStats;
 use project::WorktreeSettings;
 use remote_connection::RemoteConnectionModal;
 use rpc::proto::{self};
@@ -23,7 +24,6 @@ use ui::{
 };
 use util::rel_path::RelPath;
 use workspace::{ParticipantLocation, notifications::DetachAndPromptErr};
-use zed_actions::ShowCallStats;
 
 use crate::SidebarChrome;
 

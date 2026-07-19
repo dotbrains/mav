@@ -13,7 +13,7 @@
 
 ```bash
 flox activate
-cargo build -p zed --bin mav --release
+cargo build -p mav --bin mav --release
 ```
 
 For Nix:

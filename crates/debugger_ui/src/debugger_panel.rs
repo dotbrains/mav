@@ -24,6 +24,7 @@ use gpui::{
 
 use itertools::Itertools as _;
 use language::Buffer;
+use mav_actions::debug_panel::ToggleFocus;
 use project::debugger::session::{Session, SessionQuirks, SessionState, SessionStateEvent};
 use project::{DebugScenarioContext, Fs, ProjectPath, TaskSourceKind, WorktreeId};
 use project::{Project, debugger::session::ThreadStatus};
@@ -44,7 +45,6 @@ use workspace::{
     Item, Pane, Workspace,
     dock::{DockPosition, Panel, PanelEvent},
 };
-use zed_actions::debug_panel::ToggleFocus;
 
 pub struct DebuggerHistoryFeatureFlag;
 
@@ -177,7 +177,7 @@ impl DebugPanel {
                     })
                     .register_action({
                         let debug_panel = debug_panel.clone();
-                        move |workspace, _: &zed_actions::debug_panel::Toggle, window, cx| {
+                        move |workspace, _: &mav_actions::debug_panel::Toggle, window, cx| {
                             DebugPanel::open(debug_panel.clone(), workspace, window, cx);
                         }
                     })
@@ -685,7 +685,7 @@ impl DebugPanel {
             IconButton::new("debug-edit-debug-json", IconName::Code)
                 .icon_size(IconSize::Small)
                 .on_click(|_, window, cx| {
-                    window.dispatch_action(zed_actions::OpenProjectDebugTasks.boxed_clone(), cx);
+                    window.dispatch_action(mav_actions::OpenProjectDebugTasks.boxed_clone(), cx);
                 })
                 .tooltip(Tooltip::text("Edit debug.json"))
         };
@@ -1902,7 +1902,7 @@ impl Render for DebugPanel {
                                 )
                                 .on_click(|_, window, cx| {
                                     window.dispatch_action(
-                                        zed_actions::OpenProjectDebugTasks.boxed_clone(),
+                                        mav_actions::OpenProjectDebugTasks.boxed_clone(),
                                         cx,
                                     );
                                 }),
@@ -1928,9 +1928,9 @@ impl Render for DebugPanel {
                             )
                             .on_click(|_, window, cx| {
                                 window.dispatch_action(
-                                    zed_actions::Extensions {
+                                    mav_actions::Extensions {
                                         category_filter: Some(
-                                            zed_actions::ExtensionCategoryFilter::DebugAdapters,
+                                            mav_actions::ExtensionCategoryFilter::DebugAdapters,
                                         ),
                                         id: None,
                                     }

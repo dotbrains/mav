@@ -31,6 +31,10 @@ use gpui::{
 };
 use language::DiagnosticSeverity;
 use markdown_preview::markdown_preview_view::MarkdownPreviewView;
+use mav_actions::{
+    project_panel::{Toggle, ToggleFocus},
+    workspace::OpenWithSystem,
+};
 use menu::{Confirm, SelectFirst, SelectLast, SelectNext, SelectPrevious};
 use notifications::status_toast::StatusToast;
 use project::{
@@ -79,10 +83,6 @@ use workspace::{
     notifications::{DetachAndPromptErr, NotifyResultExt, NotifyTaskExt},
 };
 use worktree::CreatedEntry;
-use zed_actions::{
-    project_panel::{Toggle, ToggleFocus},
-    workspace::OpenWithSystem,
-};
 
 use crate::{
     project_panel_settings::ProjectPanelScrollbarProxy,
@@ -1165,10 +1165,10 @@ impl ProjectPanel {
                                     .action("Download...", Box::new(DownloadFromRemote))
                             })
                             .separator()
-                            .action("Copy Path", Box::new(zed_actions::workspace::CopyPath))
+                            .action("Copy Path", Box::new(mav_actions::workspace::CopyPath))
                             .action(
                                 "Copy Relative Path",
-                                Box::new(zed_actions::workspace::CopyRelativePath),
+                                Box::new(mav_actions::workspace::CopyRelativePath),
                             )
                             .when(has_git_repo, |menu| {
                                 menu.separator()
@@ -3595,7 +3595,7 @@ impl ProjectPanel {
 
     fn copy_path(
         &mut self,
-        _: &zed_actions::workspace::CopyPath,
+        _: &mav_actions::workspace::CopyPath,
         _: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -3623,7 +3623,7 @@ impl ProjectPanel {
 
     fn copy_relative_path(
         &mut self,
-        _: &zed_actions::workspace::CopyRelativePath,
+        _: &mav_actions::workspace::CopyRelativePath,
         _: &mut Window,
         cx: &mut Context<Self>,
     ) {

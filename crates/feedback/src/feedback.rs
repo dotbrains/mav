@@ -1,10 +1,10 @@
 use client::telemetry;
 use extension_host::ExtensionStore;
 use gpui::{App, ClipboardItem, PromptLevel, actions};
+use mav_actions::feedback::{EmailZed, FileBugReport, RequestFeature};
 use system_specs::{CopySystemSpecsIntoClipboard, SystemSpecs};
 use util::ResultExt;
 use workspace::Workspace;
-use zed_actions::feedback::{EmailZed, FileBugReport, RequestFeature};
 
 actions!(
     zed,

@@ -9,12 +9,12 @@ use gpui::{
 };
 use language::{Buffer, Language, LanguageRegistry};
 use markdown::{Markdown, MarkdownElement, MarkdownFont, MarkdownStyle};
+use mav_actions::notebook::InterruptKernel;
 use nbformat::v4::{CellId, CellMetadata, CellType};
 use runtimelib::{JupyterMessage, JupyterMessageContent};
 use settings::Settings as _;
 use ui::{CommonAnimationExt, IconButtonShape, prelude::*};
 use util::ResultExt;
-use zed_actions::notebook::InterruptKernel;
 
 use crate::{
     notebook::{CODE_BLOCK_INSET, GUTTER_WIDTH},

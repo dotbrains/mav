@@ -16,7 +16,7 @@ use ui::{
 };
 use util::ResultExt as _;
 
-use zed_actions::ExtensionCategoryFilter;
+use mav_actions::ExtensionCategoryFilter;
 
 use crate::{PROJECT, SettingField, SettingItem, SettingsPageItem, SettingsWindow, USER};
 
@@ -625,7 +625,7 @@ fn render_add_server_popover(
                                     .update(cx, |_, window, cx| {
                                         window.activate_window();
                                         window.dispatch_action(
-                                            zed_actions::Extensions {
+                                            mav_actions::Extensions {
                                                 category_filter: Some(
                                                     ExtensionCategoryFilter::ContextServers,
                                                 ),

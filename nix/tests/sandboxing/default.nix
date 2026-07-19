@@ -15,7 +15,7 @@
 #                      disabled via sysctl; `can_create` must report
 #                      `SandboxProbeFailed`.
 #
-# The behavior to assert is declared *here* as a list of `checks`, serialized to
+# The behavior to assert is declared *here* as a list of `checks`, written to
 # JSON and handed to the `bwrap_test_helper` binary, which builds the described
 # sandbox policy via the sandbox crate's public API, performs the operation, and
 # asserts the outcome. Each check is one of:
@@ -160,8 +160,8 @@ let
         # whole test on a non-zero exit; we print its output so the per-check
         # results show up in the build log.
         print(machine.succeed(
-            "ZED_SANDBOX_CHECKS=${checksFile} "
-            "ZED_TEST_ECHO_PORT=${toString echoPort} "
+            "MAV_SANDBOX_CHECKS=${checksFile} "
+            "MAV_TEST_ECHO_PORT=${toString echoPort} "
             "bwrap_test_helper 2>&1"
         ))
       '';

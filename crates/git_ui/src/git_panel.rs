@@ -47,6 +47,7 @@ use language_model::{
     CompletionIntent, ConfiguredModel, Event as LanguageModelEvent, LanguageModelRegistry,
     LanguageModelRequest, LanguageModelRequestMessage, Role,
 };
+use mav_actions::{DecreaseBufferFontSize, IncreaseBufferFontSize, ResetBufferFontSize};
 use menu;
 use multi_buffer::ExcerptBoundaryInfo;
 use notifications::status_toast::StatusToast;
@@ -89,7 +90,6 @@ use workspace::{
     dock::{DockPosition, Panel, PanelEvent},
     notifications::{DetachAndPromptErr, NotificationId, NotifyTaskExt},
 };
-use zed_actions::{DecreaseBufferFontSize, IncreaseBufferFontSize, ResetBufferFontSize};
 
 const GIT_PANEL_KEY: &str = "GitPanel";
 const UPDATE_DEBOUNCE: Duration = Duration::from_millis(50);
@@ -199,7 +199,7 @@ fn git_panel_context_menu(
                 StashAll.boxed_clone(),
             )
             .action_disabled_when(!has_stash_items, "Stash Pop", StashPop.boxed_clone())
-            .action("View Stash", zed_actions::git::ViewStash.boxed_clone())
+            .action("View Stash", mav_actions::git::ViewStash.boxed_clone())
             .separator()
             .action_disabled_when(
                 !has_tracked_changes,
@@ -4626,7 +4626,7 @@ impl GitPanel {
                     (Toast | ToastWithLog { .. }, true) => {
                         this.action("Create Pull Request", move |window, cx| {
                             window
-                                .dispatch_action(Box::new(zed_actions::git::CreatePullRequest), cx);
+                                .dispatch_action(Box::new(mav_actions::git::CreatePullRequest), cx);
                         })
                     }
                     (Toast, false) => this,
@@ -5284,10 +5284,10 @@ impl GitPanel {
                                 this.flex_1().min_h_0().pb(footer_size)
                             })
                             .pr_2p5()
-                            .on_action(|&zed_actions::editor::MoveUp, _, cx| {
+                            .on_action(|&mav_actions::editor::MoveUp, _, cx| {
                                 cx.stop_propagation();
                             })
-                            .on_action(|&zed_actions::editor::MoveDown, _, cx| {
+                            .on_action(|&mav_actions::editor::MoveDown, _, cx| {
                                 cx.stop_propagation();
                             })
                             .child(EditorElement::new(&self.commit_editor, panel_editor_style)),
@@ -7629,7 +7629,7 @@ impl RenderOnce for PanelRepoFooter {
             .label_size(LabelSize::Small)
             .truncate(true)
             .on_click(|_, window, cx| {
-                window.dispatch_action(zed_actions::git::Switch.boxed_clone(), cx);
+                window.dispatch_action(mav_actions::git::Switch.boxed_clone(), cx);
             });
 
         let branch_selector = PopoverMenu::new("popover-button")
@@ -7640,7 +7640,7 @@ impl RenderOnce for PanelRepoFooter {
             })
             .trigger_with_tooltip(
                 branch_selector_button,
-                Tooltip::for_action_title("Switch Branch", &zed_actions::git::Switch),
+                Tooltip::for_action_title("Switch Branch", &mav_actions::git::Switch),
             )
             .anchor(Anchor::BottomLeft)
             .offset(gpui::Point {

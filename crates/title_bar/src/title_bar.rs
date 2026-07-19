@@ -55,7 +55,7 @@ use workspace::{
     notifications::{NotifyResultExt, NotifyTaskExt as _},
 };
 
-use zed_actions::OpenRemote;
+use mav_actions::OpenRemote;
 
 pub use onboarding_banner::restore_banner;
 
@@ -833,7 +833,7 @@ impl SidebarChrome {
                     .selected_style(ButtonStyle::Tinted(TintColor::Accent))
                     .when(!is_project_selected, |s| s.color(Color::Muted)),
                 move |_window, cx| {
-                    Tooltip::for_action("Recent Projects", &zed_actions::OpenRecent::default(), cx)
+                    Tooltip::for_action("Recent Projects", &mav_actions::OpenRecent::default(), cx)
                 },
             )
             .anchor(gpui::Anchor::TopLeft)
@@ -884,7 +884,7 @@ impl SidebarChrome {
                     .selected_style(ButtonStyle::Tinted(TintColor::Accent))
                     .when(!is_project_selected, |s| s.color(Color::Muted)),
                 move |_window, cx| {
-                    Tooltip::for_action("Recent Projects", &zed_actions::OpenRecent::default(), cx)
+                    Tooltip::for_action("Recent Projects", &mav_actions::OpenRecent::default(), cx)
                 },
             )
             .anchor(gpui::Anchor::TopLeft)
@@ -986,7 +986,7 @@ impl SidebarChrome {
                     move |_window, cx| {
                         Tooltip::with_meta(
                             "Worktree",
-                            Some(&zed_actions::git::Worktree),
+                            Some(&mav_actions::git::Worktree),
                             format!("Currently In Use: {}", worktree_label),
                             cx,
                         )
@@ -1044,7 +1044,7 @@ impl SidebarChrome {
                         };
                         Tooltip::with_meta(
                             "Branch & Stash",
-                            Some(&zed_actions::git::Branch),
+                            Some(&mav_actions::git::Branch),
                             meta,
                             cx,
                         )
@@ -1354,19 +1354,19 @@ impl SidebarChrome {
 
                         this.separator()
                     })
-                    .action("Settings", zed_actions::OpenSettings.boxed_clone())
-                    .action("Keymap", Box::new(zed_actions::OpenKeymap))
+                    .action("Settings", mav_actions::OpenSettings.boxed_clone())
+                    .action("Keymap", Box::new(mav_actions::OpenKeymap))
                     .action(
                         "Themes…",
-                        zed_actions::theme_selector::Toggle::default().boxed_clone(),
+                        mav_actions::theme_selector::Toggle::default().boxed_clone(),
                     )
                     .action(
                         "Icon Themes…",
-                        zed_actions::icon_theme_selector::Toggle::default().boxed_clone(),
+                        mav_actions::icon_theme_selector::Toggle::default().boxed_clone(),
                     )
                     .action(
                         "Extensions",
-                        zed_actions::Extensions::default().boxed_clone(),
+                        mav_actions::Extensions::default().boxed_clone(),
                     )
                     .when(ai_enabled, |menu| {
                         menu.separator()

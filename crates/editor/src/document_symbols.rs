@@ -334,11 +334,11 @@ mod tests {
 
     use futures::StreamExt as _;
     use gpui::TestAppContext;
+    use mav_actions::editor::{MoveDown, MoveUp};
     use multi_buffer::ToPoint;
     use settings::{DocumentSymbols, SettingsStore};
     use text::Point;
     use util::path;
-    use zed_actions::editor::{MoveDown, MoveUp};
 
     use crate::{
         Editor, LSP_REQUEST_DEBOUNCE_TIMEOUT,

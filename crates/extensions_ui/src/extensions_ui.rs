@@ -18,6 +18,7 @@ use gpui::{
     InteractiveElement, KeyContext, ParentElement, Point, Render, Styled, Task, TaskExt, TextStyle,
     UniformListScrollHandle, WeakEntity, Window, actions, point, uniform_list,
 };
+use mav_actions::ExtensionCategoryFilter;
 use num_format::{Locale, ToFormattedString};
 use picker::{Picker, PickerDelegate};
 use project::DirectoryLister;
@@ -39,7 +40,6 @@ use workspace::{
     item::{Item, ItemEvent},
     workspace_error::{ErrorAction, ErrorSeverity, WorkspaceError},
 };
-use zed_actions::ExtensionCategoryFilter;
 
 use crate::components::ExtensionCard;
 use crate::extension_version_selector::{
@@ -115,7 +115,7 @@ pub fn init(cx: &mut App) {
         };
         workspace
             .register_action(
-                move |workspace, action: &zed_actions::Extensions, window, cx| {
+                move |workspace, action: &mav_actions::Extensions, window, cx| {
                     let provides_filter = action.category_filter.map(|category| match category {
                         ExtensionCategoryFilter::Themes => ExtensionProvides::Themes,
                         ExtensionCategoryFilter::IconThemes => ExtensionProvides::IconThemes,
@@ -516,7 +516,7 @@ impl ExtensionsPage {
             workspace
                 .update(cx, |_workspace, cx| {
                     window.dispatch_action(
-                        zed_actions::theme_selector::Toggle {
+                        mav_actions::theme_selector::Toggle {
                             themes_filter: Some(themes),
                         }
                         .boxed_clone(),
@@ -535,7 +535,7 @@ impl ExtensionsPage {
             workspace
                 .update(cx, |_workspace, cx| {
                     window.dispatch_action(
-                        zed_actions::icon_theme_selector::Toggle {
+                        mav_actions::icon_theme_selector::Toggle {
                             themes_filter: Some(icon_themes),
                         }
                         .boxed_clone(),

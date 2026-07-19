@@ -26,6 +26,7 @@ use language_model::{
     ZED_CLOUD_PROVIDER_ID,
 };
 use language_models::AllLanguageModelSettings;
+use mav_actions::{ExtensionCategoryFilter, OpenBrowser};
 use notifications::status_toast::StatusToast;
 use project::{
     agent_server_store::{AgentId, AgentServerStore, ExternalAgentSource},
@@ -39,7 +40,6 @@ use ui::{
 };
 use util::ResultExt as _;
 use workspace::{Workspace, create_and_open_local_file};
-use zed_actions::{ExtensionCategoryFilter, OpenBrowser};
 
 pub(crate) use configure_context_server_modal::ConfigureContextServerModal;
 pub(crate) use configure_context_server_tools_modal::ConfigureContextServerToolsModal;
@@ -555,7 +555,7 @@ impl AgentConfiguration {
                         .entry("Install from Extensions", None, {
                             |window, cx| {
                                 window.dispatch_action(
-                                    zed_actions::Extensions {
+                                    mav_actions::Extensions {
                                         category_filter: Some(
                                             ExtensionCategoryFilter::ContextServers,
                                         ),
@@ -1076,7 +1076,7 @@ impl AgentConfiguration {
                     Some(ContextMenu::build(window, cx, |menu, _window, _cx| {
                         menu.entry("Install from Registry", None, {
                             |window, cx| {
-                                window.dispatch_action(Box::new(zed_actions::AcpRegistry), cx)
+                                window.dispatch_action(Box::new(mav_actions::AcpRegistry), cx)
                             }
                         })
                         .entry("Add Custom Agent", None, {

@@ -1,6 +1,6 @@
 # Getting Started
 
-`mav` is a private dotbrains workspace for building and maintaining a Zed-based editor distribution. The repository keeps the editor source, extension host, bundled extension examples, assets, Nix packaging, and development tooling. Public website content, community automation, hosted-service legal pages, and release machinery that is not needed for private development have been removed.
+`mav` is a private dotbrains workspace for building and maintaining a Mav-based editor distribution. The repository keeps the editor source, extension host, bundled extension examples, assets, Nix packaging, and development tooling. Public website content, community automation, hosted-service legal pages, and release machinery that is not needed for private development have been removed.
 
 ## Prerequisites
 
@@ -16,7 +16,7 @@
 git clone https://github.com/dotbrains/mav.git
 cd mav
 flox activate
-cargo run -p zed --bin mav
+cargo run -p mav --bin mav
 ```
 
 The first build downloads Rust dependencies, native libraries, grammars, and extension fixtures. Expect the first build to take significantly longer than later incremental builds.
@@ -27,7 +27,7 @@ The workspace is intentionally large because the editor binary links through man
 
 ```bash
 cargo metadata --format-version=1 --no-deps
-cargo tree -p zed --edges normal,build
+cargo tree -p mav --edges normal,build
 ```
 
 ## Daily Loop
@@ -35,7 +35,7 @@ cargo tree -p zed --edges normal,build
 ```bash
 flox activate
 cargo fmt --all
-cargo check -p zed --bin mav
+cargo check -p mav --bin mav
 cargo test -p extension_api
 ```
 

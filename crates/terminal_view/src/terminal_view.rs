@@ -17,6 +17,7 @@ use gpui::{
     MouseDownEvent, Pixels, Point as GpuiPoint, Render, ScrollWheelEvent, Styled, Subscription,
     Task, TaskExt, WeakEntity, actions, anchored, deferred, div,
 };
+use mav_actions::{agent::AddSelectionToThread, assistant::InlineAssist};
 use menu;
 use persistence::TerminalDb;
 use project::{Project, ProjectEntryId, search::SearchQuery};
@@ -61,7 +62,6 @@ use workspace::{
         Direction, SearchEvent, SearchOptions, SearchToken, SearchableItem, SearchableItemHandle,
     },
 };
-use zed_actions::{agent::AddSelectionToThread, assistant::InlineAssist};
 
 struct ImeState {
     marked_text: String,
@@ -514,10 +514,10 @@ impl Render for FailedToSpawnTerminal {
             .menu(move |window, cx| {
                 Some(ContextMenu::build(window, cx, |context_menu, _, _| {
                     context_menu
-                        .action("Open Settings", zed_actions::OpenSettings.boxed_clone())
+                        .action("Open Settings", mav_actions::OpenSettings.boxed_clone())
                         .action(
                             "Edit settings.json",
-                            zed_actions::OpenSettingsFile.boxed_clone(),
+                            mav_actions::OpenSettingsFile.boxed_clone(),
                         )
                 }))
             })
@@ -551,7 +551,7 @@ impl Render for FailedToSpawnTerminal {
                         ButtonLike::new("open-settings-ui")
                             .child(Label::new("Edit Settings").size(LabelSize::Small))
                             .on_click(|_, window, cx| {
-                                window.dispatch_action(zed_actions::OpenSettings.boxed_clone(), cx);
+                                window.dispatch_action(mav_actions::OpenSettings.boxed_clone(), cx);
                             }),
                         popover_menu.into_any_element(),
                     )),
@@ -1549,8 +1549,8 @@ impl TerminalView {
     }
 }
 
-fn terminal_rerun_override(task: &TaskId) -> zed_actions::Rerun {
-    zed_actions::Rerun {
+fn terminal_rerun_override(task: &TaskId) -> mav_actions::Rerun {
+    mav_actions::Rerun {
         task_id: Some(task.0.clone()),
         allow_concurrent_runs: Some(true),
         use_new_terminal: Some(false),

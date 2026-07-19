@@ -22,6 +22,9 @@ use language::{
     SelectionGoal, proto::serialize_anchor as serialize_text_anchor,
 };
 use lsp::DiagnosticSeverity;
+use mav_actions::preview::{
+    markdown::OpenPreview as OpenMarkdownPreview, svg::OpenPreview as OpenSvgPreview,
+};
 use multi_buffer::{BufferOffset, MultiBufferOffset, PathKey};
 use project::{
     File, Project, ProjectItem as _, ProjectPath, lsp_store::FormatTrigger,
@@ -56,9 +59,6 @@ use workspace::{
     Pane, TabBarSettings, WorkspaceSettings,
     item::{FollowEvent, ProjectItemKind},
     searchable::SearchOptions,
-};
-use zed_actions::preview::{
-    markdown::OpenPreview as OpenMarkdownPreview, svg::OpenPreview as OpenSvgPreview,
 };
 
 pub const MAX_TAB_TITLE_LEN: usize = 24;

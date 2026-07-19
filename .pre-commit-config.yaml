@@ -8,7 +8,7 @@ repos:
         pass_filenames: false
       - id: cargo-check-mav
         name: cargo check mav
-        entry: cargo check -p zed --bin mav --locked
+        entry: cargo check -p mav --bin mav --locked
         language: system
         pass_filenames: false
       - id: actionlint
@@ -23,6 +23,6 @@ repos:
         pass_filenames: false
       - id: no-ubuntu-runners
         name: require Blacksmith runners
-        entry: bash -c '! grep -R "runs-on: ubuntu-" .github/workflows'
+        entry: 'bash -c ''! grep -R "runs-on: ubuntu-" .github/workflows'''
         language: system
         pass_filenames: false

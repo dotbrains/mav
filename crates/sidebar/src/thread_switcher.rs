@@ -8,9 +8,9 @@ use gpui::{
     Action as _, DismissEvent, Entity, EventEmitter, FocusHandle, Focusable, Modifiers,
     ModifiersChangedEvent, Render, ScrollHandle, SharedString, prelude::*,
 };
+use mav_actions::sidebar::ToggleThreadSwitcher;
 use ui::{AgentThreadStatus, ThreadItem, ThreadItemWorktreeInfo, WithScrollbar, prelude::*};
 use workspace::{ModalView, Workspace};
-use zed_actions::sidebar::ToggleThreadSwitcher;
 
 use super::ThreadEntryWorkspace;
 

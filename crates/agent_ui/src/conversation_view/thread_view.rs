@@ -2303,7 +2303,7 @@ impl ThreadView {
 
     fn handle_message_editor_move_up(
         &mut self,
-        _: &zed_actions::editor::MoveUp,
+        _: &mav_actions::editor::MoveUp,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -4375,7 +4375,7 @@ impl ThreadView {
                             .icon(IconName::Plus)
                             .icon_color(Color::Muted)
                             .handler(|window, cx| {
-                                window.dispatch_action(Box::new(zed_actions::AcpRegistry), cx)
+                                window.dispatch_action(Box::new(mav_actions::AcpRegistry), cx)
                             }),
                     )
                 }))
@@ -4898,8 +4898,8 @@ impl ThreadView {
                         }))
                         .on_click(|_, window, cx| {
                             window.dispatch_action(
-                                Box::new(zed_actions::OpenSettingsAt {
-                                    path: zed_actions::AGENT_SANDBOX_SETTINGS_PATH.to_string(),
+                                Box::new(mav_actions::OpenSettingsAt {
+                                    path: mav_actions::AGENT_SANDBOX_SETTINGS_PATH.to_string(),
                                     target: None,
                                 }),
                                 cx,
@@ -5550,7 +5550,7 @@ impl ThreadView {
                         .handler({
                             move |window, cx| {
                                 window.dispatch_action(
-                                    zed_actions::agent::AddSelectionToThread.boxed_clone(),
+                                    mav_actions::agent::AddSelectionToThread.boxed_clone(),
                                     cx,
                                 );
                             }
@@ -10793,7 +10793,7 @@ impl ThreadView {
                     move |_, _, _window, cx| {
                         #[cfg(windows)]
                         _window.dispatch_action(
-                            zed_actions::wsl_actions::OpenWsl::default().boxed_clone(),
+                            mav_actions::wsl_actions::OpenWsl::default().boxed_clone(),
                             cx,
                         );
                         cx.notify();

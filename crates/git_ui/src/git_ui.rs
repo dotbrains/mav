@@ -19,6 +19,7 @@ use gpui::{
     App, ClipboardItem, Context, DismissEvent, Entity, EventEmitter, FocusHandle, Focusable,
     SharedString, Subscription, Task, TaskExt, WeakEntity, Window,
 };
+use mav_actions;
 use menu::{Cancel, Confirm};
 use project::git_store::Repository;
 use project_diff::ProjectDiff;
@@ -28,7 +29,6 @@ use workspace::{
     ModalView, OpenMode, Workspace,
     notifications::{DetachAndPromptErr, NotifyTaskExt},
 };
-use zed_actions;
 
 use crate::{
     commit_view::CommitView,
@@ -97,17 +97,17 @@ pub fn init(cx: &mut App) {
         git_picker::register(workspace);
 
         workspace.register_action(
-            |workspace, action: &zed_actions::CreateWorktree, window, cx| {
+            |workspace, action: &mav_actions::CreateWorktree, window, cx| {
                 worktree_service::handle_create_worktree(workspace, action, window, None, cx);
             },
         );
         workspace.register_action(
-            |workspace, action: &zed_actions::SwitchWorktree, window, cx| {
+            |workspace, action: &mav_actions::SwitchWorktree, window, cx| {
                 worktree_service::handle_switch_worktree(workspace, action, window, None, cx);
             },
         );
 
-        workspace.register_action(|workspace, _: &zed_actions::git::Worktree, window, cx| {
+        workspace.register_action(|workspace, _: &mav_actions::git::Worktree, window, cx| {
             let focused_dock = workspace.focused_dock_position(window, cx);
             let project = workspace.project().clone();
             let workspace_handle = workspace.weak_handle();
@@ -123,7 +123,7 @@ pub fn init(cx: &mut App) {
         });
 
         workspace.register_action(
-            |workspace, action: &zed_actions::OpenWorktreeInNewWindow, window, cx| {
+            |workspace, action: &mav_actions::OpenWorktreeInNewWindow, window, cx| {
                 let path = action.path.clone();
                 let is_remote = !workspace.project().read(cx).is_local();
 
@@ -160,7 +160,7 @@ pub fn init(cx: &mut App) {
         }
         if !project.is_via_collab() {
             workspace.register_action(
-                |workspace, _: &zed_actions::git::CreatePullRequest, window, cx| {
+                |workspace, _: &mav_actions::git::CreatePullRequest, window, cx| {
                     if let Some(panel) = workspace.panel::<git_panel::GitPanel>(cx) {
                         panel.update(cx, |panel, cx| {
                             panel.create_pull_request(window, cx);

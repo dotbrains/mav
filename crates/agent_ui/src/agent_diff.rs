@@ -19,6 +19,7 @@ use gpui::{
 };
 
 use language::{Buffer, Capability, OffsetRangeExt, Point};
+use mav_actions::assistant::ToggleFocus;
 use multi_buffer::PathKey;
 use project::{Project, ProjectItem, ProjectPath};
 use settings::{Settings, SettingsStore};
@@ -36,7 +37,6 @@ use workspace::{
     item::{ItemEvent, SaveOptions, TabContentParams},
     searchable::SearchableItemHandle,
 };
-use zed_actions::assistant::ToggleFocus;
 
 pub struct AgentDiffPane {
     multibuffer: Entity<MultiBuffer>,

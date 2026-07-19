@@ -24,7 +24,7 @@ jobs:
       - name: format
         run: flox activate -- cargo fmt --all -- --check
       - name: manifest check
-        run: flox activate -- cargo check -p zed --bin mav --locked
+        run: flox activate -- cargo check -p mav --bin mav --locked
 
   nix:
     name: nix

@@ -41,7 +41,7 @@ use workspace::{
     WorkspaceId,
 };
 
-use zed_actions::editor::{MoveDown, MoveUp};
+use mav_actions::editor::{MoveDown, MoveUp};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 enum ThreadFilter {

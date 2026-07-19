@@ -714,12 +714,12 @@ impl agent::SiblingThreadHost for AgentThreadSiblingHost {
                     .upgrade()
                     .ok_or_else(|| anyhow!("Source workspace is no longer available"))?;
                 let branch_target = match request.base_ref.as_ref() {
-                    Some(ref_name) => zed_actions::NewWorktreeBranchTarget::ExistingBranch {
+                    Some(ref_name) => mav_actions::NewWorktreeBranchTarget::ExistingBranch {
                         name: ref_name.clone(),
                     },
-                    None => zed_actions::NewWorktreeBranchTarget::CurrentBranch,
+                    None => mav_actions::NewWorktreeBranchTarget::CurrentBranch,
                 };
-                let action = zed_actions::CreateWorktree {
+                let action = mav_actions::CreateWorktree {
                     worktree_name: request.worktree_name.clone(),
                     branch_target,
                 };

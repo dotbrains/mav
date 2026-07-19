@@ -1,54 +1,63 @@
 # mav
 
-[![Private](https://img.shields.io/badge/repo-private-black)](https://github.com/dotbrains/mav)
-[![Rust](https://img.shields.io/badge/rust-stable-f74c00)](https://www.rust-lang.org/)
-[![Nix](https://img.shields.io/badge/nix-flake-5277c3)](./flake.nix)
-[![Flox](https://img.shields.io/badge/flox-supported-6b46c1)](./.flox/env/manifest.toml)
 [![CI](https://github.com/dotbrains/mav/actions/workflows/ci.yml/badge.svg)](https://github.com/dotbrains/mav/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-PolyForm%20Shield-blue)](./LICENSE)
+[![License: PolyForm Shield 1.0.0](https://img.shields.io/badge/license-PolyForm%20Shield%201.0.0-blue.svg)](LICENSE)
+[![Platform: macOS + Linux](https://img.shields.io/badge/platform-macOS%20%2B%20Linux-lightgrey.svg)](docs/getting-started.md)
+[![Rust: stable](https://img.shields.io/badge/rust-stable-orange.svg)](CONTRIBUTING.md)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](.pre-commit-config.yaml)
+[![Dev env: Flox](https://img.shields.io/badge/dev%20env-flox-7c3aed.svg)](https://flox.dev)
+[![Nix: flake](https://img.shields.io/badge/nix-flake-5277c3.svg)](flake.nix)
 
-Private dotbrains workspace for the Zed editor core, bundled assets, and local extension development.
+Private **dotbrains editor workspace for macOS and Linux**. `mav` keeps the
+application runtime, extension host, bundled assets, reproducible development
+shells, and CI checks in one private repository.
 
-## Quick Start
-
-```bash
-flox activate
-cargo run -p zed --bin mav
+```console
+$ git clone https://github.com/dotbrains/mav.git
+$ cd mav
+$ flox activate
+$ cargo run -p mav --bin mav
 ```
 
-## What Is Kept
+See [docs/architecture.md](docs/architecture.md) for the workspace layout and
+[docs/getting-started.md](docs/getting-started.md) for first-run setup.
 
-| Path | Purpose |
-| --- | --- |
-| `crates/` | Rust workspace for the editor, UI, language, extension, agent, terminal, and platform crates. |
-| `assets/` | Runtime assets, default settings, keymaps, themes, icons, prompts, sounds, and images. |
-| `extensions/` | First-party extension fixtures and examples used by the extension host and extension CLI. |
-| `nix/`, `flake.nix`, `shell.nix`, `default.nix` | Nix package and development shell support. |
-| `.flox/` | Flox environment for repeatable local development. |
-| `tooling/`, `script/` | Build, workflow, license, formatting, and maintenance commands still needed by the workspace. |
+## Install
 
-## Common Tasks
+This repository is private. Authenticate before cloning or fetching release
+artifacts:
 
-```bash
+```sh
+gh auth login
+git clone https://github.com/dotbrains/mav.git
+cd mav
+```
+
+Use [Flox](https://flox.dev) for the fastest setup:
+
+```sh
 flox activate
-cargo fmt --all -- --check
-cargo check -p zed --bin mav
-cargo test -p extension_api
-nix flake check
+cargo check -p mav --bin mav --locked
+```
+
+Nix users can enter the same pinned toolchain with:
+
+```sh
+nix develop
+cargo check -p mav --bin mav --locked
+```
+
+## Development
+
+```sh
+flox activate
 pre-commit run --all-files
+cargo check -p mav --bin mav --locked
 ```
 
-## Documentation
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the contributor workflow,
+**[docs/testing.md](docs/testing.md)** for test guidance, **[docs/ci.md](docs/ci.md)**
+for CI coverage, and **[docs/nix-and-flox.md](docs/nix-and-flox.md)** for the
+reproducible development environments.
 
-- [Getting started](./docs/getting-started.md)
-- [Architecture](./docs/architecture.md)
-- [Development](./docs/development.md)
-- [Extensions](./docs/extensions.md)
-- [Nix and Flox](./docs/nix-and-flox.md)
-- [CI](./docs/ci.md)
-- [Testing](./docs/testing.md)
-- [Releasing](./docs/releasing.md)
-
-## License
-
-This repository uses the [PolyForm Shield License 1.0.0](./LICENSE).
+[PolyForm Shield License 1.0.0](LICENSE).

@@ -3,6 +3,7 @@ pub use buffer_search::BufferSearchBar;
 pub use editor::HighlightKey;
 use editor::SearchSettings;
 use gpui::{Action, App, ClickEvent, Entity, FocusHandle, IntoElement, actions};
+pub use mav_actions::search::ToggleIncludeIgnored;
 use project::search::SearchQuery;
 pub use project_search::ProjectSearchView;
 use ui::{ButtonStyle, IconButton, IconButtonShape};
@@ -10,7 +11,6 @@ use ui::{Tooltip, prelude::*};
 use util::paths::PathMatcher;
 use workspace::notifications::NotificationId;
 use workspace::{Toast, Workspace};
-pub use zed_actions::search::ToggleIncludeIgnored;
 
 pub use search_status_button::SEARCH_ICON;
 

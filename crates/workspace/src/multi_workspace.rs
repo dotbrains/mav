@@ -6,6 +6,7 @@ use gpui::{
     ManagedView, MouseButton, Pixels, Render, Subscription, Task, TaskExt, Tiling, WeakEntity,
     Window, WindowId, actions, deferred, px,
 };
+use mav_actions::sidebar::ToggleThreadSwitcher;
 use project::Project;
 pub use project::ProjectGroupKey;
 use remote::RemoteConnectionOptions;
@@ -18,7 +19,6 @@ use std::rc::Rc;
 use ui::prelude::*;
 use util::ResultExt;
 use util::path_list::PathList;
-use zed_actions::sidebar::ToggleThreadSwitcher;
 
 use crate::workspace_settings::SidebarSettings;
 use settings::SidebarDockPosition;

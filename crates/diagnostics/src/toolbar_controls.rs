@@ -2,12 +2,12 @@ use crate::{BufferDiagnosticsEditor, ProjectDiagnosticsEditor, ToggleDiagnostics
 use agent_settings::AgentSettings;
 use gpui::{Context, EventEmitter, ParentElement, Render, Window};
 use language::DiagnosticEntry;
+use mav_actions::assistant::InlineAssist;
+use mav_actions::buffer_search;
 use settings::Settings;
 use text::{Anchor, BufferId};
 use ui::{Tooltip, prelude::*};
 use workspace::{ToolbarItemEvent, ToolbarItemLocation, ToolbarItemView, item::ItemHandle};
-use zed_actions::assistant::InlineAssist;
-use zed_actions::buffer_search;
 
 pub struct ToolbarControls {
     editor: Option<Box<dyn DiagnosticsToolbarEditor>>,

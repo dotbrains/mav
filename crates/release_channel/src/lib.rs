@@ -1,4 +1,4 @@
-//! Provides constructs for the Zed app version and release channel.
+//! Provides constructs for the Mav app version and release channel.
 
 #![deny(missing_docs)]
 
@@ -7,15 +7,15 @@ use std::{env, str::FromStr, sync::LazyLock};
 use gpui::{App, Global};
 use semver::Version;
 
-const ZED_DOCS_URL: &str = "https://zed.dev/docs";
+const MAV_DOCS_URL: &str = "https://mav.dev/docs";
 
 /// stable | dev | nightly | preview
 pub static RELEASE_CHANNEL_NAME: LazyLock<String> = LazyLock::new(|| {
     if cfg!(debug_assertions) {
         env::var("ZED_RELEASE_CHANNEL")
-            .unwrap_or_else(|_| include_str!("../../zed/RELEASE_CHANNEL").trim().to_string())
+            .unwrap_or_else(|_| include_str!("../../mav/RELEASE_CHANNEL").trim().to_string())
     } else {
-        include_str!("../../zed/RELEASE_CHANNEL").trim().to_string()
+        include_str!("../../mav/RELEASE_CHANNEL").trim().to_string()
     }
 });
 
@@ -30,14 +30,14 @@ pub static RELEASE_CHANNEL: LazyLock<ReleaseChannel> =
 #[cfg(target_os = "windows")]
 pub fn app_identifier() -> &'static str {
     match *RELEASE_CHANNEL {
-        ReleaseChannel::Dev => "Zed-Editor-Dev",
-        ReleaseChannel::Nightly => "Zed-Editor-Nightly",
-        ReleaseChannel::Preview => "Zed-Editor-Preview",
-        ReleaseChannel::Stable => "Zed-Editor-Stable",
+        ReleaseChannel::Dev => "Mav-Editor-Dev",
+        ReleaseChannel::Nightly => "Mav-Editor-Nightly",
+        ReleaseChannel::Preview => "Mav-Editor-Preview",
+        ReleaseChannel::Stable => "Mav-Editor-Stable",
     }
 }
 
-/// The Git commit SHA that Zed was built at.
+/// The Git commit SHA that Mav was built at.
 #[derive(Clone, Eq, Debug, PartialEq)]
 pub struct AppCommitSha(String);
 
@@ -77,7 +77,7 @@ struct GlobalAppVersion(Version);
 
 impl Global for GlobalAppVersion {}
 
-/// The version of Zed.
+/// The version of Mav.
 pub struct AppVersion;
 
 impl AppVersion {
@@ -120,12 +120,12 @@ impl AppVersion {
     }
 }
 
-/// A Zed release channel.
+/// A Mav release channel.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub enum ReleaseChannel {
     /// The development release channel.
     ///
-    /// Used for local debug builds of Zed.
+    /// Used for local debug builds of Mav.
     #[default]
     Dev,
 
@@ -155,7 +155,7 @@ pub fn init_test(app_version: Version, release_channel: ReleaseChannel, cx: &mut
     cx.set_global(GlobalReleaseChannel(release_channel))
 }
 
-/// Returns the Zed docs URL for the current release channel for the given
+/// Returns the Mav docs URL for the current release channel for the given
 /// `slug`.
 pub fn docs_url(slug: &str, cx: &App) -> String {
     ReleaseChannel::try_global(cx)
@@ -188,7 +188,7 @@ impl ReleaseChannel {
         // mav is a private fork with no update server of its own. Gating every
         // update path (background polling and the manual "Check for Updates"
         // action both funnel through here) off so it can never download and
-        // replace itself with upstream Zed. Updates are installed manually by
+        // replace itself with Mav. Updates are installed manually by
         // rebuilding. Previously: `!matches!(self, ReleaseChannel::Dev)`.
         false
     }
@@ -197,8 +197,8 @@ impl ReleaseChannel {
     pub fn display_name(&self) -> &'static str {
         match self {
             ReleaseChannel::Dev => "mav Dev",
-            ReleaseChannel::Nightly => "Zed Nightly",
-            ReleaseChannel::Preview => "Zed Preview",
+            ReleaseChannel::Nightly => "Mav Nightly",
+            ReleaseChannel::Preview => "Mav Preview",
             ReleaseChannel::Stable => "mav",
         }
     }
@@ -215,13 +215,13 @@ impl ReleaseChannel {
 
     /// Returns the application ID that's used by Wayland as application ID
     /// and WM_CLASS on X11.
-    /// This also has to match the bundle identifier for Zed on macOS.
+    /// This also has to match the bundle identifier for Mav on macOS.
     pub fn app_id(&self) -> &'static str {
         match self {
-            ReleaseChannel::Dev => "dev.zed.Zed-Dev",
-            ReleaseChannel::Nightly => "dev.zed.Zed-Nightly",
-            ReleaseChannel::Preview => "dev.zed.Zed-Preview",
-            ReleaseChannel::Stable => "dev.zed.Zed",
+            ReleaseChannel::Dev => "dev.zed.Mav-Dev",
+            ReleaseChannel::Nightly => "dev.zed.Mav-Nightly",
+            ReleaseChannel::Preview => "dev.zed.Mav-Preview",
+            ReleaseChannel::Stable => "dev.zed.Mav",
         }
     }
 
@@ -235,7 +235,7 @@ impl ReleaseChannel {
         }
     }
 
-    /// Returns the Zed docs URL for this [`ReleaseChannel`] for the given
+    /// Returns the Mav docs URL for this [`ReleaseChannel`] for the given
     /// `slug`.
     pub fn docs_url(&self, slug: &str) -> String {
         let channel_path_segment = match self {
@@ -245,10 +245,10 @@ impl ReleaseChannel {
         };
 
         match channel_path_segment {
-            Some(channel) if slug.is_empty() => format!("{ZED_DOCS_URL}/{channel}"),
-            Some(channel) => format!("{ZED_DOCS_URL}/{channel}/{slug}"),
-            None if slug.is_empty() => ZED_DOCS_URL.to_string(),
-            None => format!("{ZED_DOCS_URL}/{slug}"),
+            Some(channel) if slug.is_empty() => format!("{MAV_DOCS_URL}/{channel}"),
+            Some(channel) => format!("{MAV_DOCS_URL}/{channel}/{slug}"),
+            None if slug.is_empty() => MAV_DOCS_URL.to_string(),
+            None => format!("{MAV_DOCS_URL}/{slug}"),
         }
     }
 }
@@ -279,19 +279,19 @@ mod tests {
     fn test_docs_url_for_release_channel() {
         assert_eq!(
             ReleaseChannel::Dev.docs_url("settings"),
-            "https://zed.dev/docs/nightly/settings"
+            "https://mav.dev/docs/nightly/settings"
         );
         assert_eq!(
             ReleaseChannel::Nightly.docs_url("settings"),
-            "https://zed.dev/docs/nightly/settings"
+            "https://mav.dev/docs/nightly/settings"
         );
         assert_eq!(
             ReleaseChannel::Preview.docs_url("settings"),
-            "https://zed.dev/docs/preview/settings"
+            "https://mav.dev/docs/preview/settings"
         );
         assert_eq!(
             ReleaseChannel::Stable.docs_url("settings"),
-            "https://zed.dev/docs/settings"
+            "https://mav.dev/docs/settings"
         );
     }
 }

@@ -14,6 +14,7 @@ use gpui::{
 };
 use itertools::Itertools;
 use language::Point;
+use mav_actions::{ToggleEnableBreakpoint, UnsetBreakpoint};
 use project::{
     Project,
     debugger::{
@@ -29,7 +30,6 @@ use ui::{
 };
 use util::rel_path::RelPath;
 use workspace::Workspace;
-use zed_actions::{ToggleEnableBreakpoint, UnsetBreakpoint};
 
 actions!(
     debugger,
