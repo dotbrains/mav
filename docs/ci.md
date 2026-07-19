@@ -1,6 +1,6 @@
 # CI
 
-CI is intentionally small for the private port. It verifies formatting, the main editor binary, the Nix flake, and documentation links.
+CI is intentionally small for the public port. It verifies formatting, the main editor binary, the Nix flake, and documentation links.
 
 ```mermaid
 flowchart TD
@@ -11,13 +11,13 @@ flowchart TD
 
 ## Runner Policy
 
-All Linux jobs use Blacksmith runners:
+All Linux jobs use GitHub-hosted runners:
 
 ```yaml
-runs-on: blacksmith-4vcpu-ubuntu-2404
+runs-on: ubuntu-latest
 ```
 
-Do not introduce `ubuntu-latest` or `ubuntu-*` runners. The pre-commit hook checks this policy.
+Do not introduce self-hosted or third-party runner labels unless a job explicitly needs dedicated infrastructure.
 
 ## Adding Jobs
 

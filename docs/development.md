@@ -39,7 +39,7 @@ pre-commit install
 pre-commit run --all-files
 ```
 
-The pre-commit hooks enforce formatting, the main binary check, GitHub Actions syntax, typo checks, and Blacksmith runner policy.
+The pre-commit hooks enforce formatting, the main binary check, GitHub Actions syntax, typo checks, and GitHub-hosted runner policy.
 
 ## Dependency Changes
 

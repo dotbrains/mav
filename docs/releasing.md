@@ -1,10 +1,10 @@
 # Releasing
 
-`mav` does not currently include public release automation. The private port keeps build and packaging support, but public release workflows, hosted-service deployment, and community automation were removed.
+`mav` does not currently include release automation. The public port keeps build and packaging support, but hosted-service deployment and community automation were removed.
 
 ## Current Release Posture
 
-- Source repository: private GitHub repository under `dotbrains`.
+- Source repository: public GitHub repository under `dotbrains`.
 - License: PolyForm Shield License 1.0.0.
 - Build validation: Cargo, Nix, Flox, and pre-commit.
 - Distribution: manual until a dotbrains release channel is defined.
