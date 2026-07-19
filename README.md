@@ -6,8 +6,8 @@
 [![Platform: macOS + Linux](https://img.shields.io/badge/platform-macOS%20%2B%20Linux-lightgrey.svg)](docs/getting-started.md)
 [![Rust: stable](https://img.shields.io/badge/rust-stable-orange.svg)](CONTRIBUTING.md)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](.pre-commit-config.yaml)
-[![Dev env: Flox](https://img.shields.io/static/v1?label=dev%20env&message=Flox&color=7c3aed)](https://flox.dev)
-[![Nix: flake](https://img.shields.io/static/v1?label=Nix&message=flake&color=5277c3)](flake.nix)
+[![Dev env: Flox](https://img.shields.io/badge/dev--env-Flox-7c3aed.svg)](https://flox.dev)
+[![Nix: flake](https://img.shields.io/badge/Nix-flake-5277c3.svg)](flake.nix)
 
 Private **dotbrains editor workspace for macOS and Linux**. `mav` keeps the
 desktop runtime, extension host, bundled languages, themes, settings, packaging

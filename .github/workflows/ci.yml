@@ -14,8 +14,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: changes
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    outputs:
+      markdown_only: ${{ steps.filter.outputs.markdown_only }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: filter
+        name: detect markdown-only changes
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+            changed_files="$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD)"
+          else
+            changed_files="$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")"
+          fi
+
+          if [[ -n "$changed_files" ]] && ! grep -vE '\.md$' <<< "$changed_files" >/dev/null; then
+            echo "markdown_only=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "markdown_only=false" >> "$GITHUB_OUTPUT"
+          fi
+
   hygiene:
     name: hygiene
+    needs: changes
+    if: needs.changes.outputs.markdown_only != 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +56,8 @@ jobs:
 
   nix:
     name: nix
+    needs: changes
+    if: needs.changes.outputs.markdown_only != 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
