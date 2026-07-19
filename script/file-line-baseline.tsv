@@ -551,7 +551,6 @@
      662	crates/agent/src/tools/copy_path_tool.rs
      656	crates/git_hosting_providers/src/providers/bitbucket.rs
      655	crates/text/src/patch.rs
-     650	crates/language_models/src/provider/x_ai.rs
      644	crates/util/src/rel_path.rs
      643	crates/terminal_view/src/persistence.rs
      640	crates/fuzzy/src/matcher.rs
