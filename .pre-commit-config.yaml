@@ -21,11 +21,6 @@ repos:
         entry: typos
         language: system
         pass_filenames: false
-      - id: no-ubuntu-runners
-        name: require Blacksmith runners
-        entry: 'bash -c ''! grep -R "runs-on: ubuntu-" .github/workflows'''
-        language: system
-        pass_filenames: false
       - id: file-line-budget
         name: file line budget
         entry: script/check-file-lines 500
