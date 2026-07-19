@@ -3,10 +3,10 @@ use futures::{AsyncBufReadExt, AsyncReadExt, StreamExt, io::BufReader, stream::B
 use http_client::{
     AsyncBody, CustomHeaders, HttpClient, Method, Request as HttpRequest, RequestBuilderExt, http,
 };
+pub use language_model_core::ModelMode;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 pub use settings::DataCollection;
-pub use settings::ModelMode;
 pub use settings::OpenRouterAvailableModel as AvailableModel;
 pub use settings::OpenRouterProvider as Provider;
 use std::{convert::TryFrom, io, time::Duration};
