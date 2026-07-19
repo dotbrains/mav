@@ -619,7 +619,6 @@
      550	crates/mav/src/mav/visual_tests.rs
      549	crates/ui/src/components/list/list_item.rs
      548	crates/vim/src/helix/paste.rs
-     547	crates/settings_content/src/terminal.rs
      546	crates/multi_buffer/src/transaction.rs
      538	crates/language_models/src/provider/google.rs
      536	crates/multi_buffer/src/anchor.rs
