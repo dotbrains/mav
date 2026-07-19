@@ -1,14 +1,21 @@
 use std::path::PathBuf;
 
 use agent_settings::AgentSettings;
-use gpui::{ReadGlobal as _, ScrollHandle, prelude::*};
-use http_proxy::HostPattern;
-use settings::{Settings as _, SettingsStore};
+use gpui::{ScrollHandle, prelude::*};
+use settings::Settings as _;
 use ui::{Banner, Divider, Severity, SwitchField, ToggleState, Tooltip, prelude::*};
 use util::ResultExt as _;
 
 use crate::SettingsWindow;
 use crate::components::{SettingsInputField, SettingsSectionHeader};
+
+mod store;
+
+use store::{
+    add_network_host, add_write_path, canonicalize_host, raw_sandbox_lists, remove_network_host,
+    remove_write_path, set_allow_all_hosts, set_allow_fs_write_all, set_allow_git_access,
+    set_sandbox_enabled, update_network_host, update_write_path,
+};
 
 const SANDBOX_DISCLAIMER: &str = "Customize how the sandbox for the agents tool should behave.";
 
@@ -369,151 +376,4 @@ fn render_add_path_input(cx: &mut Context<SettingsWindow>) -> AnyElement {
             settings_window.update(cx, |_, cx| cx.notify()).log_err();
         })
         .into_any_element()
-}
-
-/// The literal host and write-path lists as stored in user settings.json. These
-/// are the exact strings/paths that edits and removals must match against.
-fn raw_sandbox_lists(cx: &App) -> (Vec<String>, Vec<PathBuf>) {
-    let store = SettingsStore::global(cx);
-    let permissions = store
-        .raw_user_settings()
-        .and_then(|user| user.content.agent.as_ref())
-        .and_then(|agent| agent.sandbox_permissions.as_ref());
-
-    let network_hosts = permissions
-        .and_then(|permissions| permissions.network_hosts.as_ref())
-        .map(|hosts| hosts.0.clone())
-        .unwrap_or_default();
-    let write_paths = permissions
-        .and_then(|permissions| permissions.write_paths.as_ref())
-        .map(|paths| paths.0.clone())
-        .unwrap_or_default();
-
-    (network_hosts, write_paths)
-}
-
-/// Validate and canonicalize a user-provided domain, returning either the
-/// canonical form to persist or a domain-friendly error to surface.
-fn canonicalize_host(host: &str) -> Result<String, String> {
-    use http_proxy::HostPatternError;
-
-    HostPattern::parse(host)
-        .map(|pattern| pattern.to_string())
-        .map_err(|error| match error {
-            HostPatternError::Empty => "Domain cannot be empty.".to_string(),
-            HostPatternError::IpLiteral(_) => {
-                "IP addresses and local domains aren't allowed; enter a domain like github.com."
-                    .to_string()
-            }
-            HostPatternError::InvalidWildcard(_) => {
-                "Wildcards are only allowed as a leading label, e.g. *.github.com.".to_string()
-            }
-            HostPatternError::Invalid { .. } => {
-                "Not a valid domain. Use a domain like github.com or *.npmjs.org.".to_string()
-            }
-        })
-}
-
-fn update_sandbox_permissions(
-    cx: &mut App,
-    update: impl 'static + Send + FnOnce(&mut settings::SandboxPermissionsContent),
-) {
-    SettingsStore::global(cx).update_settings_file(<dyn fs::Fs>::global(cx), move |settings, _| {
-        update(
-            settings
-                .agent
-                .get_or_insert_default()
-                .sandbox_permissions
-                .get_or_insert_default(),
-        );
-    });
-}
-
-fn set_sandbox_enabled(value: bool, cx: &mut App) {
-    // The UI presents an "enabled" switch, but the stored setting is the
-    // inverse (`allow_unsandboxed`).
-    update_sandbox_permissions(cx, move |permissions| {
-        permissions.allow_unsandboxed = Some(!value);
-    });
-}
-
-fn set_allow_all_hosts(value: bool, cx: &mut App) {
-    update_sandbox_permissions(cx, move |permissions| {
-        permissions.allow_all_hosts = Some(value);
-    });
-}
-
-fn set_allow_git_access(value: bool, cx: &mut App) {
-    update_sandbox_permissions(cx, move |permissions| {
-        permissions.allow_git_access = Some(value);
-    });
-}
-
-fn set_allow_fs_write_all(value: bool, cx: &mut App) {
-    update_sandbox_permissions(cx, move |permissions| {
-        permissions.allow_fs_write_all = Some(value);
-    });
-}
-
-fn add_network_host(host: String, cx: &mut App) {
-    update_sandbox_permissions(cx, move |permissions| {
-        let hosts = &mut permissions.network_hosts.get_or_insert_default().0;
-        if !hosts.contains(&host) {
-            hosts.push(host);
-        }
-    });
-}
-
-fn update_network_host(old_host: String, new_host: String, cx: &mut App) {
-    update_sandbox_permissions(cx, move |permissions| {
-        let hosts = &mut permissions.network_hosts.get_or_insert_default().0;
-        if hosts.contains(&new_host) {
-            return;
-        }
-        if let Some(entry) = hosts.iter_mut().find(|host| **host == old_host) {
-            *entry = new_host;
-        }
-    });
-}
-
-fn remove_network_host(host: String, cx: &mut App) {
-    update_sandbox_permissions(cx, move |permissions| {
-        if let Some(hosts) = permissions.network_hosts.as_mut() {
-            hosts.0.retain(|entry| *entry != host);
-        }
-    });
-}
-
-fn add_write_path(path: PathBuf, cx: &mut App) {
-    // Normalize away `.`/`..` so the stored entry matches the form the runtime
-    // uses for coverage checks (see `compile_sandbox_permissions`) and the form
-    // persisted by the in-thread "Allow always" grant.
-    let Ok(path) = util::paths::normalize_lexically(&path) else {
-        return;
-    };
-    update_sandbox_permissions(cx, move |permissions| {
-        let paths = &mut permissions.write_paths.get_or_insert_default().0;
-        // Store minimal subtrees so a parent path subsumes its descendants.
-        util::paths::insert_subtree(paths, path);
-    });
-}
-
-fn update_write_path(old_path: PathBuf, new_path: PathBuf, cx: &mut App) {
-    let Ok(new_path) = util::paths::normalize_lexically(&new_path) else {
-        return;
-    };
-    update_sandbox_permissions(cx, move |permissions| {
-        if let Some(paths) = permissions.write_paths.as_mut() {
-            paths.0.retain(|entry| *entry != old_path);
-            util::paths::insert_subtree(&mut paths.0, new_path);
-        }
-    });
-}
-
-fn remove_write_path(path: PathBuf, cx: &mut App) {
-    update_sandbox_permissions(cx, move |permissions| {
-        if let Some(paths) = permissions.write_paths.as_mut() {
-            paths.0.retain(|entry| *entry != path);
-        }
-    });
 }
