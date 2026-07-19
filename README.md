@@ -1,12 +1,13 @@
 # mav
 
-[![CI](https://github.com/dotbrains/mav/actions/workflows/ci.yml/badge.svg)](https://github.com/dotbrains/mav/actions/workflows/ci.yml)
-[![License: PolyForm Shield 1.0.0](https://img.shields.io/badge/license-PolyForm%20Shield%201.0.0-blue.svg)](LICENSE)
+[![CI](https://img.shields.io/badge/ci-private%20actions-2088ff.svg)](https://github.com/dotbrains/mav/actions/workflows/ci.yml)
+[![Private](https://img.shields.io/badge/repo-private-111827.svg)](https://github.com/dotbrains/mav)
+[![License: PolyForm Shield](https://img.shields.io/badge/license-PolyForm%20Shield-blue.svg)](LICENSE)
 [![Platform: macOS + Linux](https://img.shields.io/badge/platform-macOS%20%2B%20Linux-lightgrey.svg)](docs/getting-started.md)
-[![Rust: stable](https://img.shields.io/badge/rust-stable-orange.svg)](CONTRIBUTING.md)
+[![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](CONTRIBUTING.md)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](.pre-commit-config.yaml)
-[![Dev env: Flox](https://img.shields.io/badge/dev%20env-flox-7c3aed.svg)](https://flox.dev)
-[![Nix: flake](https://img.shields.io/badge/nix-flake-5277c3.svg)](flake.nix)
+[![Flox](https://img.shields.io/badge/dev%20env-flox-7c3aed.svg)](https://flox.dev)
+[![Nix](https://img.shields.io/badge/nix-flake-5277c3.svg)](flake.nix)
 
 Private **dotbrains editor workspace for macOS and Linux**. `mav` keeps the
 application runtime, extension host, bundled assets, reproducible development

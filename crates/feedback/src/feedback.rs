@@ -1,29 +1,29 @@
 use client::telemetry;
 use extension_host::ExtensionStore;
 use gpui::{App, ClipboardItem, PromptLevel, actions};
-use mav_actions::feedback::{EmailZed, FileBugReport, RequestFeature};
+use mav_actions::feedback::{EmailMav, FileBugReport, RequestFeature};
 use system_specs::{CopySystemSpecsIntoClipboard, SystemSpecs};
 use util::ResultExt;
 use workspace::Workspace;
 
 actions!(
-    zed,
+    mav,
     [
-        /// Opens the Zed repository on GitHub.
-        OpenZedRepo,
+        /// Opens the Mav repository on GitHub.
+        OpenMavRepo,
         /// Copies installed extensions to the clipboard for bug reports.
         CopyInstalledExtensionsIntoClipboard
     ]
 );
 
-const ZED_REPO_URL: &str = "https://github.com/zed-industries/zed";
+const MAV_REPO_URL: &str = "https://github.com/dotbrains/mav";
 
-const REQUEST_FEATURE_URL: &str = "https://github.com/zed-industries/zed/discussions/new/choose";
+const REQUEST_FEATURE_URL: &str = "https://github.com/dotbrains/mav/discussions/new/choose";
 
 fn file_bug_report_url(specs: &SystemSpecs) -> String {
     format!(
         concat!(
-            "https://github.com/zed-industries/zed/issues/new",
+            "https://github.com/dotbrains/mav/issues/new",
             "?",
             "template=10_bug_report.yml",
             "&",
@@ -33,9 +33,9 @@ fn file_bug_report_url(specs: &SystemSpecs) -> String {
     )
 }
 
-fn email_zed_url(specs: &SystemSpecs) -> String {
+fn email_mav_url(specs: &SystemSpecs) -> String {
     format!(
-        concat!("mailto:hi@zed.dev", "?", "body={}"),
+        concat!("mailto:hello@dotbrains.dev", "?", "body={}"),
         email_body(specs)
     )
 }
@@ -96,20 +96,20 @@ pub fn init(cx: &mut App) {
                 })
                 .detach();
             })
-            .register_action(move |_, _: &EmailZed, window, cx| {
+            .register_action(move |_, _: &EmailMav, window, cx| {
                 let specs =
                     SystemSpecs::new(window, cx, telemetry::os_name(), telemetry::os_version());
                 cx.spawn_in(window, async move |_, cx| {
                     let specs = specs.await;
                     cx.update(|_, cx| {
-                        cx.open_url(&email_zed_url(&specs));
+                        cx.open_url(&email_mav_url(&specs));
                     })
                     .log_err();
                 })
                 .detach();
             })
-            .register_action(move |_, _: &OpenZedRepo, _, cx| {
-                cx.open_url(ZED_REPO_URL);
+            .register_action(move |_, _: &OpenMavRepo, _, cx| {
+                cx.open_url(MAV_REPO_URL);
             });
     })
     .detach();

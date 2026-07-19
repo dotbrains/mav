@@ -5290,7 +5290,7 @@ mod tests {
                 "worktree_picker",
                 "mav",
                 "mav_actions",
-                "zed_predict_onboarding",
+                "mav_predict_onboarding",
                 "zeta",
             ];
             assert_eq!(
