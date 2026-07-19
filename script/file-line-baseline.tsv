@@ -619,7 +619,6 @@
      526	crates/editor/src/test/editor_lsp_test_context.rs
      526	crates/collab/tests/integration/auto_watch_tests.rs
      520	crates/vim/test_data/test_change_surrounding_character_objects.json
-     520	crates/editor/src/display_map/crease_map.rs
      519	crates/settings_ui/src/pages/sandbox_settings.rs
      519	crates/editor/src/code_completion_tests.rs
      518	crates/vim/test_data/test_delete_surrounding_character_objects.json
