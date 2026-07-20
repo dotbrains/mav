@@ -37,6 +37,7 @@ mod window_chrome;
 mod workspace_actions;
 pub mod workspace_error;
 mod workspace_event;
+mod workspace_focus_targets;
 mod workspace_id;
 mod workspace_keystrokes;
 mod workspace_location_helpers;
@@ -176,6 +177,7 @@ pub use window_chrome::client_side_decorations;
 pub(crate) use window_chrome::window_bounds_env_override;
 pub use workspace_actions::*;
 pub use workspace_event::Event;
+use workspace_focus_targets::{ActivateInDirectionTarget, dock_has_focus_target};
 pub use workspace_id::WorkspaceId;
 use workspace_keystrokes::DispatchingKeystrokes;
 pub use workspace_location_helpers::{
@@ -7663,23 +7665,6 @@ impl Workspace {
             }
         }
     }
-}
-
-#[derive(Clone)]
-enum ActivateInDirectionTarget {
-    Pane(Entity<Pane>),
-    Dock(Entity<Dock>),
-    Sidebar(FocusHandle),
-}
-
-fn dock_has_focus_target(dock: &Entity<Dock>, cx: &App) -> bool {
-    let dock = dock.read(cx);
-    if !dock.is_open() {
-        return false;
-    }
-
-    dock.active_panel()
-        .is_some_and(|panel| PanelPaneKind::for_panel_key(panel.panel_key()).is_none())
 }
 
 impl Focusable for Workspace {
