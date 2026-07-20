@@ -29,6 +29,7 @@ mod lsp_store_events;
 mod progress_token;
 mod prompt_and_log;
 mod query_types;
+mod registration_options;
 mod rename_watchers;
 pub mod rust_analyzer_ext;
 mod semantic_tokens;
@@ -56,6 +57,9 @@ pub use self::local_lsp_adapter_delegate::LocalLspAdapterDelegate;
 pub use self::lsp_store_events::{LanguageServerStatus, LspStoreEvent};
 pub use self::prompt_and_log::{LanguageServerLogType, LanguageServerPromptRequest};
 pub use self::query_types::{LanguageServerToQuery, ResolvedHint};
+use self::registration_options::{
+    parse_register_capabilities, server_capabilities_support_range_formatting,
+};
 use self::rename_watchers::{LanguageServerWatchedPaths, LazyGlobSet, RenamePathsWatchedForServer};
 pub use self::server_state::LanguageServerState;
 use self::server_state::glob_literal_prefix;
@@ -13675,24 +13679,6 @@ impl LspStore {
         }
         lsp_data
     }
-}
-
-// Registration with registerOptions as null, should fallback to true.
-// https://github.com/microsoft/vscode-languageserver-node/blob/d90a87f9557a0df9142cfb33e251cfa6fe27d970/client/src/common/client.ts#L2133
-fn parse_register_capabilities<T: serde::de::DeserializeOwned>(
-    reg: lsp::Registration,
-) -> Result<OneOf<bool, T>> {
-    Ok(match reg.register_options {
-        Some(options) => OneOf::Right(serde_json::from_value::<T>(options)?),
-        None => OneOf::Left(true),
-    })
-}
-
-fn server_capabilities_support_range_formatting(capabilities: &lsp::ServerCapabilities) -> bool {
-    matches!(
-        capabilities.document_range_formatting_provider.as_ref(),
-        Some(provider) if *provider != OneOf::Left(false)
-    )
 }
 
 fn subscribe_to_binary_statuses(
