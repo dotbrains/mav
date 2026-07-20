@@ -22,6 +22,7 @@ mod inlay_hints;
 pub mod json_language_server_ext;
 pub mod log_store;
 pub mod lsp_ext_command;
+mod lsp_store_events;
 mod progress_token;
 pub mod rust_analyzer_ext;
 mod semantic_tokens;
@@ -36,6 +37,7 @@ use self::document_colors::DocumentColorData;
 use self::document_links::DocumentLinksData;
 use self::document_symbols::DocumentSymbolsData;
 use self::inlay_hints::BufferInlayHints;
+pub use self::lsp_store_events::{LanguageServerStatus, LspStoreEvent};
 use crate::{
     CodeAction, Completion, CompletionDisplayOptions, CompletionResponse, CompletionSource,
     CoreCompletion, Hover, InlayHint, InlayId, LocationLink, LspAction, LspPullDiagnostics,
@@ -119,7 +121,6 @@ use rpc::{
 };
 use semver::Version;
 use serde::Serialize;
-use serde_json::Value;
 use settings::{Settings, SettingsLocation, SettingsStore};
 use sha2::{Digest, Sha256};
 use snippet::Snippet;
@@ -3981,65 +3982,6 @@ impl BufferLspData {
     pub fn inlay_hints(&self) -> &BufferInlayHints {
         &self.inlay_hints
     }
-}
-
-#[derive(Debug)]
-pub enum LspStoreEvent {
-    LanguageServerAdded(LanguageServerId, LanguageServerName, Option<WorktreeId>),
-    LanguageServerRemoved(LanguageServerId),
-    LanguageServerUpdate {
-        language_server_id: LanguageServerId,
-        name: Option<LanguageServerName>,
-        message: proto::update_language_server::Variant,
-    },
-    LanguageServerLog(LanguageServerId, LanguageServerLogType, String),
-    LanguageServerPrompt(LanguageServerPromptRequest),
-    LanguageDetected {
-        buffer: Entity<Buffer>,
-        new_language: Option<Arc<Language>>,
-    },
-    Notification(String),
-    RefreshInlayHints {
-        server_id: LanguageServerId,
-        request_id: Option<usize>,
-    },
-    RefreshSemanticTokens {
-        server_id: LanguageServerId,
-        request_id: Option<usize>,
-    },
-    RefreshCodeLens,
-    DiagnosticsUpdated {
-        server_id: LanguageServerId,
-        paths: Vec<ProjectPath>,
-    },
-    DiskBasedDiagnosticsStarted {
-        language_server_id: LanguageServerId,
-    },
-    DiskBasedDiagnosticsFinished {
-        language_server_id: LanguageServerId,
-    },
-    SnippetEdit {
-        buffer_id: BufferId,
-        edits: Vec<(lsp::Range, Snippet)>,
-        most_recent_edit: clock::Lamport,
-    },
-    WorkspaceEditApplied(ProjectTransaction),
-}
-
-#[derive(Clone, Debug, Serialize)]
-pub struct LanguageServerStatus {
-    pub name: LanguageServerName,
-    pub language_name: Option<LanguageName>,
-    pub server_version: Option<SharedString>,
-    pub server_readable_version: Option<SharedString>,
-    pub pending_work: BTreeMap<ProgressToken, LanguageServerProgress>,
-    pub has_pending_diagnostic_updates: bool,
-    pub progress_tokens: HashSet<ProgressToken>,
-    pub worktree: Option<WorktreeId>,
-    pub binary: Option<LanguageServerBinary>,
-    pub configuration: Option<Value>,
-    pub workspace_folders: BTreeSet<Uri>,
-    pub process_id: Option<u32>,
 }
 
 fn should_log_lsp_request_failure(message: &str) -> bool {
