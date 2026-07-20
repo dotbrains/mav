@@ -35,6 +35,7 @@ pub mod rust_analyzer_ext;
 mod semantic_tokens;
 mod server_identity;
 mod server_state;
+mod server_status_subscription;
 mod settings_helpers;
 mod ssh_lsp_adapter;
 mod store_mode;
@@ -201,6 +202,7 @@ pub use semantic_tokens::{
 use server_identity::{
     DynamicRegistrations, LanguageServerSeed, LanguageServerSeedSettings, UnifiedLanguageServer,
 };
+use server_status_subscription::subscribe_to_binary_statuses;
 use store_mode::LspStoreMode;
 pub use store_mode::{FormattableBuffer, RemoteLspStore};
 use symbol_types::CoreSymbol;
@@ -13679,53 +13681,6 @@ impl LspStore {
         }
         lsp_data
     }
-}
-
-fn subscribe_to_binary_statuses(
-    languages: &Arc<LanguageRegistry>,
-    cx: &mut Context<'_, LspStore>,
-) -> Task<()> {
-    let mut server_statuses = languages.language_server_binary_statuses();
-    cx.spawn(async move |lsp_store, cx| {
-        while let Some((server_name, binary_status)) = server_statuses.next().await {
-            if lsp_store
-                .update(cx, |_, cx| {
-                    let mut message = None;
-                    let binary_status = match binary_status {
-                        BinaryStatus::None => proto::ServerBinaryStatus::None,
-                        BinaryStatus::CheckingForUpdate => {
-                            proto::ServerBinaryStatus::CheckingForUpdate
-                        }
-                        BinaryStatus::Downloading => proto::ServerBinaryStatus::Downloading,
-                        BinaryStatus::Starting => proto::ServerBinaryStatus::Starting,
-                        BinaryStatus::Stopping => proto::ServerBinaryStatus::Stopping,
-                        BinaryStatus::Stopped => proto::ServerBinaryStatus::Stopped,
-                        BinaryStatus::Failed { error } => {
-                            message = Some(error);
-                            proto::ServerBinaryStatus::Failed
-                        }
-                    };
-                    cx.emit(LspStoreEvent::LanguageServerUpdate {
-                        // Binary updates are about the binary that might not have any language server id at that point.
-                        // Reuse `LanguageServerUpdate` for them and provide a fake id that won't be used on the receiver side.
-                        language_server_id: LanguageServerId(0),
-                        name: Some(server_name),
-                        message: proto::update_language_server::Variant::StatusUpdate(
-                            proto::StatusUpdate {
-                                message,
-                                status: Some(proto::status_update::Status::Binary(
-                                    binary_status as i32,
-                                )),
-                            },
-                        ),
-                    });
-                })
-                .is_err()
-            {
-                break;
-            }
-        }
-    })
 }
 
 impl EventEmitter<LspStoreEvent> for LspStore {}
