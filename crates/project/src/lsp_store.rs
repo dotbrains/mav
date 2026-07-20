@@ -39,6 +39,7 @@ mod ssh_lsp_adapter;
 mod store_mode;
 mod symbol_types;
 pub mod vue_language_server_ext;
+mod workspace_diagnostics;
 
 use self::code_lens::CodeLensData;
 pub use self::completion_documentation::CompletionDocumentation;
@@ -57,9 +58,13 @@ pub use self::prompt_and_log::{LanguageServerLogType, LanguageServerPromptReques
 pub use self::query_types::{LanguageServerToQuery, ResolvedHint};
 use self::rename_watchers::{LanguageServerWatchedPaths, LazyGlobSet, RenamePathsWatchedForServer};
 pub use self::server_state::LanguageServerState;
-use self::server_state::{WorkspaceRefreshTask, glob_literal_prefix};
+use self::server_state::glob_literal_prefix;
 pub use self::settings_helpers::{language_server_settings, language_server_settings_for};
 pub use self::ssh_lsp_adapter::SshLspAdapter;
+use self::workspace_diagnostics::{
+    WORKSPACE_DIAGNOSTICS_TOKEN_START, buffer_diagnostic_identifier,
+    lsp_workspace_diagnostics_refresh,
+};
 use crate::{
     CodeAction, Completion, CompletionDisplayOptions, CompletionResponse, CompletionSource,
     CoreCompletion, Hover, InlayHint, InlayId, LocationLink, LspAction, LspPullDiagnostics,
@@ -92,7 +97,7 @@ use collections::{BTreeMap, BTreeSet, HashMap, HashSet, btree_map};
 use futures::{
     AsyncWriteExt, Future, FutureExt, StreamExt,
     channel::oneshot,
-    future::{Either, Shared, join_all, pending, select},
+    future::{Shared, join_all},
     select, select_biased,
     stream::FuturesUnordered,
 };
@@ -123,7 +128,7 @@ use language::{
 };
 use lsp::{
     AdapterServerCapabilities, CodeActionKind, CompletionContext, CompletionOptions,
-    DEFAULT_LSP_REQUEST_TIMEOUT, DiagnosticServerCapabilities, DiagnosticSeverity, DiagnosticTag,
+    DiagnosticServerCapabilities, DiagnosticSeverity, DiagnosticTag,
     DidChangeWatchedFilesRegistrationOptions, Edit, FileRename, FileSystemWatcher, LanguageServer,
     LanguageServerBinary, LanguageServerBinaryOptions, LanguageServerId, LanguageServerName,
     LanguageServerSelector, LspRequestFuture, MessageActionItem, OneOf, RenameFilesParams,
@@ -131,7 +136,7 @@ use lsp::{
     WorkDoneProgressCancelParams, WorkspaceFolder, notification::DidRenameFiles,
 };
 use parking_lot::Mutex;
-use postage::{mpsc, sink::Sink, stream::Stream, watch};
+use postage::{sink::Sink, stream::Stream, watch};
 use rand::prelude::*;
 use rpc::{
     AnyProtoClient, ErrorCode, ErrorExt as _,
@@ -147,11 +152,9 @@ use std::{
     cmp::{Ordering, Reverse},
     collections::{VecDeque, hash_map},
     convert::TryInto,
-    future::ready,
     mem,
     ops::{ControlFlow, Range},
     path::{self, Path, PathBuf},
-    pin::pin,
     rc::Rc,
     sync::{
         Arc,
@@ -164,7 +167,7 @@ use sum_tree::Dimensions;
 use text::{Anchor, BufferId, LineEnding, OffsetRangeExt, ToPoint as _};
 
 use util::{
-    ConnectionResult, ResultExt as _, debug_panic, defer, maybe, merge_json_value_into,
+    ResultExt as _, debug_panic, defer, maybe, merge_json_value_into,
     paths::{PathStyle, SanitizedPath, UrlExt},
     post_inc,
     redact::redact_command,
@@ -206,7 +209,6 @@ pub use worktree::{
 
 const SERVER_LAUNCHING_BEFORE_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
 pub const SERVER_PROGRESS_THROTTLE_TIMEOUT: Duration = Duration::from_millis(100);
-const WORKSPACE_DIAGNOSTICS_TOKEN_START: &str = "id:";
 const SERVER_DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(10);
 static NEXT_PROMPT_REQUEST_ID: AtomicUsize = AtomicUsize::new(0);
 
@@ -13738,186 +13740,6 @@ fn subscribe_to_binary_statuses(
             }
         }
     })
-}
-
-fn lsp_workspace_diagnostics_refresh(
-    registration_id: Option<String>,
-    options: DiagnosticServerCapabilities,
-    server: Arc<LanguageServer>,
-    cx: &mut Context<'_, LspStore>,
-) -> Option<WorkspaceRefreshTask> {
-    let identifier = workspace_diagnostic_identifier(&options)?;
-    let registration_id_shared = registration_id.as_ref().map(SharedString::from);
-
-    let (progress_tx, mut progress_rx) = mpsc::channel(1);
-    let (mut refresh_tx, mut refresh_rx) = mpsc::channel::<Option<oneshot::Sender<bool>>>(1);
-    refresh_tx.try_send(None).ok();
-
-    let request_timeout = ProjectSettings::get_global(cx)
-        .global_lsp_settings
-        .get_request_timeout();
-
-    // Clamp timeout duration at a minimum of [`DEFAULT_LSP_REQUEST_TIMEOUT`] to mitigate useless loops from re-trying connections with smaller timeouts from project settings.
-    // This allows users to increase the duration if need be
-    let timeout = if request_timeout != Duration::ZERO {
-        request_timeout.max(DEFAULT_LSP_REQUEST_TIMEOUT)
-    } else {
-        request_timeout
-    };
-
-    let workspace_query_language_server = cx.spawn(async move |lsp_store, cx| {
-        let mut attempts = 0;
-        let max_attempts = 50;
-        let mut requests = 0;
-
-        loop {
-            let Some(mut completion_tx) = refresh_rx.recv().await else {
-                return;
-            };
-
-            'request: loop {
-                requests += 1;
-                if attempts > max_attempts {
-                    log::error!(
-                        "Failed to pull workspace diagnostics {max_attempts} times, aborting"
-                    );
-                    return;
-                }
-                let backoff_millis = (50 * (1 << attempts)).clamp(30, 1000);
-                cx.background_executor()
-                    .timer(Duration::from_millis(backoff_millis))
-                    .await;
-                attempts += 1;
-
-                let Ok(previous_result_ids) = lsp_store.update(cx, |lsp_store, _| {
-                    lsp_store
-                        .result_ids_for_workspace_refresh(server.server_id(), &registration_id_shared)
-                        .into_iter()
-                        .filter_map(|(abs_path, result_id)| {
-                            let uri = file_path_to_lsp_url(&abs_path).ok()?;
-                            Some(lsp::PreviousResultId {
-                                uri,
-                                value: result_id.to_string(),
-                            })
-                        })
-                        .collect()
-                }) else {
-                    return;
-                };
-
-                let token = if let Some(registration_id) = &registration_id {
-                    format!(
-                        "workspace/diagnostic/{}/{requests}/{WORKSPACE_DIAGNOSTICS_TOKEN_START}{registration_id}",
-                        server.server_id(),
-                    )
-                } else {
-                    format!("workspace/diagnostic/{}/{requests}", server.server_id())
-                };
-
-                progress_rx.try_recv().ok();
-                let timer = server.request_timer(timeout).fuse();
-                let progress = pin!(progress_rx.recv().fuse());
-                let response_result = server
-                    .request_with_timer::<lsp::WorkspaceDiagnosticRequest, _>(
-                        lsp::WorkspaceDiagnosticParams {
-                            previous_result_ids,
-                            identifier: identifier.clone(),
-                            work_done_progress_params: Default::default(),
-                            partial_result_params: lsp::PartialResultParams {
-                                partial_result_token: Some(lsp::ProgressToken::String(token)),
-                            },
-                        },
-                        select(timer, progress).then(|either| match either {
-                            Either::Left((message, ..)) => ready(message).left_future(),
-                            Either::Right(..) => pending::<String>().right_future(),
-                        }),
-                    )
-                    .await;
-
-                // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#diagnostic_refresh
-                // >  If a server closes a workspace diagnostic pull request the client should re-trigger the request.
-                match response_result {
-                    ConnectionResult::Timeout => {
-                        log::error!("Timeout during workspace diagnostics pull");
-                        continue 'request;
-                    }
-                    ConnectionResult::ConnectionReset => {
-                        log::error!("Server closed a workspace diagnostics pull request");
-                        continue 'request;
-                    }
-                    ConnectionResult::Result(Err(e)) => {
-                        log::error!("Error during workspace diagnostics pull: {e:#}");
-                        if let Some(tx) = completion_tx.take() {
-                            tx.send(false).ok();
-                        }
-                        break 'request;
-                    }
-                    ConnectionResult::Result(Ok(pulled_diagnostics)) => {
-                        attempts = 0;
-                        if lsp_store
-                            .update(cx, |lsp_store, cx| {
-                                lsp_store.apply_workspace_diagnostic_report(
-                                    server.server_id(),
-                                    pulled_diagnostics,
-                                    registration_id_shared.clone(),
-                                    cx,
-                                )
-                            })
-                            .is_err()
-                        {
-                            return;
-                        }
-                        if let Some(tx) = completion_tx.take() {
-                            tx.send(true).ok();
-                        }
-                        break 'request;
-                    }
-                }
-            }
-        }
-    });
-
-    Some(WorkspaceRefreshTask {
-        refresh_tx,
-        progress_tx,
-        task: workspace_query_language_server,
-    })
-}
-
-fn buffer_diagnostic_identifier(options: &DiagnosticServerCapabilities) -> Option<SharedString> {
-    match &options {
-        lsp::DiagnosticServerCapabilities::Options(diagnostic_options) => diagnostic_options
-            .identifier
-            .as_deref()
-            .map(SharedString::new),
-        lsp::DiagnosticServerCapabilities::RegistrationOptions(registration_options) => {
-            let diagnostic_options = &registration_options.diagnostic_options;
-            diagnostic_options
-                .identifier
-                .as_deref()
-                .map(SharedString::new)
-        }
-    }
-}
-
-fn workspace_diagnostic_identifier(
-    options: &DiagnosticServerCapabilities,
-) -> Option<Option<String>> {
-    match &options {
-        lsp::DiagnosticServerCapabilities::Options(diagnostic_options) => {
-            if !diagnostic_options.workspace_diagnostics {
-                return None;
-            }
-            Some(diagnostic_options.identifier.clone())
-        }
-        lsp::DiagnosticServerCapabilities::RegistrationOptions(registration_options) => {
-            let diagnostic_options = &registration_options.diagnostic_options;
-            if !diagnostic_options.workspace_diagnostics {
-                return None;
-            }
-            Some(diagnostic_options.identifier.clone())
-        }
-    }
 }
 
 impl EventEmitter<LspStoreEvent> for LspStore {}
