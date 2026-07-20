@@ -4328,63 +4328,6 @@ impl Editor {
         self.join_lines_impl(true, window, cx);
     }
 
-    pub fn toggle_read_only(
-        &mut self,
-        _: &workspace::ToggleReadOnlyFile,
-        _: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        if let Some(buffer) = self.buffer.read(cx).as_singleton() {
-            buffer.update(cx, |buffer, cx| {
-                buffer.set_capability(
-                    match buffer.capability() {
-                        Capability::ReadWrite => Capability::Read,
-                        Capability::Read => Capability::ReadWrite,
-                        Capability::ReadOnly => Capability::ReadOnly,
-                    },
-                    cx,
-                );
-            })
-        }
-    }
-
-    pub fn reload_file(&mut self, _: &ReloadFile, window: &mut Window, cx: &mut Context<Self>) {
-        let Some(project) = self.project.clone() else {
-            return;
-        };
-        let task = self.reload(project, window, cx);
-        self.detach_and_notify_err(task, window, cx);
-    }
-
-    pub fn open_active_item_in_terminal(
-        &mut self,
-        _: &OpenInTerminal,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        if let Some(working_directory) = self.active_buffer(cx).and_then(|buffer| {
-            let project_path = buffer.read(cx).project_path(cx)?;
-            let project = self.project()?.read(cx);
-            let entry = project.entry_for_path(&project_path, cx)?;
-            let parent = match &entry.canonical_path {
-                Some(canonical_path) => canonical_path.to_path_buf(),
-                None => project.absolute_path(&project_path, cx)?,
-            }
-            .parent()?
-            .to_path_buf();
-            Some(parent)
-        }) {
-            window.dispatch_action(
-                OpenTerminal {
-                    working_directory,
-                    local: false,
-                }
-                .boxed_clone(),
-                cx,
-            );
-        }
-    }
-
     fn add_edit_block(
         &mut self,
         anchor: Anchor,
