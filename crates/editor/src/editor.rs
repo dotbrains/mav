@@ -127,6 +127,8 @@ mod highlight_refresh;
 mod history_actions;
 #[path = "editor/indentation_actions.rs"]
 mod indentation_actions;
+#[path = "editor/initializer_base_subscriptions.rs"]
+mod initializer_base_subscriptions;
 #[path = "editor/initializer_display.rs"]
 mod initializer_display;
 #[path = "editor/initializer_finish.rs"]
@@ -1045,29 +1047,14 @@ impl Editor {
             stored_review_comments: Vec::new(),
             next_review_comment_id: 0,
             hovered_diff_hunk_row: None,
-            _subscriptions: (!is_minimap)
-                .then(|| {
-                    vec![
-                        cx.observe(&multi_buffer, Self::on_buffer_changed),
-                        cx.subscribe_in(&multi_buffer, window, Self::on_buffer_event),
-                        cx.observe_in(&display_map, window, Self::on_display_map_changed),
-                        cx.observe(&initial_focus_state.blink_manager, |_, _, cx| cx.notify()),
-                        cx.observe_global_in::<SettingsStore>(window, Self::settings_changed),
-                        cx.observe_global_in::<GlobalTheme>(window, Self::theme_changed),
-                        observe_buffer_font_size_adjustment(cx, |_, cx| cx.notify()),
-                        cx.observe_window_activation(window, |editor, window, cx| {
-                            let active = window.is_window_active();
-                            editor.blink_manager.update(cx, |blink_manager, cx| {
-                                if active {
-                                    blink_manager.enable(cx);
-                                } else {
-                                    blink_manager.disable(cx);
-                                }
-                            });
-                        }),
-                    ]
-                })
-                .unwrap_or_default(),
+            _subscriptions: Self::base_subscriptions(
+                is_minimap,
+                &multi_buffer,
+                &display_map,
+                &initial_focus_state.blink_manager,
+                window,
+                cx,
+            ),
             runnables: RunnableData::new(),
             pull_diagnostics_task: Task::ready(()),
             colors: None,
