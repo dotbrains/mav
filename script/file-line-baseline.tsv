@@ -6,7 +6,7 @@
    12396	crates/editor/src/editor.rs
    12095	crates/editor/src/element.rs
    12065	crates/agent_ui/src/conversation_view/thread_view.rs
-    5979	crates/project_panel/src/project_panel_tests.rs
+    3761	crates/project_panel/src/project_panel_tests.rs
    10763	crates/agent_ui/src/conversation_view.rs
    10546	crates/settings_ui/src/page_data.rs
    10490	crates/git_ui/src/git_panel.rs
