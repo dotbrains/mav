@@ -2,6 +2,9 @@
 
 mod agent_registry_store;
 mod bookmark_store;
+mod bookmark_store_fs_events;
+mod bookmark_store_restore;
+mod bookmark_store_serialization;
 mod color_extractor;
 mod context_server_lifecycle;
 mod context_server_remote;

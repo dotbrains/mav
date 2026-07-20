@@ -490,7 +490,7 @@
      755	crates/proto/proto/git.proto
      755	crates/language_models/src/provider/vercel_ai_gateway.rs
      754	crates/dev_container/src/devcontainer_api.rs
-     752	crates/project/tests/integration/bookmark_store.rs
+    158	crates/project/tests/integration/bookmark_store.rs
      751	crates/gpui/src/taffy.rs
      743	crates/project/src/search.rs
      741	crates/vim/src/helix/boundary.rs
