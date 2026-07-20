@@ -26,6 +26,7 @@ mod random_project_collaboration_tests;
 mod randomized_test_helpers;
 mod remote_editing_collaboration_tests;
 mod remote_git_diff_tests;
+mod remote_git_status_tests;
 mod test_server;
 
 pub use randomized_test_helpers::{
