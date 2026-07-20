@@ -65,6 +65,8 @@ mod agent_panel_prompts;
 mod agent_panel_rules;
 #[path = "agent_panel_terminal.rs"]
 mod agent_panel_terminal;
+#[path = "agent_panel_view_state.rs"]
+mod agent_panel_view_state;
 use agent_panel_diagnostics::thread_metadata_to_debug_json;
 use agent_panel_persistence::{
     AGENT_PANEL_KEY, AgentPanelEntryKind, SerializedActiveThread, SerializedAgentPanel,
@@ -81,6 +83,7 @@ use agent_panel_prompts::{
 use agent_panel_rules::{open_global_rules, open_project_rules, project_agents_md_path};
 pub use agent_panel_terminal::{AgentPanelTerminalInfo, MaxIdleRetainedThreads, TerminalId};
 use agent_panel_terminal::{AgentTerminal, TERMINAL_AGENT_TELEMETRY_ID};
+use agent_panel_view_state::{AgentThread, BaseView, OverlayView, VisibleSurface, WhichFontSize};
 use agent_settings::AgentSettings;
 use ai_onboarding::AgentPanelOnboarding;
 use anyhow::{Context as _, Result, anyhow};
@@ -558,61 +561,6 @@ pub struct CreateThreadOptions {
     /// freshly-created sibling worktree). When `None`, the thread inherits
     /// the project's default path list.
     pub work_dirs: Option<PathList>,
-}
-
-pub(crate) struct AgentThread {
-    conversation_view: Entity<ConversationView>,
-}
-
-enum BaseView {
-    Uninitialized,
-    AgentThread {
-        conversation_view: Entity<ConversationView>,
-    },
-    Terminal {
-        terminal_id: TerminalId,
-    },
-}
-
-impl From<AgentThread> for BaseView {
-    fn from(thread: AgentThread) -> Self {
-        BaseView::AgentThread {
-            conversation_view: thread.conversation_view,
-        }
-    }
-}
-
-enum OverlayView {
-    Configuration,
-}
-
-enum VisibleSurface<'a> {
-    Uninitialized,
-    AgentThread(&'a Entity<ConversationView>),
-    Terminal(&'a Entity<TerminalView>),
-    Configuration(Option<&'a Entity<AgentConfiguration>>),
-}
-
-enum WhichFontSize {
-    AgentFont,
-    None,
-}
-
-impl BaseView {
-    pub fn which_font_size_used(&self) -> WhichFontSize {
-        match self {
-            BaseView::AgentThread { .. } => WhichFontSize::AgentFont,
-            BaseView::Terminal { .. } | BaseView::Uninitialized => WhichFontSize::None,
-        }
-    }
-}
-
-impl OverlayView {
-    pub fn which_font_size_used(&self) -> WhichFontSize {
-        match self {
-            OverlayView::Configuration => WhichFontSize::None,
-        }
-    }
 }
 
 pub struct AgentPanel {
