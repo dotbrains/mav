@@ -131,6 +131,8 @@ mod indentation_actions;
 mod initializer_display;
 #[path = "editor/initializer_finish.rs"]
 mod initializer_finish;
+#[path = "editor/initializer_focus.rs"]
+mod initializer_focus;
 #[path = "editor/initializer_project.rs"]
 mod initializer_project;
 #[path = "editor/initializer_subscriptions.rs"]
@@ -849,17 +851,7 @@ impl Editor {
 
         let selections = SelectionsCollection::new();
 
-        let blink_manager = cx.new(|cx| {
-            let mut blink_manager = BlinkManager::new(
-                CURSOR_BLINK_INTERVAL,
-                |cx| EditorSettings::get_global(cx).cursor_blink,
-                cx,
-            );
-            if is_minimap {
-                blink_manager.disable(cx);
-            }
-            blink_manager
-        });
+        let initial_focus_state = Self::initial_focus_state(is_minimap, window, cx);
 
         let soft_wrap_mode_override =
             matches!(mode, EditorMode::SingleLine).then(|| language_settings::SoftWrap::None);
@@ -871,20 +863,6 @@ impl Editor {
 
         let inlay_hint_settings =
             inlay_hint_settings(selections.newest_anchor().head(), &buffer_snapshot, cx);
-        let focus_handle = cx.focus_handle();
-        if !is_minimap {
-            cx.on_focus(&focus_handle, window, Self::handle_focus)
-                .detach();
-            cx.on_focus_in(&focus_handle, window, Self::handle_focus_in)
-                .detach();
-            cx.on_focus_out(&focus_handle, window, Self::handle_focus_out)
-                .detach();
-            cx.on_blur(&focus_handle, window, Self::handle_blur)
-                .detach();
-            cx.observe_pending_input(window, Self::observe_pending_input)
-                .detach();
-        }
-
         let show_indent_guides =
             if matches!(mode, EditorMode::SingleLine | EditorMode::Minimap { .. }) {
                 Some(false)
@@ -896,7 +874,7 @@ impl Editor {
             Self::initial_project_handles(&mode, &project, &multi_buffer, cx);
 
         let editor = Self {
-            focus_handle,
+            focus_handle: initial_focus_state.focus_handle,
             show_cursor_when_unfocused: false,
             last_focused_descendant: None,
             buffer: multi_buffer.clone(),
@@ -928,7 +906,7 @@ impl Editor {
                 .map(|project| Rc::new(project.downgrade()) as _),
             collaboration_hub: project.clone().map(|project| Box::new(project) as _),
             project,
-            blink_manager: blink_manager.clone(),
+            blink_manager: initial_focus_state.blink_manager.clone(),
             show_local_selections: true,
             show_scrollbars: ScrollbarAxes {
                 horizontal: full_mode,
@@ -1073,7 +1051,7 @@ impl Editor {
                         cx.observe(&multi_buffer, Self::on_buffer_changed),
                         cx.subscribe_in(&multi_buffer, window, Self::on_buffer_event),
                         cx.observe_in(&display_map, window, Self::on_display_map_changed),
-                        cx.observe(&blink_manager, |_, _, cx| cx.notify()),
+                        cx.observe(&initial_focus_state.blink_manager, |_, _, cx| cx.notify()),
                         cx.observe_global_in::<SettingsStore>(window, Self::settings_changed),
                         cx.observe_global_in::<GlobalTheme>(window, Self::theme_changed),
                         observe_buffer_font_size_adjustment(cx, |_, cx| cx.notify()),
