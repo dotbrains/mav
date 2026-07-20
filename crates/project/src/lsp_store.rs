@@ -26,6 +26,7 @@ pub mod rust_analyzer_ext;
 mod semantic_tokens;
 mod server_identity;
 mod store_mode;
+mod symbol_types;
 pub mod vue_language_server_ext;
 
 use self::code_lens::CodeLensData;
@@ -177,6 +178,8 @@ use server_identity::{
 };
 use store_mode::LspStoreMode;
 pub use store_mode::{FormattableBuffer, RemoteLspStore};
+use symbol_types::CoreSymbol;
+pub use symbol_types::SymbolLocation;
 
 pub use worktree::{
     Entry, EntryKind, FS_WATCH_LATENCY, File, LocalWorktree, PathChange, ProjectEntryId,
@@ -4035,36 +4038,6 @@ pub struct LanguageServerStatus {
     pub configuration: Option<Value>,
     pub workspace_folders: BTreeSet<Uri>,
     pub process_id: Option<u32>,
-}
-
-#[derive(Clone, Debug)]
-struct CoreSymbol {
-    pub language_server_name: LanguageServerName,
-    pub source_worktree_id: WorktreeId,
-    pub source_language_server_id: LanguageServerId,
-    pub path: SymbolLocation,
-    pub name: String,
-    pub kind: lsp::SymbolKind,
-    pub range: Range<Unclipped<PointUtf16>>,
-    pub container_name: Option<String>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum SymbolLocation {
-    InProject(ProjectPath),
-    OutsideProject {
-        abs_path: Arc<Path>,
-        signature: [u8; 32],
-    },
-}
-
-impl SymbolLocation {
-    fn file_name(&self) -> Option<&str> {
-        match self {
-            Self::InProject(path) => path.path.file_name(),
-            Self::OutsideProject { abs_path, .. } => abs_path.file_name()?.to_str(),
-        }
-    }
 }
 
 fn should_log_lsp_request_failure(message: &str) -> bool {
