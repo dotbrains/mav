@@ -3,7 +3,12 @@
 mod agent_registry_store;
 mod bookmark_store;
 mod color_extractor;
+mod context_server_lifecycle;
+mod context_server_remote;
+mod context_server_settings;
+mod context_server_status;
 mod context_server_store;
+mod context_server_timeouts;
 mod debugger;
 mod default_workdirs;
 mod diagnostic_summaries;

@@ -306,7 +306,7 @@
     1191	crates/editor/src/element/mouse.rs
     1185	crates/vim/src/normal/paste.rs
     1177	crates/agent/src/sandboxing.rs
-    1169	crates/project/tests/integration/context_server_store.rs
+    148	crates/project/tests/integration/context_server_store.rs
     1169	crates/fs/tests/integration/fs_tests.rs
     1168	crates/settings_content/src/editor.rs
     1165	crates/gpui/src/app/test_context.rs
