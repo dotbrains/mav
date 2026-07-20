@@ -74,6 +74,8 @@ mod erased_editor;
 mod input;
 mod markdown_actions;
 mod navigation;
+#[path = "editor/navigation_overlay.rs"]
+mod navigation_overlay;
 #[path = "editor/prompt_editor.rs"]
 mod prompt_editor;
 mod rewrap;
@@ -141,6 +143,7 @@ pub use multi_buffer::{
     MultiBufferOffset, MultiBufferOffsetUtf16, MultiBufferSnapshot, PathKey, RowInfo, ToOffset,
     ToPoint,
 };
+pub use navigation_overlay::{NavigationOverlayLabel, NavigationTargetOverlay};
 use prompt_editor::{BreakpointPromptEditAction, PromptEditor, PromptEditorCallback};
 pub(crate) use row_ext::RowRangeExt;
 pub use row_ext::{RangeToAnchorExt, RowExt};
@@ -1178,21 +1181,6 @@ pub struct EditorSnapshot {
     current_line_highlight: CurrentLineHighlight,
     gutter_hovered: bool,
     semantic_tokens_enabled: bool,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct NavigationTargetOverlay {
-    pub target_range: Range<Anchor>,
-    pub label: NavigationOverlayLabel,
-    pub covered_text_range: Option<Range<Anchor>>,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct NavigationOverlayLabel {
-    pub text: SharedString,
-    pub text_color: Hsla,
-    pub x_offset: Pixels,
-    pub scale_factor: f32,
 }
 
 #[derive(Default, Debug, Clone, Copy)]
