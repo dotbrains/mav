@@ -88,6 +88,8 @@ mod selection;
 mod selection_ext;
 #[path = "editor/selection_history.rs"]
 mod selection_history;
+#[path = "editor/selection_state.rs"]
+mod selection_state;
 
 pub(crate) use actions::*;
 pub use change_list::ChangeList;
@@ -154,6 +156,11 @@ pub use row_ext::{RangeToAnchorExt, RowExt};
 pub(crate) use selection_ext::SelectionExt;
 pub(crate) use selection_history::{
     DeferredSelectionEffectsState, SelectionHistory, SelectionHistoryEntry, SelectionHistoryMode,
+};
+pub use selection_state::RowHighlightOptions;
+pub(crate) use selection_state::{
+    AddSelectionsGroup, AddSelectionsState, AutocloseRegion, RowHighlight, SelectNextState,
+    SnippetState,
 };
 pub use split::{SplittableEditor, ToggleSplitDiff};
 pub use split_editor_view::SplitEditorView;
@@ -1286,70 +1293,6 @@ impl SelectionEffects {
             ..self
         }
     }
-}
-
-#[derive(Clone, Copy)]
-pub struct RowHighlightOptions {
-    pub autoscroll: bool,
-    pub include_gutter: bool,
-}
-
-impl Default for RowHighlightOptions {
-    fn default() -> Self {
-        Self {
-            autoscroll: Default::default(),
-            include_gutter: true,
-        }
-    }
-}
-
-struct RowHighlight {
-    index: usize,
-    range: Range<Anchor>,
-    color: fn(&App) -> Hsla,
-    options: RowHighlightOptions,
-    type_id: TypeId,
-}
-
-#[derive(Clone, Debug)]
-struct AddSelectionsState {
-    groups: Vec<AddSelectionsGroup>,
-}
-
-#[derive(Clone, Debug)]
-struct AddSelectionsGroup {
-    above: bool,
-    stack: Vec<usize>,
-}
-
-#[derive(Clone)]
-struct SelectNextState {
-    query: AhoCorasick,
-    wordwise: bool,
-    done: bool,
-}
-
-impl std::fmt::Debug for SelectNextState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct(std::any::type_name::<Self>())
-            .field("wordwise", &self.wordwise)
-            .field("done", &self.done)
-            .finish()
-    }
-}
-
-#[derive(Debug)]
-struct AutocloseRegion {
-    selection_id: usize,
-    range: Range<Anchor>,
-    pair: BracketPair,
-}
-
-#[derive(Debug)]
-struct SnippetState {
-    ranges: Vec<Vec<Range<Anchor>>>,
-    active_index: usize,
-    choices: Vec<Option<Vec<String>>>,
 }
 
 #[doc(hidden)]
