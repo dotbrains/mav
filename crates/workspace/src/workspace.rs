@@ -30,6 +30,7 @@ pub mod welcome;
 mod window_chrome;
 mod workspace_actions;
 pub mod workspace_error;
+mod workspace_id;
 mod workspace_registries;
 mod workspace_settings;
 
@@ -121,10 +122,6 @@ use settings::{
 };
 
 use mav_actions::{Spawn, feedback::FileBugReport, theme::ToggleMode};
-use sqlez::{
-    bindable::{Bind, Column, StaticColumnCount},
-    statement::Statement,
-};
 use status_bar::StatusBar;
 pub use status_bar::{HideStatusItem, StatusItemView, add_hide_button_entry};
 use std::{
@@ -160,6 +157,7 @@ use uuid::Uuid;
 pub use window_chrome::client_side_decorations;
 pub(crate) use window_chrome::window_bounds_env_override;
 pub use workspace_actions::*;
+pub use workspace_id::WorkspaceId;
 pub use workspace_registries::{
     FollowableViewRegistry, register_project_item, register_serializable_item,
 };
@@ -224,46 +222,6 @@ pub trait DebuggerProvider {
     fn debug_scenario_scheduled_last(&self, cx: &App) -> bool;
 
     fn active_thread_state(&self, cx: &App) -> Option<ThreadStatus>;
-}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    Hash,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    serde::Serialize,
-    serde::Deserialize,
-)]
-pub struct WorkspaceId(i64);
-
-impl WorkspaceId {
-    pub fn from_i64(value: i64) -> Self {
-        Self(value)
-    }
-}
-
-impl StaticColumnCount for WorkspaceId {}
-impl Bind for WorkspaceId {
-    fn bind(&self, statement: &Statement, start_index: i32) -> Result<i32> {
-        self.0.bind(statement, start_index)
-    }
-}
-impl Column for WorkspaceId {
-    fn column(statement: &mut Statement, start_index: i32) -> Result<(Self, i32)> {
-        i64::column(statement, start_index)
-            .map(|(i, next_index)| (Self(i), next_index))
-            .with_context(|| format!("Failed to read WorkspaceId at index {start_index}"))
-    }
-}
-impl From<WorkspaceId> for i64 {
-    fn from(val: WorkspaceId) -> Self {
-        val.0
-    }
 }
 
 fn prompt_and_open_paths(
