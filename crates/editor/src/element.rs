@@ -9,6 +9,7 @@ mod highlighted_range;
 mod layout_data;
 mod line_numbers;
 mod mouse;
+mod navigation_overlay;
 mod position_map;
 mod scrollbar_layouts;
 
@@ -27,6 +28,9 @@ use layout_data::{
     ColoredRange, ContextMenuLayout, CreaseTrailerLayout, ScrollbarLayoutInformation,
 };
 pub(super) use line_numbers::{LineNumberLayout, LineNumberSegment};
+use navigation_overlay::{
+    NavigationLabelLayout, NavigationOverlayLayoutContext, NavigationOverlayPaintCommand,
+};
 pub use position_map::PointForPosition;
 pub(crate) use position_map::PositionMap;
 use scrollbar_layouts::{EditorScrollbars, MinimapLayout, ScrollbarLayout};
@@ -9292,30 +9296,6 @@ pub struct IndentGuideLayout {
     depth: u32,
     active: bool,
     settings: IndentGuideSettings,
-}
-
-enum NavigationOverlayPaintCommand {
-    Label(NavigationLabelLayout),
-}
-
-struct NavigationLabelLayout {
-    element: AnyElement,
-    #[cfg_attr(not(test), allow(dead_code))]
-    origin: gpui::Point<Pixels>,
-}
-
-struct NavigationOverlayLayoutContext<'a> {
-    display_snapshot: &'a DisplaySnapshot,
-    visible_display_row_range: &'a Range<DisplayRow>,
-    line_layouts: &'a [LineWithInvisibles],
-    text_align: TextAlign,
-    content_width: Pixels,
-    content_origin: gpui::Point<Pixels>,
-    scroll_position: gpui::Point<ScrollOffset>,
-    scroll_pixel_position: gpui::Point<ScrollPixelOffset>,
-    line_height: Pixels,
-    editor_font: Font,
-    editor_font_size: Pixels,
 }
 
 enum CursorPopoverType {
