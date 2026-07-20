@@ -39,6 +39,7 @@ mod prompt_and_log;
 mod query_types;
 mod registration_options;
 mod rename_watchers;
+mod request_failure;
 pub mod rust_analyzer_ext;
 mod semantic_tokens;
 mod server_binary;
@@ -74,6 +75,7 @@ use self::registration_options::{
     parse_register_capabilities, server_capabilities_support_range_formatting,
 };
 use self::rename_watchers::{LanguageServerWatchedPaths, LazyGlobSet, RenamePathsWatchedForServer};
+use self::request_failure::should_log_lsp_request_failure;
 pub use self::server_state::LanguageServerState;
 use self::server_state::glob_literal_prefix;
 pub use self::settings_helpers::{language_server_settings, language_server_settings_for};
@@ -1852,12 +1854,6 @@ pub struct LspStore {
     lsp_data: HashMap<BufferId, BufferLspData>,
     buffer_reload_tasks: HashMap<BufferId, Task<anyhow::Result<()>>>,
     next_hint_id: Arc<AtomicUsize>,
-}
-
-fn should_log_lsp_request_failure(message: &str) -> bool {
-    // content modified is a weird failure mode of rust-analyzer
-    // where requests are denied before its loaded a project
-    message.ends_with("content modified") || message.ends_with("server cancelled the request")
 }
 
 impl LspStore {
