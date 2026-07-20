@@ -22,6 +22,7 @@ pub mod security_modal;
 pub mod shared_screen;
 pub use shared_screen::SharedScreen;
 pub mod focus_follows_mouse;
+mod remote_workspace_position;
 mod status_bar;
 pub mod tasks;
 mod theme_preview;
@@ -127,6 +128,7 @@ use settings::{
 
 pub(crate) use delayed_edit_action::DelayedDebouncedEditAction;
 use mav_actions::{Spawn, feedback::FileBugReport, theme::ToggleMode};
+pub use remote_workspace_position::{WorkspacePosition, remote_workspace_position_from_db};
 use status_bar::StatusBar;
 pub use status_bar::{HideStatusItem, StatusItemView, add_hide_button_entry};
 use std::{
@@ -9970,59 +9972,6 @@ pub fn clone_active_item(
                 .log_err();
         })
         .detach();
-}
-
-#[derive(Debug)]
-pub struct WorkspacePosition {
-    pub window_bounds: Option<WindowBounds>,
-    pub display: Option<Uuid>,
-    pub centered_layout: bool,
-}
-
-pub fn remote_workspace_position_from_db(
-    connection_options: RemoteConnectionOptions,
-    paths_to_open: &[PathBuf],
-    cx: &App,
-) -> Task<Result<WorkspacePosition>> {
-    let paths = paths_to_open.to_vec();
-    let db = WorkspaceDb::global(cx);
-    let kvp = db::kvp::KeyValueStore::global(cx);
-
-    cx.background_spawn(async move {
-        let remote_connection_id = db
-            .get_or_create_remote_connection(connection_options)
-            .await
-            .context("fetching serialized ssh project")?;
-        let serialized_workspace = db.remote_workspace_for_roots(&paths, remote_connection_id);
-
-        let (window_bounds, display) = if let Some(bounds) = window_bounds_env_override() {
-            (Some(WindowBounds::Windowed(bounds)), None)
-        } else {
-            let restorable_bounds = serialized_workspace
-                .as_ref()
-                .and_then(|workspace| {
-                    Some((workspace.display?, workspace.window_bounds.map(|b| b.0)?))
-                })
-                .or_else(|| persistence::read_default_window_bounds(&kvp));
-
-            if let Some((serialized_display, serialized_bounds)) = restorable_bounds {
-                (Some(serialized_bounds), Some(serialized_display))
-            } else {
-                (None, None)
-            }
-        };
-
-        let centered_layout = serialized_workspace
-            .as_ref()
-            .map(|w| w.centered_layout)
-            .unwrap_or(false);
-
-        Ok(WorkspacePosition {
-            window_bounds,
-            display,
-            centered_layout,
-        })
-    })
 }
 
 pub fn with_active_or_new_workspace(
