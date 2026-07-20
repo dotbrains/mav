@@ -12,6 +12,7 @@ mod multi_workspace_tests;
 pub mod notifications;
 pub mod pane;
 pub mod pane_group;
+mod pane_movement;
 pub mod panel_pane;
 pub mod path_list {
     pub use util::path_list::{PathList, SerializedPathList};
@@ -108,6 +109,8 @@ pub use pane_group::{
     ActivePaneDecorator, HANDLE_HITBOX_SIZE, Member, PaneAxis, PaneGroup, PaneRenderContext,
     SplitDirection, SplitSizeHint,
 };
+pub use pane_movement::{clone_active_item, move_active_item, move_item};
+use pane_movement::{join_pane_into_active, move_all_items};
 use panel_pane::{PanelItem, PanelPaneKind, configure_agent_pane, configure_project_pane};
 pub use persistence::{
     RecentWorkspace, WorkspaceDb, delete_unloaded_items,
@@ -9176,184 +9179,6 @@ pub fn join_in_room_project(
 
         anyhow::Ok(())
     })
-}
-
-fn join_pane_into_active(
-    active_pane: &Entity<Pane>,
-    pane: &Entity<Pane>,
-    window: &mut Window,
-    cx: &mut App,
-) {
-    if pane == active_pane {
-    } else if pane.read(cx).items_len() == 0 {
-        pane.update(cx, |_, cx| {
-            cx.emit(pane::Event::Remove {
-                focus_on_pane: None,
-            });
-        })
-    } else {
-        move_all_items(pane, active_pane, window, cx);
-    }
-}
-
-fn move_all_items(
-    from_pane: &Entity<Pane>,
-    to_pane: &Entity<Pane>,
-    window: &mut Window,
-    cx: &mut App,
-) {
-    if !from_pane.read(cx).is_tabbed() || !to_pane.read(cx).is_tabbed() {
-        return;
-    }
-
-    let destination_is_different = from_pane != to_pane;
-    let mut moved_items = 0;
-    for (item_ix, item_handle) in from_pane
-        .read(cx)
-        .items()
-        .enumerate()
-        .map(|(ix, item)| (ix, item.clone()))
-        .collect::<Vec<_>>()
-    {
-        let ix = item_ix - moved_items;
-        if destination_is_different {
-            // Close item from previous pane
-            from_pane.update(cx, |source, cx| {
-                source.remove_item_and_focus_on_pane(ix, false, to_pane.clone(), window, cx);
-            });
-            moved_items += 1;
-        }
-
-        // This automatically removes duplicate items in the pane
-        to_pane.update(cx, |destination, cx| {
-            destination.add_item(item_handle, true, true, None, window, cx);
-            window.focus(&destination.focus_handle(cx), cx)
-        });
-    }
-}
-
-pub fn move_item(
-    source: &Entity<Pane>,
-    destination: &Entity<Pane>,
-    item_id_to_move: EntityId,
-    destination_index: usize,
-    activate: bool,
-    window: &mut Window,
-    cx: &mut App,
-) {
-    if !source.read(cx).is_tabbed() || !destination.read(cx).is_tabbed() {
-        return;
-    }
-
-    let Some((item_ix, item_handle)) = source
-        .read(cx)
-        .items()
-        .enumerate()
-        .find(|(_, item_handle)| item_handle.item_id() == item_id_to_move)
-        .map(|(ix, item)| (ix, item.clone()))
-    else {
-        // Tab was closed during drag
-        return;
-    };
-
-    if source != destination {
-        // Close item from previous pane
-        source.update(cx, |source, cx| {
-            source.remove_item_and_focus_on_pane(item_ix, false, destination.clone(), window, cx);
-        });
-    }
-
-    // This automatically removes duplicate items in the pane
-    destination.update(cx, |destination, cx| {
-        destination.add_item_inner(
-            item_handle,
-            activate,
-            activate,
-            activate,
-            Some(destination_index),
-            window,
-            cx,
-        );
-        if activate {
-            window.focus(&destination.focus_handle(cx), cx)
-        }
-    });
-}
-
-pub fn move_active_item(
-    source: &Entity<Pane>,
-    destination: &Entity<Pane>,
-    focus_destination: bool,
-    close_if_empty: bool,
-    window: &mut Window,
-    cx: &mut App,
-) {
-    if source == destination {
-        return;
-    }
-    if !source.read(cx).is_tabbed() || !destination.read(cx).is_tabbed() {
-        return;
-    }
-    let Some(active_item) = source.read(cx).active_item() else {
-        return;
-    };
-    source.update(cx, |source_pane, cx| {
-        let item_id = active_item.item_id();
-        source_pane.remove_item(item_id, false, close_if_empty, window, cx);
-        destination.update(cx, |target_pane, cx| {
-            target_pane.add_item(
-                active_item,
-                focus_destination,
-                focus_destination,
-                Some(target_pane.items_len()),
-                window,
-                cx,
-            );
-        });
-    });
-}
-
-pub fn clone_active_item(
-    workspace_id: Option<WorkspaceId>,
-    source: &Entity<Pane>,
-    destination: &Entity<Pane>,
-    focus_destination: bool,
-    window: &mut Window,
-    cx: &mut App,
-) {
-    if source == destination {
-        return;
-    }
-    if !source.read(cx).is_tabbed() || !destination.read(cx).is_tabbed() {
-        return;
-    }
-    let Some(active_item) = source.read(cx).active_item() else {
-        return;
-    };
-    if !active_item.can_split(cx) {
-        return;
-    }
-    let destination = destination.downgrade();
-    let task = active_item.clone_on_split(workspace_id, window, cx);
-    window
-        .spawn(cx, async move |cx| {
-            let Some(clone) = task.await else {
-                return;
-            };
-            destination
-                .update_in(cx, |target_pane, window, cx| {
-                    target_pane.add_item(
-                        clone,
-                        focus_destination,
-                        focus_destination,
-                        Some(target_pane.items_len()),
-                        window,
-                        cx,
-                    );
-                })
-                .log_err();
-        })
-        .detach();
 }
 
 pub fn with_active_or_new_workspace(
