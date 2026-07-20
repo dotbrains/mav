@@ -17,6 +17,7 @@ mod collab_panel_tests;
 mod contact_presence_tests;
 mod contact_request_tests;
 mod db_tests;
+mod editor_code_action_tests;
 mod editor_completion_tests;
 mod editor_session_tests;
 mod editor_tests;
