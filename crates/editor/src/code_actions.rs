@@ -2,6 +2,18 @@ use super::*;
 
 mod project_provider;
 
+pub(crate) enum CodeActionsForSelection {
+    None,
+    Fetching(Shared<Task<Option<ActionFetchReady>>>),
+    Ready(ActionFetchReady),
+}
+
+#[derive(Clone)]
+pub(crate) struct ActionFetchReady {
+    pub(crate) location: Location,
+    pub(crate) actions: Rc<[AvailableCodeAction]>,
+}
+
 impl Editor {
     /// Toggles an action selection menu for the latest selection.
     /// May show LSP code actions, code lens' command, runnables and potentially more entities applicable as actions.

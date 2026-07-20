@@ -105,6 +105,7 @@ pub(crate) use actions::*;
 pub use change_list::ChangeList;
 pub use clipboard::ClipboardSelection;
 pub use code_actions::CodeActionProvider;
+pub(crate) use code_actions::CodeActionsForSelection;
 pub use code_label_styles::styled_runs_for_code_label;
 use collections::TypeIdHashMap;
 pub use completions::CompletionProvider;
@@ -507,18 +508,6 @@ pub trait Addon: 'static {
     fn to_any_mut(&mut self) -> Option<&mut dyn std::any::Any> {
         None
     }
-}
-
-enum CodeActionsForSelection {
-    None,
-    Fetching(Shared<Task<Option<ActionFetchReady>>>),
-    Ready(ActionFetchReady),
-}
-
-#[derive(Clone)]
-struct ActionFetchReady {
-    location: Location,
-    actions: Rc<[AvailableCodeAction]>,
 }
 
 /// Mav's primary implementation of text input, allowing users to edit a [`MultiBuffer`].
