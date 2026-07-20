@@ -25,6 +25,7 @@ pub mod log_store;
 pub mod lsp_ext_command;
 mod lsp_store_events;
 mod progress_token;
+mod rename_watchers;
 pub mod rust_analyzer_ext;
 mod semantic_tokens;
 mod server_identity;
@@ -40,6 +41,7 @@ use self::document_links::DocumentLinksData;
 use self::document_symbols::DocumentSymbolsData;
 use self::inlay_hints::BufferInlayHints;
 pub use self::lsp_store_events::{LanguageServerStatus, LspStoreEvent};
+use self::rename_watchers::{LanguageServerWatchedPaths, LazyGlobSet, RenamePathsWatchedForServer};
 use crate::{
     CodeAction, Completion, CompletionDisplayOptions, CompletionResponse, CompletionSource,
     CoreCompletion, Hover, InlayHint, InlayId, LocationLink, LspAction, LspPullDiagnostics,
@@ -77,7 +79,7 @@ use futures::{
     select, select_biased,
     stream::FuturesUnordered,
 };
-use globset::{Glob, GlobBuilder, GlobMatcher, GlobSet, GlobSetBuilder};
+use globset::Glob;
 use gpui::{
     App, AppContext, AsyncApp, Context, Entity, EventEmitter, PromptLevel, SharedString,
     Subscription, Task, TaskExt, WeakEntity,
@@ -106,8 +108,7 @@ use language::{
 use lsp::{
     AdapterServerCapabilities, CodeActionKind, CompletionContext, CompletionOptions,
     DEFAULT_LSP_REQUEST_TIMEOUT, DiagnosticServerCapabilities, DiagnosticSeverity, DiagnosticTag,
-    DidChangeWatchedFilesRegistrationOptions, Edit, FileOperationFilter, FileOperationPatternKind,
-    FileOperationRegistrationOptions, FileRename, FileSystemWatcher, LanguageServer,
+    DidChangeWatchedFilesRegistrationOptions, Edit, FileRename, FileSystemWatcher, LanguageServer,
     LanguageServerBinary, LanguageServerBinaryOptions, LanguageServerId, LanguageServerName,
     LanguageServerSelector, LspRequestFuture, MessageActionItem, MessageType, OneOf,
     RenameFilesParams, SymbolKind, TextDocumentSyncSaveOptions, TextEdit, Uri, WillRenameFiles,
@@ -14040,182 +14041,6 @@ pub enum LanguageServerToQuery {
     FirstCapable,
     /// Query a specific language server.
     Other(LanguageServerId),
-}
-
-#[derive(Default)]
-struct RenamePathsWatchedForServer {
-    did_rename: Vec<RenameActionPredicate>,
-    will_rename: Vec<RenameActionPredicate>,
-}
-
-impl RenamePathsWatchedForServer {
-    fn with_did_rename_patterns(
-        mut self,
-        did_rename: Option<&FileOperationRegistrationOptions>,
-    ) -> Self {
-        if let Some(did_rename) = did_rename {
-            self.did_rename = did_rename
-                .filters
-                .iter()
-                .filter_map(|filter| filter.try_into().log_err())
-                .collect();
-        }
-        self
-    }
-    fn with_will_rename_patterns(
-        mut self,
-        will_rename: Option<&FileOperationRegistrationOptions>,
-    ) -> Self {
-        if let Some(will_rename) = will_rename {
-            self.will_rename = will_rename
-                .filters
-                .iter()
-                .filter_map(|filter| filter.try_into().log_err())
-                .collect();
-        }
-        self
-    }
-
-    fn should_send_did_rename(&self, path: &str, is_dir: bool) -> bool {
-        self.did_rename.iter().any(|pred| pred.eval(path, is_dir))
-    }
-    fn should_send_will_rename(&self, path: &str, is_dir: bool) -> bool {
-        self.will_rename.iter().any(|pred| pred.eval(path, is_dir))
-    }
-}
-
-impl TryFrom<&FileOperationFilter> for RenameActionPredicate {
-    type Error = globset::Error;
-    fn try_from(ops: &FileOperationFilter) -> Result<Self, globset::Error> {
-        Ok(Self {
-            kind: ops.pattern.matches.clone(),
-            glob: GlobBuilder::new(&ops.pattern.glob)
-                .case_insensitive(
-                    ops.pattern
-                        .options
-                        .as_ref()
-                        .is_some_and(|ops| ops.ignore_case.unwrap_or(false)),
-                )
-                .build()?
-                .compile_matcher(),
-        })
-    }
-}
-struct RenameActionPredicate {
-    glob: GlobMatcher,
-    kind: Option<FileOperationPatternKind>,
-}
-
-impl RenameActionPredicate {
-    // Returns true if language server should be notified
-    fn eval(&self, path: &str, is_dir: bool) -> bool {
-        self.kind.as_ref().is_none_or(|kind| {
-            let expected_kind = if is_dir {
-                FileOperationPatternKind::Folder
-            } else {
-                FileOperationPatternKind::File
-            };
-            kind == &expected_kind
-        }) && self.glob.is_match(path)
-    }
-}
-
-#[derive(Default)]
-struct LanguageServerWatchedPaths {
-    worktree_paths: HashMap<WorktreeId, LazyGlobSet>,
-    abs_paths: HashMap<Arc<Path>, (LazyGlobSet, Task<()>)>,
-}
-
-#[derive(Default)]
-struct LazyGlobSet {
-    /// Globs keyed by registration ID.
-    globs: HashMap<String, Vec<Glob>>,
-    /// Compiled from `globs`, lazily on `is_match`. `None` when stale.
-    compiled: Option<GlobSet>,
-}
-
-impl LazyGlobSet {
-    fn add(&mut self, registration_id: &str, glob: Glob) {
-        self.globs
-            .entry(registration_id.to_string())
-            .or_default()
-            .push(glob);
-        self.compiled = None;
-    }
-
-    fn remove(&mut self, registration_id: &str) {
-        if self.globs.remove(registration_id).is_some() {
-            self.compiled = None;
-        }
-    }
-
-    fn is_empty(&self) -> bool {
-        self.globs.is_empty()
-    }
-
-    fn is_match<P: AsRef<Path>>(&mut self, path: P) -> bool {
-        let compiled = self.compiled.get_or_insert_with(|| {
-            let mut builder = GlobSetBuilder::new();
-            for glob in self.globs.values().flatten() {
-                builder.add(glob.clone());
-            }
-            builder.build().log_err().unwrap_or_default()
-        });
-        compiled.is_match(path)
-    }
-}
-
-impl LanguageServerWatchedPaths {
-    fn spawn_abs_path_watcher(
-        abs_path: Arc<Path>,
-        fs: Arc<dyn Fs>,
-        language_server_id: LanguageServerId,
-        cx: &mut Context<LspStore>,
-    ) -> Task<()> {
-        let lsp_store = cx.weak_entity();
-        const LSP_ABS_PATH_OBSERVE: Duration = Duration::from_millis(100);
-
-        cx.spawn({
-            async move |_, cx| {
-                maybe!(async move {
-                    let mut push_updates = fs.watch(&abs_path, LSP_ABS_PATH_OBSERVE).await;
-                    while let Some(update) = push_updates.0.next().await {
-                        let action = lsp_store
-                            .update(cx, |this, _| {
-                                let Some(local) = this.as_local_mut() else {
-                                    return ControlFlow::Break(());
-                                };
-                                let Some(watcher) = local
-                                    .language_server_watched_paths
-                                    .get_mut(&language_server_id)
-                                else {
-                                    return ControlFlow::Break(());
-                                };
-                                let Some((globs, _)) = watcher.abs_paths.get_mut(&abs_path) else {
-                                    return ControlFlow::Break(());
-                                };
-                                let matching_entries = update
-                                    .into_iter()
-                                    .filter(|event| globs.is_match(&event.path))
-                                    .collect::<Vec<_>>();
-                                this.lsp_notify_abs_paths_changed(
-                                    language_server_id,
-                                    matching_entries,
-                                );
-                                ControlFlow::Continue(())
-                            })
-                            .ok()?;
-
-                        if action.is_break() {
-                            break;
-                        }
-                    }
-                    Some(())
-                })
-                .await;
-            }
-        })
-    }
 }
 
 struct LspBufferSnapshot {
