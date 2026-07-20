@@ -31,6 +31,7 @@ mod rename_watchers;
 pub mod rust_analyzer_ext;
 mod semantic_tokens;
 mod server_identity;
+mod server_state;
 mod settings_helpers;
 mod ssh_lsp_adapter;
 mod store_mode;
@@ -48,6 +49,8 @@ pub use self::lsp_store_events::{LanguageServerStatus, LspStoreEvent};
 pub use self::prompt_and_log::{LanguageServerLogType, LanguageServerPromptRequest};
 pub use self::query_types::{LanguageServerToQuery, ResolvedHint};
 use self::rename_watchers::{LanguageServerWatchedPaths, LazyGlobSet, RenamePathsWatchedForServer};
+pub use self::server_state::LanguageServerState;
+use self::server_state::{WorkspaceRefreshTask, glob_literal_prefix};
 pub use self::settings_helpers::{language_server_settings, language_server_settings_for};
 pub use self::ssh_lsp_adapter::SshLspAdapter;
 use crate::{
@@ -14046,77 +14049,6 @@ async fn populate_labels_for_completions(
 struct LspBufferSnapshot {
     version: i32,
     snapshot: TextBufferSnapshot,
-}
-
-pub struct WorkspaceRefreshTask {
-    refresh_tx: mpsc::Sender<Option<oneshot::Sender<bool>>>,
-    progress_tx: mpsc::Sender<()>,
-    #[allow(dead_code)]
-    task: Task<()>,
-}
-
-pub enum LanguageServerState {
-    Starting {
-        startup: Task<Option<Arc<LanguageServer>>>,
-        /// List of language servers that will be added to the workspace once it's initialization completes.
-        pending_workspace_folders: Arc<Mutex<BTreeSet<Uri>>>,
-    },
-
-    Running {
-        adapter: Arc<CachedLspAdapter>,
-        server: Arc<LanguageServer>,
-        simulate_disk_based_diagnostics_completion: Option<Task<()>>,
-        workspace_diagnostics_refresh_tasks: HashMap<Option<String>, WorkspaceRefreshTask>,
-    },
-}
-
-impl LanguageServerState {
-    fn add_workspace_folder(&self, uri: Uri) {
-        match self {
-            LanguageServerState::Starting {
-                pending_workspace_folders,
-                ..
-            } => {
-                pending_workspace_folders.lock().insert(uri);
-            }
-            LanguageServerState::Running { server, .. } => {
-                server.add_workspace_folder(uri);
-            }
-        }
-    }
-    fn _remove_workspace_folder(&self, uri: Uri) {
-        match self {
-            LanguageServerState::Starting {
-                pending_workspace_folders,
-                ..
-            } => {
-                pending_workspace_folders.lock().remove(&uri);
-            }
-            LanguageServerState::Running { server, .. } => server.remove_workspace_folder(uri),
-        }
-    }
-}
-
-impl std::fmt::Debug for LanguageServerState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            LanguageServerState::Starting { .. } => {
-                f.debug_struct("LanguageServerState::Starting").finish()
-            }
-            LanguageServerState::Running { .. } => {
-                f.debug_struct("LanguageServerState::Running").finish()
-            }
-        }
-    }
-}
-
-pub fn glob_literal_prefix(glob: &Path) -> PathBuf {
-    glob.components()
-        .take_while(|component| match component {
-            path::Component::Normal(part) => !part.to_string_lossy().contains(['*', '?', '{', '}']),
-            _ => true,
-        })
-        .collect()
 }
 
 pub struct LocalLspAdapterDelegate {
