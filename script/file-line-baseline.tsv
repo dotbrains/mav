@@ -1,4 +1,4 @@
-   31652	crates/editor/src/editor_tests.rs
+   28727	crates/editor/src/editor_tests.rs
    16246	crates/workspace/src/workspace.rs
    15288	crates/project/src/lsp_store.rs
    14706	crates/project/tests/integration/project_tests.rs
