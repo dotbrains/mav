@@ -4,6 +4,7 @@ mod cursor_layout;
 mod gutter;
 mod header;
 mod highlighted_range;
+mod line_numbers;
 mod mouse;
 mod position_map;
 mod scrollbar_layouts;
@@ -16,6 +17,7 @@ use gutter::Gutter;
 pub(crate) use header::StickyHeader;
 pub(crate) use header::{header_jump_data, render_buffer_header};
 pub use highlighted_range::{HighlightedRange, HighlightedRangeLine};
+pub(super) use line_numbers::{LineNumberLayout, LineNumberSegment};
 pub use position_map::PointForPosition;
 pub(crate) use position_map::PositionMap;
 use scrollbar_layouts::{EditorScrollbars, MinimapLayout, ScrollbarLayout};
@@ -9257,17 +9259,6 @@ impl EditorLayout {
     fn line_end_overshoot(&self) -> Pixels {
         0.15 * self.position_map.line_height
     }
-}
-
-#[derive(Debug)]
-struct LineNumberSegment {
-    shaped_line: ShapedLine,
-    hitbox: Option<Hitbox>,
-}
-
-#[derive(Debug)]
-struct LineNumberLayout {
-    segments: SmallVec<[LineNumberSegment; 1]>,
 }
 
 struct ColoredRange<T> {
