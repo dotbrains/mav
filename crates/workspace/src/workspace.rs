@@ -187,6 +187,7 @@ use workspace_notifications::notify_if_database_failed;
 pub(crate) use workspace_open_items::open_items;
 pub use workspace_open_options::{OpenOptions, OpenResult, OpenVisible, WorkspaceMatching};
 use workspace_open_prompt::prompt_and_open_paths;
+pub use workspace_open_prompt::prompt_for_open_path_and_open;
 pub use workspace_providers::{DebuggerProvider, TerminalProvider};
 pub use workspace_registries::{
     FollowableViewRegistry, register_project_item, register_serializable_item,
