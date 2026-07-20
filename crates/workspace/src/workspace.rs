@@ -42,6 +42,7 @@ mod workspace_location_helpers;
 mod workspace_open_options;
 mod workspace_providers;
 mod workspace_registries;
+mod workspace_reload;
 mod workspace_restore;
 mod workspace_settings;
 mod workspace_store;
@@ -186,6 +187,7 @@ pub use workspace_registries::{
 pub(crate) use workspace_registries::{
     ProjectItemRegistry, SerializableItemRegistry, WorkspaceItemBuilder,
 };
+pub use workspace_reload::reload;
 use workspace_restore::apply_restored_sidebar_state;
 pub use workspace_restore::{apply_restored_multiworkspace_state, restore_multiworkspace};
 pub use workspace_settings::{
@@ -9174,59 +9176,6 @@ pub fn join_in_room_project(
 
         anyhow::Ok(())
     })
-}
-
-pub fn reload(cx: &mut App) {
-    let should_confirm = WorkspaceSettings::get_global(cx).confirm_quit;
-    let mut workspace_windows = cx
-        .windows()
-        .into_iter()
-        .filter_map(|window| window.downcast::<MultiWorkspace>())
-        .collect::<Vec<_>>();
-
-    // If multiple windows have unsaved changes, and need a save prompt,
-    // prompt in the active window before switching to a different window.
-    workspace_windows.sort_by_key(|window| window.is_active(cx) == Some(false));
-
-    let mut prompt = None;
-    if let (true, Some(window)) = (should_confirm, workspace_windows.first()) {
-        prompt = window
-            .update(cx, |_, window, cx| {
-                window.prompt(
-                    PromptLevel::Info,
-                    "Are you sure you want to restart?",
-                    None,
-                    &["Restart", "Cancel"],
-                    cx,
-                )
-            })
-            .ok();
-    }
-
-    cx.spawn(async move |cx| {
-        if let Some(prompt) = prompt {
-            let answer = prompt.await?;
-            if answer != 0 {
-                return anyhow::Ok(());
-            }
-        }
-
-        // If the user cancels any save prompt, then keep the app open.
-        for window in workspace_windows {
-            if let Ok(should_close) = window.update(cx, |multi_workspace, window, cx| {
-                let workspace = multi_workspace.workspace().clone();
-                workspace.update(cx, |workspace, cx| {
-                    workspace.prepare_to_close(CloseIntent::Quit, window, cx)
-                })
-            }) && !should_close.await?
-            {
-                return anyhow::Ok(());
-            }
-        }
-        cx.update(|cx| cx.restart());
-        anyhow::Ok(())
-    })
-    .detach_and_log_err(cx);
 }
 
 fn join_pane_into_active(
