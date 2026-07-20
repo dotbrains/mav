@@ -131,6 +131,8 @@ mod indentation_actions;
 mod initializer_display;
 #[path = "editor/initializer_finish.rs"]
 mod initializer_finish;
+#[path = "editor/initializer_project.rs"]
+mod initializer_project;
 #[path = "editor/initializer_subscriptions.rs"]
 mod initializer_subscriptions;
 #[path = "editor/inline_values.rs"]
@@ -890,31 +892,8 @@ impl Editor {
                 None
             };
 
-        let bookmark_store = match (&mode, project.as_ref()) {
-            (EditorMode::Full { .. }, Some(project)) => Some(project.read(cx).bookmark_store()),
-            _ => None,
-        };
-
-        let breakpoint_store = match (&mode, project.as_ref()) {
-            (EditorMode::Full { .. }, Some(project)) => Some(project.read(cx).breakpoint_store()),
-            _ => None,
-        };
-
-        let mut code_action_providers = Vec::new();
-        let mut load_uncommitted_diff = None;
-        if let Some(project) = project.clone() {
-            load_uncommitted_diff = Some(
-                update_uncommitted_diff_for_buffer(
-                    cx.entity(),
-                    &project,
-                    multi_buffer.read(cx).all_buffers(),
-                    multi_buffer.clone(),
-                    cx,
-                )
-                .shared(),
-            );
-            code_action_providers.push(Rc::new(project) as Rc<_>);
-        }
+        let initial_project_handles =
+            Self::initial_project_handles(&mode, &project, &multi_buffer, cx);
 
         let editor = Self {
             focus_handle,
@@ -998,7 +977,7 @@ impl Editor {
             find_all_references_task_sources: Vec::new(),
             next_completion_id: 0,
             next_inlay_id: 0,
-            code_action_providers,
+            code_action_providers: initial_project_handles.code_action_providers,
             code_actions_for_selection: CodeActionsForSelection::None,
             runnables_for_selection_toggle: Task::ready(()),
             quick_selection_highlight_task: None,
@@ -1079,8 +1058,8 @@ impl Editor {
             blame: None,
             blame_subscription: None,
 
-            bookmark_store,
-            breakpoint_store,
+            bookmark_store: initial_project_handles.bookmark_store,
+            breakpoint_store: initial_project_handles.breakpoint_store,
             gutter_hover_button: (None, None),
             gutter_diff_review_indicator: (None, None),
             diff_review_drag_state: None,
@@ -1136,7 +1115,7 @@ impl Editor {
             serialize_selections: Task::ready(()),
             serialize_folds: Task::ready(()),
             text_style_refinement: None,
-            load_diff_task: load_uncommitted_diff,
+            load_diff_task: initial_project_handles.load_uncommitted_diff,
             temporary_diff_override: false,
             render_diff_hunks_as_unstaged: false,
             minimap: None,
