@@ -67,6 +67,8 @@ mod code_actions;
 mod code_label_styles;
 mod completions;
 mod config;
+#[path = "editor/constants.rs"]
+mod constants;
 #[path = "editor/core_types.rs"]
 mod core_types;
 mod diagnostics;
@@ -107,6 +109,15 @@ pub use completions::CompletionProvider;
 #[cfg(test)]
 pub(crate) use completions::snippet_candidate_suffixes;
 pub(crate) use completions::split_words;
+pub use constants::{
+    BUFFER_HEADER_PADDING, CODE_ACTIONS_DEBOUNCE_TIMEOUT, FILE_HEADER_HEIGHT,
+    LSP_REQUEST_DEBOUNCE_TIMEOUT, MULTI_BUFFER_EXCERPT_HEADER_HEIGHT,
+    SELECTION_HIGHLIGHT_DEBOUNCE_TIMEOUT,
+};
+pub(crate) use constants::{
+    CODE_ACTION_TIMEOUT, CURSORS_VISIBLE_FOR, EDIT_PREDICTION_KEY_CONTEXT, FORMAT_TIMEOUT,
+    MAX_LINE_LEN, MINIMAP_FONT_SIZE, SCROLL_CENTER_TOP_BOTTOM_DEBOUNCE_TIMEOUT,
+};
 pub(crate) use core_types::BreadcrumbsVisibility;
 pub use core_types::{
     BufferSerialization, EditorMode, EditorStyle, MinimapVisibility, Navigated, SizingBehavior,
@@ -140,6 +151,7 @@ pub use element::{
 };
 use erased_editor::ErasedEditorImpl;
 pub use events::EditorEvent;
+pub(crate) use events::ReportEditorEvent;
 pub use git::blame::BlameRenderer;
 pub(crate) use git::{DiffHunkKey, StoredReviewComment};
 use git::{
@@ -337,41 +349,9 @@ use crate::{
     signature_help::{SignatureHelpHiddenBy, SignatureHelpState},
 };
 
-pub const FILE_HEADER_HEIGHT: u32 = 2;
-pub const BUFFER_HEADER_PADDING: Rems = rems(0.25);
-pub const MULTI_BUFFER_EXCERPT_HEADER_HEIGHT: u32 = 1;
 const CURSOR_BLINK_INTERVAL: Duration = Duration::from_millis(500);
-const MAX_LINE_LEN: usize = 1024;
 const MIN_NAVIGATION_HISTORY_ROW_DELTA: i64 = 10;
 const MAX_SELECTION_HISTORY_LEN: usize = 1024;
-pub(crate) const CURSORS_VISIBLE_FOR: Duration = Duration::from_millis(2000);
-#[doc(hidden)]
-pub const CODE_ACTIONS_DEBOUNCE_TIMEOUT: Duration = Duration::from_millis(250);
-pub const SELECTION_HIGHLIGHT_DEBOUNCE_TIMEOUT: Duration = Duration::from_millis(100);
-
-pub(crate) const CODE_ACTION_TIMEOUT: Duration = Duration::from_secs(5);
-pub(crate) const FORMAT_TIMEOUT: Duration = Duration::from_secs(5);
-pub(crate) const SCROLL_CENTER_TOP_BOTTOM_DEBOUNCE_TIMEOUT: Duration = Duration::from_secs(1);
-pub const LSP_REQUEST_DEBOUNCE_TIMEOUT: Duration = Duration::from_millis(50);
-
-pub(crate) const EDIT_PREDICTION_KEY_CONTEXT: &str = "edit_prediction";
-pub(crate) const MINIMAP_FONT_SIZE: AbsoluteLength = AbsoluteLength::Pixels(px(2.));
-
-enum ReportEditorEvent {
-    Saved { auto_saved: bool },
-    EditorOpened,
-    Closed,
-}
-
-impl ReportEditorEvent {
-    pub fn event_type(&self) -> &'static str {
-        match self {
-            Self::Saved { .. } => "Editor Saved",
-            Self::EditorOpened => "Editor Opened",
-            Self::Closed => "Editor Closed",
-        }
-    }
-}
 
 pub enum ActiveDebugLine {}
 pub enum DebugStackFrameLine {}

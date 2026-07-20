@@ -83,3 +83,19 @@ pub enum EditorEvent {
 }
 
 impl EventEmitter<EditorEvent> for Editor {}
+
+pub(crate) enum ReportEditorEvent {
+    Saved { auto_saved: bool },
+    EditorOpened,
+    Closed,
+}
+
+impl ReportEditorEvent {
+    pub(super) fn event_type(&self) -> &'static str {
+        match self {
+            Self::Saved { .. } => "Editor Saved",
+            Self::EditorOpened => "Editor Opened",
+            Self::Closed => "Editor Closed",
+        }
+    }
+}
