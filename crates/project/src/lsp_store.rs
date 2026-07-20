@@ -9,6 +9,7 @@
 //! - [`LspStore`], which unifies the two under one consistent interface for interacting with language servers.
 //!
 //! Most of the interesting work happens at the local layer, as bulk of the complexity is with managing the lifecycle of language servers. The actual implementation of the LSP protocol is handled by [`lsp`] crate.
+mod buffer_lsp_data;
 pub mod clangd_ext;
 pub mod code_lens;
 mod completion_documentation;
@@ -43,6 +44,7 @@ mod symbol_types;
 pub mod vue_language_server_ext;
 mod workspace_diagnostics;
 
+use self::buffer_lsp_data::{BufferLspData, LspKey};
 use self::code_lens::CodeLensData;
 pub use self::completion_documentation::CompletionDocumentation;
 pub(crate) use self::completion_labels::{
@@ -3935,76 +3937,6 @@ pub struct LspStore {
     lsp_data: HashMap<BufferId, BufferLspData>,
     buffer_reload_tasks: HashMap<BufferId, Task<anyhow::Result<()>>>,
     next_hint_id: Arc<AtomicUsize>,
-}
-
-#[derive(Debug)]
-pub struct BufferLspData {
-    buffer_version: Global,
-    document_colors: Option<DocumentColorData>,
-    code_lens: Option<CodeLensData>,
-    semantic_tokens: Option<SemanticTokensData>,
-    folding_ranges: Option<FoldingRangeData>,
-    document_links: Option<DocumentLinksData>,
-    document_symbols: Option<DocumentSymbolsData>,
-    inlay_hints: BufferInlayHints,
-    lsp_requests: HashMap<LspKey, HashMap<LspRequestId, Task<()>>>,
-    chunk_lsp_requests: HashMap<LspKey, HashMap<RowChunk, LspRequestId>>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-struct LspKey {
-    request_type: TypeId,
-    server_queried: Option<LanguageServerId>,
-}
-
-impl BufferLspData {
-    fn new(buffer: &Entity<Buffer>, cx: &mut App) -> Self {
-        Self {
-            buffer_version: buffer.read(cx).version(),
-            document_colors: None,
-            code_lens: None,
-            semantic_tokens: None,
-            folding_ranges: None,
-            document_links: None,
-            document_symbols: None,
-            inlay_hints: BufferInlayHints::new(buffer, cx),
-            lsp_requests: HashMap::default(),
-            chunk_lsp_requests: HashMap::default(),
-        }
-    }
-
-    fn remove_server_data(&mut self, for_server: LanguageServerId) {
-        if let Some(document_colors) = &mut self.document_colors {
-            document_colors.remove_server_data(for_server);
-        }
-
-        if let Some(code_lens) = &mut self.code_lens {
-            code_lens.remove_server_data(for_server);
-        }
-
-        self.inlay_hints.remove_server_data(for_server);
-
-        if let Some(semantic_tokens) = &mut self.semantic_tokens {
-            semantic_tokens.remove_server_data(for_server);
-        }
-
-        if let Some(folding_ranges) = &mut self.folding_ranges {
-            folding_ranges.ranges.remove(&for_server);
-        }
-
-        if let Some(document_links) = &mut self.document_links {
-            document_links.remove_server_data(for_server);
-        }
-
-        if let Some(document_symbols) = &mut self.document_symbols {
-            document_symbols.remove_server_data(for_server);
-        }
-    }
-
-    #[cfg(any(test, feature = "test-support"))]
-    pub fn inlay_hints(&self) -> &BufferInlayHints {
-        &self.inlay_hints
-    }
 }
 
 fn should_log_lsp_request_failure(message: &str) -> bool {
