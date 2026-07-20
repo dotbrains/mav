@@ -310,4 +310,8 @@ impl Editor {
     pub fn use_modal_editing(&self) -> bool {
         self.use_modal_editing
     }
+
+    pub fn has_mouse_context_menu(&self) -> bool {
+        self.mouse_context_menu.is_some()
+    }
 }
