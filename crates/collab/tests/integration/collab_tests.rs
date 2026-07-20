@@ -22,6 +22,7 @@ mod integration_tests;
 mod notification_tests;
 mod project_buffer_lifecycle_tests;
 mod project_diagnostics_tests;
+mod project_formatting_tests;
 mod project_save_sync_tests;
 mod project_worktree_sync_tests;
 mod random_channel_buffer_tests;
