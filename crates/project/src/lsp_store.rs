@@ -11,6 +11,7 @@
 //! Most of the interesting work happens at the local layer, as bulk of the complexity is with managing the lifecycle of language servers. The actual implementation of the LSP protocol is handled by [`lsp`] crate.
 pub mod clangd_ext;
 pub mod code_lens;
+mod diagnostics_types;
 mod document_colors;
 mod document_links;
 mod document_symbols;
@@ -149,6 +150,7 @@ use util::{
     rel_path::RelPath,
 };
 
+pub use diagnostics_types::{DocumentDiagnostics, DocumentDiagnosticsUpdate};
 pub use document_colors::DocumentColors;
 pub use document_links::{
     BufferDocumentLinks, DocumentLinkId, DocumentLinkResolveTask, LspDocumentLink,
@@ -202,21 +204,6 @@ struct LanguageServerSeed {
     name: LanguageServerName,
     toolchain: Option<Toolchain>,
     settings: LanguageServerSeedSettings,
-}
-
-#[derive(Debug)]
-pub struct DocumentDiagnosticsUpdate<'a, D> {
-    pub diagnostics: D,
-    pub result_id: Option<SharedString>,
-    pub registration_id: Option<SharedString>,
-    pub server_id: LanguageServerId,
-    pub disk_based_sources: Cow<'a, [String]>,
-}
-
-pub struct DocumentDiagnostics {
-    diagnostics: Vec<DiagnosticEntry<Unclipped<PointUtf16>>>,
-    document_abs_path: PathBuf,
-    version: Option<i32>,
 }
 
 #[derive(Default, Debug)]
