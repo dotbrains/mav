@@ -204,6 +204,40 @@ impl Editor {
         self.move_to_snippet_tabstop(Bias::Left, window, cx)
     }
 
+    pub fn next_snippet_tabstop(
+        &mut self,
+        _: &NextSnippetTabstop,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.mode.is_single_line() || self.snippet_stack.is_empty() {
+            cx.propagate();
+            return;
+        }
+
+        if self.move_to_next_snippet_tabstop(window, cx) {
+            return;
+        }
+        cx.propagate();
+    }
+
+    pub fn previous_snippet_tabstop(
+        &mut self,
+        _: &PreviousSnippetTabstop,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.mode.is_single_line() || self.snippet_stack.is_empty() {
+            cx.propagate();
+            return;
+        }
+
+        if self.move_to_prev_snippet_tabstop(window, cx) {
+            return;
+        }
+        cx.propagate();
+    }
+
     pub fn move_to_snippet_tabstop(
         &mut self,
         bias: Bias,
