@@ -11,6 +11,8 @@ use std::cell::RefCell;
 mod feedback_state;
 #[path = "thread_view/numbered_code_block.rs"]
 mod numbered_code_block;
+#[path = "thread_view/ui_state.rs"]
+mod ui_state;
 
 use acp_thread::{
     PlanEntry, SandboxAuthorizationDetails, SandboxFallbackAuthorizationDetails,
@@ -49,104 +51,16 @@ use workspace::{OpenOptions, SERIALIZATION_THROTTLE_TIME};
 use super::*;
 use feedback_state::ThreadFeedbackState;
 use numbered_code_block::{parse_cat_numbered_markdown_code_block, render_cat_numbered_code_block};
+use ui_state::GeneratingSpinnerElement;
+pub(crate) use ui_state::PermissionSelection;
 
 const DATA_RETENTION_LEARN_MORE_URL: &str = "https://support.claude.com/en/articles/15425996-data-retention-practices-for-mythos-class-models";
-
-struct GeneratingSpinner {
-    variant: SpinnerVariant,
-}
-
-impl GeneratingSpinner {
-    fn new(variant: SpinnerVariant) -> Self {
-        Self { variant }
-    }
-}
-
-impl Render for GeneratingSpinner {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        SpinnerLabel::with_variant(self.variant).size(LabelSize::Small)
-    }
-}
-
-#[derive(IntoElement)]
-struct GeneratingSpinnerElement {
-    variant: SpinnerVariant,
-}
-
-impl GeneratingSpinnerElement {
-    fn new(variant: SpinnerVariant) -> Self {
-        Self { variant }
-    }
-}
-
-impl RenderOnce for GeneratingSpinnerElement {
-    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let id = match self.variant {
-            SpinnerVariant::Dots => "generating-spinner-view",
-            SpinnerVariant::Sand => "confirmation-spinner-view",
-            _ => "spinner-view",
-        };
-        window.with_id(id, |window| {
-            window.use_state(cx, |_, _| GeneratingSpinner::new(self.variant))
-        })
-    }
-}
 
 pub enum AcpThreadViewEvent {
     Interacted,
 }
 
 impl EventEmitter<AcpThreadViewEvent> for ThreadView {}
-
-/// Tracks the user's permission dropdown selection state for a specific tool call.
-///
-/// Default (no entry in the map) means the last dropdown choice is selected,
-/// which is typically "Only this time".
-#[derive(Clone)]
-pub(crate) enum PermissionSelection {
-    /// A specific choice from the dropdown (e.g., "Always for terminal", "Only this time").
-    /// The index corresponds to the position in the `choices` list from `PermissionOptions`.
-    Choice(usize),
-    /// "Select options…" mode where individual command patterns can be toggled.
-    /// Contains the indices of checked patterns in the `patterns` list.
-    /// All patterns start checked when this mode is first activated.
-    SelectedPatterns(Vec<usize>),
-}
-
-impl PermissionSelection {
-    /// Returns the choice index if a specific dropdown choice is selected,
-    /// or `None` if in per-command pattern mode.
-    pub(crate) fn choice_index(&self) -> Option<usize> {
-        match self {
-            Self::Choice(index) => Some(*index),
-            Self::SelectedPatterns(_) => None,
-        }
-    }
-
-    fn is_pattern_checked(&self, index: usize) -> bool {
-        match self {
-            Self::SelectedPatterns(checked) => checked.contains(&index),
-            _ => false,
-        }
-    }
-
-    fn has_any_checked_patterns(&self) -> bool {
-        match self {
-            Self::SelectedPatterns(checked) => !checked.is_empty(),
-            _ => false,
-        }
-    }
-
-    fn toggle_pattern(&mut self, index: usize) {
-        if let Self::SelectedPatterns(checked) = self {
-            if let Some(pos) = checked.iter().position(|&i| i == index) {
-                checked.swap_remove(pos);
-            } else {
-                checked.push(index);
-            }
-        }
-    }
-}
 
 pub struct ThreadView {
     pub(crate) root_thread_id: ThreadId,
