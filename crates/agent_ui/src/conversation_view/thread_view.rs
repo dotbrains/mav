@@ -7,6 +7,8 @@ use crate::{
 };
 use agent_client_protocol::schema::v1 as acp;
 use std::cell::RefCell;
+#[path = "thread_view/fast_mode_warning.rs"]
+mod fast_mode_warning;
 #[path = "thread_view/feedback_state.rs"]
 mod feedback_state;
 #[path = "thread_view/numbered_code_block.rs"]
@@ -40,7 +42,6 @@ use crate::completion_provider::AvailableSkill;
 use crate::message_editor::SharedSessionCapabilities;
 use crate::ui::{SandboxGroup, SandboxRow, SandboxSection, SandboxStatusTooltip};
 
-use db::kvp::KeyValueStore;
 use gpui::List;
 use gpui::Stateful;
 use gpui::TaskExt;
@@ -57,6 +58,8 @@ use ui::{
 use workspace::{OpenOptions, SERIALIZATION_THROTTLE_TIME};
 
 use super::*;
+pub(crate) use fast_mode_warning::reset_fast_mode_warnings;
+use fast_mode_warning::{fast_mode_warning_dismissed, set_fast_mode_warning_dismissed};
 use feedback_state::ThreadFeedbackState;
 use numbered_code_block::{parse_cat_numbered_markdown_code_block, render_cat_numbered_code_block};
 use sandbox_policy::{
@@ -11123,53 +11126,4 @@ mod tests {
             assert!(*active.path == *"src/main.rs");
         });
     }
-}
-
-const FAST_MODE_WARNING_NAMESPACE: &str = "fast-mode-warning-dismissed";
-
-fn fast_mode_warning_id(
-    provider_id: &LanguageModelProviderId,
-    model_id: &LanguageModelId,
-) -> String {
-    format!("{}:{}", provider_id.0, model_id.0)
-}
-
-fn fast_mode_warning_dismissed(
-    provider_id: &LanguageModelProviderId,
-    model_id: &LanguageModelId,
-    cx: &App,
-) -> bool {
-    KeyValueStore::global(cx)
-        .scoped(FAST_MODE_WARNING_NAMESPACE)
-        .read(&fast_mode_warning_id(provider_id, model_id))
-        .log_err()
-        .flatten()
-        .is_some()
-}
-
-fn set_fast_mode_warning_dismissed(
-    provider_id: &LanguageModelProviderId,
-    model_id: &LanguageModelId,
-    cx: &mut App,
-) {
-    let key = fast_mode_warning_id(provider_id, model_id);
-    let kvp = KeyValueStore::global(cx);
-    cx.background_spawn(async move {
-        kvp.scoped(FAST_MODE_WARNING_NAMESPACE)
-            .write(key, "1".to_string())
-            .await
-            .log_err();
-    })
-    .detach();
-}
-
-pub(crate) fn reset_fast_mode_warnings(cx: &mut App) {
-    let kvp = KeyValueStore::global(cx);
-    cx.background_spawn(async move {
-        kvp.scoped(FAST_MODE_WARNING_NAMESPACE)
-            .delete_all()
-            .await
-            .log_err();
-    })
-    .detach();
 }
