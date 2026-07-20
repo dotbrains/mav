@@ -23,6 +23,7 @@ pub mod security_modal;
 pub mod shared_screen;
 pub use shared_screen::SharedScreen;
 pub mod focus_follows_mouse;
+mod legacy_panel_size;
 mod remote_workspace_position;
 mod status_bar;
 pub mod tasks;
@@ -89,6 +90,7 @@ pub use item::{
 };
 use itertools::Itertools;
 use language::{LanguageRegistry, Rope, language_settings::all_language_settings};
+use legacy_panel_size::load_legacy_panel_size;
 pub use modal_layer::*;
 use node_runtime::NodeRuntime;
 use notifications::{
@@ -9860,57 +9862,6 @@ pub fn with_active_or_new_workspace(
             .detach_and_log_err(cx);
         }
     }
-}
-
-/// Reads a panel's pixel size from its legacy KVP format and deletes the legacy
-/// key. This migration path only runs once per panel per workspace.
-fn load_legacy_panel_size(
-    panel_key: &str,
-    dock_position: DockPosition,
-    workspace: &Workspace,
-    cx: &mut App,
-) -> Option<Pixels> {
-    #[derive(Deserialize)]
-    struct LegacyPanelState {
-        #[serde(default)]
-        width: Option<Pixels>,
-        #[serde(default)]
-        height: Option<Pixels>,
-    }
-
-    let workspace_id = workspace
-        .database_id()
-        .map(|id| i64::from(id).to_string())
-        .or_else(|| workspace.session_id())?;
-
-    let legacy_key = match panel_key {
-        "ProjectPanel" => {
-            format!("{}-{:?}", "ProjectPanel", workspace_id)
-        }
-        "OutlinePanel" => {
-            format!("{}-{:?}", "OutlinePanel", workspace_id)
-        }
-        "GitPanel" => {
-            format!("{}-{:?}", "GitPanel", workspace_id)
-        }
-        "TerminalPanel" => {
-            format!("{:?}-{:?}", "TerminalPanel", workspace_id)
-        }
-        _ => return None,
-    };
-
-    let kvp = db::kvp::KeyValueStore::global(cx);
-    let json = kvp.read_kvp(&legacy_key).log_err().flatten()?;
-    let state = serde_json::from_str::<LegacyPanelState>(&json).log_err()?;
-    let size = match dock_position {
-        DockPosition::Bottom => state.height,
-        DockPosition::Left | DockPosition::Right => state.width,
-    }?;
-
-    cx.background_spawn(async move { kvp.delete_kvp(legacy_key).await })
-        .detach_and_log_err(cx);
-
-    Some(size)
 }
 
 #[cfg(test)]
