@@ -1,4 +1,4 @@
-use std::{path::Path, time::Duration};
+use std::time::Duration;
 
 use collections::HashMap;
 use project::{
@@ -7,9 +7,7 @@ use project::{
 };
 
 use fs::FakeFs;
-use git::status::{
-    FileStatus, GitSummary, StatusCode, TrackedSummary, UnmergedStatus, UnmergedStatusCode,
-};
+use git::status::{GitSummary, TrackedSummary};
 use gpui::TestAppContext;
 use project::GitTraversal;
 
@@ -20,15 +18,6 @@ use util::{
     rel_path::{RelPath, rel_path},
 };
 
-const CONFLICT: FileStatus = FileStatus::Unmerged(UnmergedStatus {
-    first_head: UnmergedStatusCode::Updated,
-    second_head: UnmergedStatusCode::Updated,
-});
-const ADDED: GitSummary = GitSummary {
-    index: TrackedSummary::ADDED,
-    count: 1,
-    ..GitSummary::UNCHANGED
-};
 const MODIFIED: GitSummary = GitSummary {
     index: TrackedSummary::MODIFIED,
     count: 1,

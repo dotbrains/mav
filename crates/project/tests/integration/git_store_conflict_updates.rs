@@ -10,7 +10,7 @@ use git::{
 use gpui::{BackgroundExecutor, TestAppContext};
 use project::git_store::*;
 use serde_json::json;
-use text::{Buffer, BufferId, OffsetRangeExt, Point, ReplicaId, ToOffset as _};
+use text::{OffsetRangeExt, Point};
 use unindent::Unindent as _;
 use util::{path, rel_path::rel_path};
 
