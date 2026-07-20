@@ -4,7 +4,7 @@ use settings::Settings;
 use std::sync::Arc;
 use theme::{ActiveTheme as _, PlayerColor, StatusColors, SyntaxTheme};
 
-use crate::{Editor, display_map::EditPredictionStyles};
+use crate::{Editor, EditorSettings, display_map::EditPredictionStyles};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Navigated {
@@ -90,6 +90,130 @@ pub enum SoftWrap {
     EditorWidth,
     /// Soft wrap line at the preferred line length or the editor width (whichever is smaller).
     Bounded(u32),
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum MinimapVisibility {
+    Disabled,
+    Enabled {
+        /// The configuration currently present in the users settings.
+        setting_configuration: bool,
+        /// Whether to override the currently set visibility from the users setting.
+        toggle_override: bool,
+    },
+}
+
+impl MinimapVisibility {
+    pub(crate) fn for_mode(mode: &EditorMode, cx: &App) -> Self {
+        if mode.is_full() {
+            Self::Enabled {
+                setting_configuration: EditorSettings::get_global(cx).minimap.minimap_enabled(),
+                toggle_override: false,
+            }
+        } else {
+            Self::Disabled
+        }
+    }
+
+    pub(crate) fn hidden(&self) -> Self {
+        match *self {
+            Self::Enabled {
+                setting_configuration,
+                ..
+            } => Self::Enabled {
+                setting_configuration,
+                toggle_override: setting_configuration,
+            },
+            Self::Disabled => Self::Disabled,
+        }
+    }
+
+    pub(crate) fn disabled(&self) -> bool {
+        matches!(*self, Self::Disabled)
+    }
+
+    pub(crate) fn settings_visibility(&self) -> bool {
+        match *self {
+            Self::Enabled {
+                setting_configuration,
+                ..
+            } => setting_configuration,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn visible(&self) -> bool {
+        match *self {
+            Self::Enabled {
+                setting_configuration,
+                toggle_override,
+            } => setting_configuration ^ toggle_override,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn toggle_visibility(&self) -> Self {
+        match *self {
+            Self::Enabled {
+                toggle_override,
+                setting_configuration,
+            } => Self::Enabled {
+                setting_configuration,
+                toggle_override: !toggle_override,
+            },
+            Self::Disabled => Self::Disabled,
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) struct BreadcrumbsVisibility {
+    setting_configuration: bool,
+    toggle_override: bool,
+}
+
+impl BreadcrumbsVisibility {
+    pub(crate) fn from_settings(cx: &App) -> Self {
+        Self::new(EditorSettings::get_global(cx).toolbar.breadcrumbs)
+    }
+
+    pub(crate) fn new(setting_configuration: bool) -> Self {
+        Self {
+            setting_configuration,
+            toggle_override: false,
+        }
+    }
+
+    pub(crate) fn settings_visibility(&self) -> bool {
+        self.setting_configuration
+    }
+
+    pub(crate) fn visible(&self) -> bool {
+        self.setting_configuration ^ self.toggle_override
+    }
+
+    pub(crate) fn toggle_visibility(&self) -> Self {
+        Self {
+            setting_configuration: self.setting_configuration,
+            toggle_override: !self.toggle_override,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BufferSerialization {
+    All,
+    NonDirtyBuffers,
+}
+
+impl BufferSerialization {
+    pub(crate) fn new(restore_unsaved_buffers: bool) -> Self {
+        if restore_unsaved_buffers {
+            Self::All
+        } else {
+            Self::NonDirtyBuffers
+        }
+    }
 }
 
 #[derive(Clone)]

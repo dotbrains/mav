@@ -105,8 +105,10 @@ pub use completions::CompletionProvider;
 #[cfg(test)]
 pub(crate) use completions::snippet_candidate_suffixes;
 pub(crate) use completions::split_words;
+pub(crate) use core_types::BreadcrumbsVisibility;
 pub use core_types::{
-    EditorMode, EditorStyle, Navigated, SizingBehavior, SoftWrap, make_inlay_hints_style,
+    BufferSerialization, EditorMode, EditorStyle, MinimapVisibility, Navigated, SizingBehavior,
+    SoftWrap, make_inlay_hints_style,
 };
 use diagnostics::{ActiveDiagnostic, GlobalDiagnosticRenderer, InlineDiagnostic};
 pub use diagnostics::{DiagnosticRenderer, set_diagnostic_renderer};
@@ -521,130 +523,6 @@ struct ScrollbarMarkerState {
 impl ScrollbarMarkerState {
     fn should_refresh(&self, scrollbar_size: Size<Pixels>) -> bool {
         self.pending_refresh.is_none() && (self.scrollbar_size != scrollbar_size || self.dirty)
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum MinimapVisibility {
-    Disabled,
-    Enabled {
-        /// The configuration currently present in the users settings.
-        setting_configuration: bool,
-        /// Whether to override the currently set visibility from the users setting.
-        toggle_override: bool,
-    },
-}
-
-impl MinimapVisibility {
-    fn for_mode(mode: &EditorMode, cx: &App) -> Self {
-        if mode.is_full() {
-            Self::Enabled {
-                setting_configuration: EditorSettings::get_global(cx).minimap.minimap_enabled(),
-                toggle_override: false,
-            }
-        } else {
-            Self::Disabled
-        }
-    }
-
-    fn hidden(&self) -> Self {
-        match *self {
-            Self::Enabled {
-                setting_configuration,
-                ..
-            } => Self::Enabled {
-                setting_configuration,
-                toggle_override: setting_configuration,
-            },
-            Self::Disabled => Self::Disabled,
-        }
-    }
-
-    fn disabled(&self) -> bool {
-        matches!(*self, Self::Disabled)
-    }
-
-    fn settings_visibility(&self) -> bool {
-        match *self {
-            Self::Enabled {
-                setting_configuration,
-                ..
-            } => setting_configuration,
-            _ => false,
-        }
-    }
-
-    fn visible(&self) -> bool {
-        match *self {
-            Self::Enabled {
-                setting_configuration,
-                toggle_override,
-            } => setting_configuration ^ toggle_override,
-            _ => false,
-        }
-    }
-
-    fn toggle_visibility(&self) -> Self {
-        match *self {
-            Self::Enabled {
-                toggle_override,
-                setting_configuration,
-            } => Self::Enabled {
-                setting_configuration,
-                toggle_override: !toggle_override,
-            },
-            Self::Disabled => Self::Disabled,
-        }
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-struct BreadcrumbsVisibility {
-    setting_configuration: bool,
-    toggle_override: bool,
-}
-
-impl BreadcrumbsVisibility {
-    fn from_settings(cx: &App) -> Self {
-        Self::new(EditorSettings::get_global(cx).toolbar.breadcrumbs)
-    }
-
-    fn new(setting_configuration: bool) -> Self {
-        Self {
-            setting_configuration,
-            toggle_override: false,
-        }
-    }
-
-    fn settings_visibility(&self) -> bool {
-        self.setting_configuration
-    }
-
-    fn visible(&self) -> bool {
-        self.setting_configuration ^ self.toggle_override
-    }
-
-    fn toggle_visibility(&self) -> Self {
-        Self {
-            setting_configuration: self.setting_configuration,
-            toggle_override: !self.toggle_override,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum BufferSerialization {
-    All,
-    NonDirtyBuffers,
-}
-
-impl BufferSerialization {
-    fn new(restore_unsaved_buffers: bool) -> Self {
-        if restore_unsaved_buffers {
-            Self::All
-        } else {
-            Self::NonDirtyBuffers
-        }
     }
 }
 
