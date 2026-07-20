@@ -40,6 +40,8 @@ mod jsx_tag_auto_close;
 mod linked_editing_ranges;
 mod lsp_ext;
 mod mouse_context_menu;
+#[path = "editor/mouse_modifiers.rs"]
+mod mouse_modifiers;
 pub mod movement;
 mod persistence;
 mod runnables;
@@ -2606,131 +2608,6 @@ impl Editor {
             ..display_snapshot
                 .clip_point(target_end, Bias::Right)
                 .to_point(display_snapshot)
-    }
-
-    pub fn display_cursor_names(
-        &mut self,
-        _: &DisplayCursorNames,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.show_cursor_names(window, cx);
-    }
-
-    fn show_cursor_names(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        self.show_cursor_names = true;
-        cx.notify();
-        cx.spawn_in(window, async move |this, cx| {
-            cx.background_executor().timer(CURSORS_VISIBLE_FOR).await;
-            this.update(cx, |this, cx| {
-                this.show_cursor_names = false;
-                cx.notify()
-            })
-            .ok()
-        })
-        .detach();
-    }
-
-    fn handle_modifiers_changed(
-        &mut self,
-        modifiers: Modifiers,
-        position_map: &PositionMap,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.update_edit_prediction_settings(cx);
-
-        // Ensure that the edit prediction preview is updated, even when not
-        // enabled, if there's an active edit prediction preview.
-        if self.show_edit_predictions_in_menu()
-            || self.edit_prediction_requires_modifier()
-            || matches!(
-                self.edit_prediction_preview,
-                EditPredictionPreview::Active { .. }
-            )
-        {
-            self.update_edit_prediction_preview(&modifiers, window, cx);
-        }
-
-        self.update_selection_mode(&modifiers, position_map, window, cx);
-
-        let mouse_position = window.mouse_position();
-        if !position_map.text_hitbox.is_hovered(window) {
-            if self.gutter_hover_button.0.is_some() {
-                cx.notify();
-            }
-            return;
-        }
-
-        self.update_hovered_link(
-            position_map.point_for_position(mouse_position),
-            Some(mouse_position),
-            &position_map.snapshot,
-            modifiers,
-            window,
-            cx,
-        )
-    }
-
-    fn is_cmd_or_ctrl_pressed(modifiers: &Modifiers, cx: &mut Context<Self>) -> bool {
-        match EditorSettings::get_global(cx).multi_cursor_modifier {
-            MultiCursorModifier::Alt => modifiers.secondary(),
-            MultiCursorModifier::CmdOrCtrl => modifiers.alt,
-        }
-    }
-
-    fn is_alt_pressed(modifiers: &Modifiers, cx: &mut Context<Self>) -> bool {
-        match EditorSettings::get_global(cx).multi_cursor_modifier {
-            MultiCursorModifier::Alt => modifiers.alt,
-            MultiCursorModifier::CmdOrCtrl => modifiers.secondary(),
-        }
-    }
-
-    fn columnar_selection_mode(
-        modifiers: &Modifiers,
-        cx: &mut Context<Self>,
-    ) -> Option<ColumnarMode> {
-        if modifiers.shift && modifiers.number_of_modifiers() == 2 {
-            if Self::is_cmd_or_ctrl_pressed(modifiers, cx) {
-                Some(ColumnarMode::FromMouse)
-            } else if Self::is_alt_pressed(modifiers, cx) {
-                Some(ColumnarMode::FromSelection)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    }
-
-    fn update_selection_mode(
-        &mut self,
-        modifiers: &Modifiers,
-        position_map: &PositionMap,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        let Some(mode) = Self::columnar_selection_mode(modifiers, cx) else {
-            return;
-        };
-        if self.selections.pending_anchor().is_none() {
-            return;
-        }
-
-        let mouse_position = window.mouse_position();
-        let point_for_position = position_map.point_for_position(mouse_position);
-        let position = point_for_position.previous_valid;
-
-        self.select(
-            SelectPhase::BeginColumnar {
-                position,
-                reset: false,
-                mode,
-                goal_column: point_for_position.exact_unclipped.column(),
-            },
-            window,
-            cx,
-        );
     }
 }
 
