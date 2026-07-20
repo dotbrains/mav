@@ -61,6 +61,8 @@ pub mod test;
 
 mod clipboard;
 mod code_actions;
+#[path = "editor/code_label_styles.rs"]
+mod code_label_styles;
 mod completions;
 mod config;
 mod diagnostics;
@@ -74,10 +76,13 @@ mod rewrap;
 #[path = "editor/row_ext.rs"]
 mod row_ext;
 mod selection;
+#[path = "editor/selection_ext.rs"]
+mod selection_ext;
 
 pub(crate) use actions::*;
 pub use clipboard::ClipboardSelection;
 pub use code_actions::CodeActionProvider;
+pub use code_label_styles::styled_runs_for_code_label;
 use collections::TypeIdHashMap;
 pub use completions::CompletionProvider;
 #[cfg(test)]
@@ -131,6 +136,7 @@ pub use multi_buffer::{
 };
 pub(crate) use row_ext::RowRangeExt;
 pub use row_ext::{RangeToAnchorExt, RowExt};
+pub(crate) use selection_ext::SelectionExt;
 pub use split::{SplittableEditor, ToggleSplitDiff};
 pub use split_editor_view::SplitEditorView;
 pub use text::Bias;
@@ -11764,49 +11770,6 @@ impl Render for Editor {
     }
 }
 
-trait SelectionExt {
-    fn display_range(&self, map: &DisplaySnapshot) -> Range<DisplayPoint>;
-    fn spanned_rows(
-        &self,
-        include_end_if_at_line_start: bool,
-        map: &DisplaySnapshot,
-    ) -> Range<MultiBufferRow>;
-}
-
-impl<T: ToPoint + ToOffset> SelectionExt for Selection<T> {
-    fn display_range(&self, map: &DisplaySnapshot) -> Range<DisplayPoint> {
-        let start = self
-            .start
-            .to_point(map.buffer_snapshot())
-            .to_display_point(map);
-        let end = self
-            .end
-            .to_point(map.buffer_snapshot())
-            .to_display_point(map);
-        if self.reversed {
-            end..start
-        } else {
-            start..end
-        }
-    }
-
-    fn spanned_rows(
-        &self,
-        include_end_if_at_line_start: bool,
-        map: &DisplaySnapshot,
-    ) -> Range<MultiBufferRow> {
-        let start = self.start.to_point(map.buffer_snapshot());
-        let mut end = self.end.to_point(map.buffer_snapshot());
-        if !include_end_if_at_line_start && start.row != end.row && end.column == 0 {
-            end.row -= 1;
-        }
-
-        let buffer_start = map.prev_line_boundary(start).0;
-        let buffer_end = map.next_line_boundary(end).0;
-        MultiBufferRow(buffer_start.row)..MultiBufferRow(buffer_end.row + 1)
-    }
-}
-
 impl<T: InvalidationRegion> InvalidationStack<T> {
     fn invalidate<S>(&mut self, selections: &[Selection<S>], buffer: &MultiBufferSnapshot)
     where
@@ -11859,70 +11822,6 @@ impl InvalidationRegion for SnippetState {
     fn ranges(&self) -> &[Range<Anchor>] {
         &self.ranges[self.active_index]
     }
-}
-
-pub fn styled_runs_for_code_label<'a>(
-    label: &'a CodeLabel,
-    syntax_theme: &'a theme::SyntaxTheme,
-    local_player: &'a theme::PlayerColor,
-) -> impl 'a + Iterator<Item = (Range<usize>, HighlightStyle)> {
-    let fade_out = HighlightStyle {
-        fade_out: Some(0.35),
-        ..Default::default()
-    };
-
-    if label.runs.is_empty() {
-        let desc_start = label.filter_range.end;
-        let fade_run =
-            (desc_start < label.text.len()).then(|| (desc_start..label.text.len(), fade_out));
-        return Either::Left(fade_run.into_iter());
-    }
-
-    let mut prev_end = label.filter_range.end;
-    Either::Right(
-        label
-            .runs
-            .iter()
-            .enumerate()
-            .flat_map(move |(ix, (range, highlight_id))| {
-                let style = if *highlight_id == language::HighlightId::TABSTOP_INSERT_ID {
-                    HighlightStyle {
-                        color: Some(local_player.cursor),
-                        ..Default::default()
-                    }
-                } else if *highlight_id == language::HighlightId::TABSTOP_REPLACE_ID {
-                    HighlightStyle {
-                        background_color: Some(local_player.selection),
-                        ..Default::default()
-                    }
-                } else if let Some(style) = syntax_theme.get(*highlight_id).cloned() {
-                    style
-                } else {
-                    return Default::default();
-                };
-
-                let mut runs = SmallVec::<[(Range<usize>, HighlightStyle); 3]>::new();
-                let muted_style = style.highlight(fade_out);
-                if range.start >= label.filter_range.end {
-                    if range.start > prev_end {
-                        runs.push((prev_end..range.start, fade_out));
-                    }
-                    runs.push((range.clone(), muted_style));
-                } else if range.end <= label.filter_range.end {
-                    runs.push((range.clone(), style));
-                } else {
-                    runs.push((range.start..label.filter_range.end, style));
-                    runs.push((label.filter_range.end..range.end, muted_style));
-                }
-                prev_end = cmp::max(prev_end, range.end);
-
-                if ix + 1 == label.runs.len() && label.text.len() > prev_end {
-                    runs.push((prev_end..label.text.len(), fade_out));
-                }
-
-                runs
-            }),
-    )
 }
 
 /// If select range has more than one line, we
