@@ -1206,6 +1206,8 @@ mod tests {
     mod misc_regression_tests;
     #[path = "agent_panel_source_initialization_tests.rs"]
     mod source_initialization_tests;
+    #[path = "agent_panel_source_overwrite_tests.rs"]
+    mod source_overwrite_tests;
     #[path = "agent_panel_terminal_init_tests.rs"]
     mod terminal_init_tests;
     #[path = "agent_panel_terminal_notification_lifecycle_tests.rs"]
@@ -1224,6 +1226,8 @@ mod tests {
     mod thread_cleanup_tests;
     #[path = "agent_panel_thread_navigation_tests.rs"]
     mod thread_navigation_tests;
+    #[path = "agent_panel_thread_options_tests.rs"]
+    mod thread_options_tests;
     #[path = "agent_panel_thread_restore_tests.rs"]
     mod thread_restore_tests;
     #[path = "agent_panel_thread_workdir_tests.rs"]
@@ -1398,182 +1402,5 @@ mod tests {
         });
 
         (workspace, panel, cx)
-    }
-
-    #[gpui::test]
-    async fn test_initialize_from_source_does_not_overwrite_existing_content(
-        cx: &mut TestAppContext,
-    ) {
-        init_test(cx);
-        cx.update(|cx| {
-            agent::ThreadStore::init_global(cx);
-            language_model::LanguageModelRegistry::test(cx);
-        });
-
-        let fs = FakeFs::new(cx.executor());
-        fs.insert_tree("/project_a", json!({ "file.txt": "" }))
-            .await;
-        fs.insert_tree("/project_b", json!({ "file.txt": "" }))
-            .await;
-        let project_a = Project::test(fs.clone(), [Path::new("/project_a")], cx).await;
-        let project_b = Project::test(fs.clone(), [Path::new("/project_b")], cx).await;
-
-        let multi_workspace =
-            cx.add_window(|window, cx| MultiWorkspace::test_new(project_a.clone(), window, cx));
-
-        let workspace_a = multi_workspace
-            .read_with(cx, |mw, _cx| mw.workspace().clone())
-            .unwrap();
-
-        let workspace_b = multi_workspace
-            .update(cx, |multi_workspace, window, cx| {
-                multi_workspace.test_add_workspace(project_b.clone(), window, cx)
-            })
-            .unwrap();
-
-        let cx = &mut VisualTestContext::from_window(multi_workspace.into(), cx);
-
-        // Set up panel_a with draft text.
-        let panel_a = workspace_a.update_in(cx, |workspace, window, cx| {
-            let panel = cx.new(|cx| AgentPanel::new(workspace, window, cx));
-            workspace.add_panel(panel.clone(), window, cx);
-            panel
-        });
-        cx.run_until_parked();
-
-        panel_a.update_in(cx, |panel, window, cx| {
-            panel.open_external_thread_with_server(
-                Rc::new(StubAgentServer::default_response()),
-                window,
-                cx,
-            );
-        });
-        cx.run_until_parked();
-
-        let thread_view_a =
-            panel_a.read_with(cx, |panel, cx| panel.active_thread_view(cx).unwrap());
-        let editor_a = thread_view_a.read_with(cx, |view, _cx| view.message_editor.clone());
-        editor_a.update_in(cx, |editor, window, cx| {
-            editor.set_text("Draft from workspace A", window, cx);
-        });
-
-        // Set up panel_b with its OWN content — this is a non-fresh panel.
-        let panel_b = workspace_b.update_in(cx, |workspace, window, cx| {
-            let panel = cx.new(|cx| AgentPanel::new(workspace, window, cx));
-            workspace.add_panel(panel.clone(), window, cx);
-            panel
-        });
-        cx.run_until_parked();
-
-        panel_b.update_in(cx, |panel, window, cx| {
-            panel.open_external_thread_with_server(
-                Rc::new(StubAgentServer::default_response()),
-                window,
-                cx,
-            );
-        });
-        cx.run_until_parked();
-
-        let thread_view_b =
-            panel_b.read_with(cx, |panel, cx| panel.active_thread_view(cx).unwrap());
-        let editor_b = thread_view_b.read_with(cx, |view, _cx| view.message_editor.clone());
-        editor_b.update_in(cx, |editor, window, cx| {
-            editor.set_text("Existing work in workspace B", window, cx);
-        });
-
-        // Attempting to initialize panel_b from workspace_a should be rejected
-        // because panel_b already has meaningful content.
-        let transferred = panel_b.update_in(cx, |panel, window, cx| {
-            panel.initialize_from_source_workspace_if_needed(workspace_a.downgrade(), window, cx)
-        });
-        assert!(
-            !transferred,
-            "destination panel with existing content should not be overwritten"
-        );
-
-        // Verify panel_b still has its original content.
-        panel_b.read_with(cx, |panel, cx| {
-            let thread_view = panel
-                .active_thread_view(cx)
-                .expect("panel_b should still have its thread view");
-            let text = thread_view.read(cx).message_editor.read(cx).text(cx);
-            assert_eq!(
-                text, "Existing work in workspace B",
-                "destination panel's content should be preserved"
-            );
-        });
-    }
-
-    #[gpui::test]
-    async fn test_create_thread_with_options_retains_thread_and_restores_agent(
-        cx: &mut TestAppContext,
-    ) {
-        let (panel, mut cx) = setup_panel(cx).await;
-        let _stub_connection =
-            crate::test_support::set_stub_agent_connection(StubAgentConnection::new());
-
-        // Baseline: panel's selected_agent is the stub.
-        panel.update(&mut cx, |panel, _cx| {
-            panel.selected_agent = Agent::Stub;
-        });
-
-        // Case 1: no agent override. The new thread should land in
-        // `retained_threads` and `selected_agent` should be unchanged.
-        let no_override_id = panel.update_in(&mut cx, |panel, window, cx| {
-            panel.create_thread_with_options(
-                CreateThreadOptions::default(),
-                AgentThreadSource::AgentPanel,
-                window,
-                cx,
-            )
-        });
-
-        panel.read_with(&cx, |panel, _cx| {
-            assert!(
-                panel.retained_threads.contains_key(&no_override_id),
-                "thread created via create_thread_with_options should be retained"
-            );
-            assert_eq!(
-                panel.selected_agent,
-                Agent::Stub,
-                "selected_agent should be unchanged when no agent override is requested"
-            );
-        });
-
-        // Case 2: an explicit agent override that differs from the panel's
-        // selection. `create_agent_thread_inner` updates `selected_agent` as a
-        // side effect; `create_thread_with_options` must restore it so the
-        // user's last-used agent isn't silently flipped by an agent-initiated
-        // call.
-        let override_agent = Agent::Custom {
-            id: "override-agent".into(),
-        };
-        let override_id = panel.update_in(&mut cx, |panel, window, cx| {
-            panel.create_thread_with_options(
-                CreateThreadOptions {
-                    agent: Some(override_agent.clone()),
-                    ..CreateThreadOptions::default()
-                },
-                AgentThreadSource::AgentPanel,
-                window,
-                cx,
-            )
-        });
-
-        panel.read_with(&cx, |panel, _cx| {
-            assert!(
-                panel.retained_threads.contains_key(&override_id),
-                "thread created with an agent override should also be retained"
-            );
-            assert_ne!(
-                no_override_id, override_id,
-                "each call should produce a distinct ThreadId"
-            );
-            assert_eq!(
-                panel.selected_agent,
-                Agent::Stub,
-                "selected_agent should be restored to the original after an agent override"
-            );
-        });
     }
 }
