@@ -11,6 +11,8 @@ use std::cell::RefCell;
 mod fast_mode_warning;
 #[path = "thread_view/feedback_state.rs"]
 mod feedback_state;
+#[path = "thread_view/native_command.rs"]
+mod native_command;
 #[path = "thread_view/numbered_code_block.rs"]
 mod numbered_code_block;
 #[path = "thread_view/sandbox_policy.rs"]
@@ -61,6 +63,7 @@ use super::*;
 pub(crate) use fast_mode_warning::reset_fast_mode_warnings;
 use fast_mode_warning::{fast_mode_warning_dismissed, set_fast_mode_warning_dismissed};
 use feedback_state::ThreadFeedbackState;
+use native_command::{leading_native_command, strip_leading_command};
 use numbered_code_block::{parse_cat_numbered_markdown_code_block, render_cat_numbered_code_block};
 use sandbox_policy::{
     augment_settings_sandbox_policy, sandbox_policy_grants_nothing, sandbox_section,
@@ -10990,33 +10993,6 @@ pub(crate) fn open_link(
 /// consumes.
 ///
 /// Native commands run a turn that produces its own thread entry, so the typed
-/// command is never echoed as a user message (see `send_command_queueing_remainder`).
-fn leading_native_command(
-    text: &str,
-    available_commands: &[acp::AvailableCommand],
-) -> Option<String> {
-    let rest = text.trim_start().strip_prefix('/')?;
-    let name_end = rest.find(char::is_whitespace).unwrap_or(rest.len());
-    let name = &rest[..name_end];
-    let is_native = available_commands.iter().any(|command| {
-        command.name == name
-            && acp_thread::command_category_from_meta(&command.meta)
-                == Some(acp_thread::CommandCategory::Native)
-    });
-    is_native.then(|| name.to_string())
-}
-
-/// Removes a leading `/command_name` token from `text`, returning the trimmed
-/// remainder. Falls back to the trimmed input if the prefix isn't present.
-fn strip_leading_command(text: &str, command_name: &str) -> String {
-    let trimmed = text.trim_start();
-    trimmed
-        .strip_prefix('/')
-        .and_then(|rest| rest.strip_prefix(command_name))
-        .map(|rest| rest.trim_start().to_string())
-        .unwrap_or_else(|| trimmed.to_string())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -11024,66 +11000,6 @@ mod tests {
     use serde_json::json;
     use util::path;
     use workspace::MultiWorkspace;
-
-    fn native_command(name: &str) -> acp::AvailableCommand {
-        acp::AvailableCommand::new(name, "").meta(acp_thread::meta_with_command_category(
-            acp_thread::CommandCategory::Native,
-        ))
-    }
-
-    fn mcp_command(name: &str) -> acp::AvailableCommand {
-        acp::AvailableCommand::new(name, "").meta(acp_thread::meta_with_command_category(
-            acp_thread::CommandCategory::Mcp,
-        ))
-    }
-
-    #[test]
-    fn test_leading_native_command_matches_bare_and_with_remainder() {
-        let commands = [native_command("compact"), mcp_command("deploy")];
-
-        // Native command with trailing text.
-        assert_eq!(
-            leading_native_command("/compact summarize the API work", &commands),
-            Some("compact".to_string())
-        );
-        // Leading/trailing whitespace is tolerated.
-        assert_eq!(
-            leading_native_command("  /compact   do x  ", &commands),
-            Some("compact".to_string())
-        );
-
-        // Bare native command (no remainder) is still recognized, so it runs as
-        // a command turn (without echoing a user message) rather than being sent
-        // to the model as a normal prompt.
-        assert_eq!(
-            leading_native_command("/compact", &commands),
-            Some("compact".to_string())
-        );
-        assert_eq!(
-            leading_native_command("/compact   ", &commands),
-            Some("compact".to_string())
-        );
-
-        // MCP/ACP commands are not native: their trailing text is a real
-        // argument the agent consumes, and they echo as normal user messages.
-        assert_eq!(leading_native_command("/deploy prod", &commands), None);
-        assert_eq!(leading_native_command("/deploy", &commands), None);
-
-        // Unknown command, or not a slash command at all.
-        assert_eq!(leading_native_command("/unknown foo", &commands), None);
-        assert_eq!(leading_native_command("just a message", &commands), None);
-    }
-
-    #[test]
-    fn test_strip_leading_command() {
-        assert_eq!(strip_leading_command("/compact do x", "compact"), "do x");
-        assert_eq!(
-            strip_leading_command("  /compact  do x ", "compact"),
-            "do x "
-        );
-        // No matching prefix: returns the trimmed input unchanged.
-        assert_eq!(strip_leading_command("hello", "compact"), "hello");
-    }
 
     #[gpui::test]
     async fn test_open_link_bare_path(cx: &mut gpui::TestAppContext) {
