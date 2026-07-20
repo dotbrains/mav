@@ -76,6 +76,76 @@ pub(crate) struct GutterHoverButton {
     pub(crate) is_active: bool,
 }
 
+#[derive(Debug)]
+/// SelectionEffects controls the side-effects of updating the selection.
+///
+/// The default behaviour does "what you mostly want":
+/// - it pushes to the nav history if the cursor moved by >10 lines
+/// - it re-triggers completion requests
+/// - it scrolls to fit
+///
+/// You might want to modify these behaviours. For example when doing a "jump"
+/// like go to definition, we always want to add to nav history; but when scrolling
+/// in vim mode we never do.
+///
+/// Similarly, you might want to disable scrolling if you don't want the viewport to
+/// move.
+#[derive(Clone)]
+pub struct SelectionEffects {
+    pub(crate) nav_history: Option<bool>,
+    pub(crate) completions: bool,
+    pub(crate) scroll: Option<Autoscroll>,
+    pub(crate) from_search: bool,
+}
+
+impl Default for SelectionEffects {
+    fn default() -> Self {
+        Self {
+            nav_history: None,
+            completions: true,
+            scroll: Some(Autoscroll::fit()),
+            from_search: false,
+        }
+    }
+}
+
+impl SelectionEffects {
+    pub fn scroll(scroll: Autoscroll) -> Self {
+        Self {
+            scroll: Some(scroll),
+            ..Default::default()
+        }
+    }
+
+    pub fn no_scroll() -> Self {
+        Self {
+            scroll: None,
+            ..Default::default()
+        }
+    }
+
+    pub fn completions(self, completions: bool) -> Self {
+        Self {
+            completions,
+            ..self
+        }
+    }
+
+    pub fn nav_history(self, nav_history: bool) -> Self {
+        Self {
+            nav_history: Some(nav_history),
+            ..self
+        }
+    }
+
+    pub fn from_search(self, from_search: bool) -> Self {
+        Self {
+            from_search,
+            ..self
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct RowHighlightOptions {
     pub autoscroll: bool,
@@ -138,4 +208,103 @@ pub(crate) struct SnippetState {
     pub(crate) ranges: Vec<Vec<Range<Anchor>>>,
     pub(crate) active_index: usize,
     pub(crate) choices: Vec<Option<Vec<String>>>,
+}
+
+pub(crate) struct InvalidationStack<T>(Vec<T>);
+
+pub(crate) trait InvalidationRegion {
+    fn ranges(&self) -> &[Range<Anchor>];
+}
+
+impl<T: InvalidationRegion> InvalidationStack<T> {
+    pub(crate) fn invalidate<S>(
+        &mut self,
+        selections: &[Selection<S>],
+        buffer: &MultiBufferSnapshot,
+    ) where
+        S: Clone + ToOffset,
+    {
+        while let Some(region) = self.last() {
+            let all_selections_inside_invalidation_ranges =
+                if selections.len() == region.ranges().len() {
+                    selections
+                        .iter()
+                        .zip(region.ranges().iter().map(|r| r.to_offset(buffer)))
+                        .all(|(selection, invalidation_range)| {
+                            let head = selection.head().to_offset(buffer);
+                            invalidation_range.start <= head && invalidation_range.end >= head
+                        })
+                } else {
+                    false
+                };
+
+            if all_selections_inside_invalidation_ranges {
+                break;
+            } else {
+                self.pop();
+            }
+        }
+    }
+}
+
+impl<T> Default for InvalidationStack<T> {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
+impl<T> Deref for InvalidationStack<T> {
+    type Target = Vec<T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T> DerefMut for InvalidationStack<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl InvalidationRegion for SnippetState {
+    fn ranges(&self) -> &[Range<Anchor>] {
+        &self.ranges[self.active_index]
+    }
+}
+
+// selections, scroll behavior, was newest selection reversed
+pub(crate) type SelectSyntaxNodeHistoryState = (
+    Box<[Selection<Anchor>]>,
+    SelectSyntaxNodeScrollBehavior,
+    bool,
+);
+
+#[derive(Default)]
+pub(crate) struct SelectSyntaxNodeHistory {
+    stack: Vec<SelectSyntaxNodeHistoryState>,
+    // disable temporarily to allow changing selections without losing the stack
+    pub(crate) disable_clearing: bool,
+}
+
+impl SelectSyntaxNodeHistory {
+    pub(crate) fn try_clear(&mut self) {
+        if !self.disable_clearing {
+            self.stack.clear();
+        }
+    }
+
+    pub(crate) fn push(&mut self, selection: SelectSyntaxNodeHistoryState) {
+        self.stack.push(selection);
+    }
+
+    pub(crate) fn pop(&mut self) -> Option<SelectSyntaxNodeHistoryState> {
+        self.stack.pop()
+    }
+}
+
+pub(crate) enum SelectSyntaxNodeScrollBehavior {
+    CursorTop,
+    FitSelection,
+    CursorBottom,
 }

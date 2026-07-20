@@ -196,9 +196,10 @@ pub(crate) use selection_history::{
 pub use selection_state::RowHighlightOptions;
 pub(crate) use selection_state::{
     AddSelectionsGroup, AddSelectionsState, AutocloseRegion, ColumnarSelectionState,
-    GutterHoverButton, RowHighlight, SelectNextState, SelectionDragState, SnippetState,
+    GutterHoverButton, InvalidationStack, RowHighlight, SelectNextState, SelectSyntaxNodeHistory,
+    SelectSyntaxNodeScrollBehavior, SelectionDragState, SnippetState,
 };
-pub use selection_state::{ColumnarMode, SelectMode, SelectPhase};
+pub use selection_state::{ColumnarMode, SelectMode, SelectPhase, SelectionEffects};
 pub use snapshot::{EditorSnapshot, GutterDimensions, column_pixels};
 pub use split::{SplittableEditor, ToggleSplitDiff};
 pub use split_editor_view::SplitEditorView;
@@ -429,10 +430,6 @@ pub fn init(cx: &mut App) {
 }
 
 pub struct SearchWithinRange;
-
-trait InvalidationRegion {
-    fn ranges(&self) -> &[Range<Anchor>];
-}
 
 type BackgroundHighlight = (
     Arc<dyn Fn(&usize, &Theme) -> Hsla + Send + Sync>,
@@ -738,119 +735,12 @@ struct CharacterDimensions {
     line_height: Pixels,
 }
 
-#[derive(Debug)]
-/// SelectionEffects controls the side-effects of updating the selection.
-///
-/// The default behaviour does "what you mostly want":
-/// - it pushes to the nav history if the cursor moved by >10 lines
-/// - it re-triggers completion requests
-/// - it scrolls to fit
-///
-/// You might want to modify these behaviours. For example when doing a "jump"
-/// like go to definition, we always want to add to nav history; but when scrolling
-/// in vim mode we never do.
-///
-/// Similarly, you might want to disable scrolling if you don't want the viewport to
-/// move.
-#[derive(Clone)]
-pub struct SelectionEffects {
-    nav_history: Option<bool>,
-    completions: bool,
-    scroll: Option<Autoscroll>,
-    from_search: bool,
-}
-
-impl Default for SelectionEffects {
-    fn default() -> Self {
-        Self {
-            nav_history: None,
-            completions: true,
-            scroll: Some(Autoscroll::fit()),
-            from_search: false,
-        }
-    }
-}
-impl SelectionEffects {
-    pub fn scroll(scroll: Autoscroll) -> Self {
-        Self {
-            scroll: Some(scroll),
-            ..Default::default()
-        }
-    }
-
-    pub fn no_scroll() -> Self {
-        Self {
-            scroll: None,
-            ..Default::default()
-        }
-    }
-
-    pub fn completions(self, completions: bool) -> Self {
-        Self {
-            completions,
-            ..self
-        }
-    }
-
-    pub fn nav_history(self, nav_history: bool) -> Self {
-        Self {
-            nav_history: Some(nav_history),
-            ..self
-        }
-    }
-
-    pub fn from_search(self, from_search: bool) -> Self {
-        Self {
-            from_search,
-            ..self
-        }
-    }
-}
-
 #[doc(hidden)]
 pub struct RenameState {
     pub range: Range<Anchor>,
     pub old_name: Arc<str>,
     pub editor: Entity<Editor>,
     block_id: CustomBlockId,
-}
-
-struct InvalidationStack<T>(Vec<T>);
-
-// selections, scroll behavior, was newest selection reversed
-type SelectSyntaxNodeHistoryState = (
-    Box<[Selection<Anchor>]>,
-    SelectSyntaxNodeScrollBehavior,
-    bool,
-);
-
-#[derive(Default)]
-struct SelectSyntaxNodeHistory {
-    stack: Vec<SelectSyntaxNodeHistoryState>,
-    // disable temporarily to allow changing selections without losing the stack
-    pub disable_clearing: bool,
-}
-
-impl SelectSyntaxNodeHistory {
-    pub fn try_clear(&mut self) {
-        if !self.disable_clearing {
-            self.stack.clear();
-        }
-    }
-
-    pub fn push(&mut self, selection: SelectSyntaxNodeHistoryState) {
-        self.stack.push(selection);
-    }
-
-    pub fn pop(&mut self) -> Option<SelectSyntaxNodeHistoryState> {
-        self.stack.pop()
-    }
-}
-
-enum SelectSyntaxNodeScrollBehavior {
-    CursorTop,
-    FitSelection,
-    CursorBottom,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -10635,60 +10525,6 @@ impl Focusable for Editor {
 impl Render for Editor {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         EditorElement::new(&cx.entity(), self.create_style(cx))
-    }
-}
-
-impl<T: InvalidationRegion> InvalidationStack<T> {
-    fn invalidate<S>(&mut self, selections: &[Selection<S>], buffer: &MultiBufferSnapshot)
-    where
-        S: Clone + ToOffset,
-    {
-        while let Some(region) = self.last() {
-            let all_selections_inside_invalidation_ranges =
-                if selections.len() == region.ranges().len() {
-                    selections
-                        .iter()
-                        .zip(region.ranges().iter().map(|r| r.to_offset(buffer)))
-                        .all(|(selection, invalidation_range)| {
-                            let head = selection.head().to_offset(buffer);
-                            invalidation_range.start <= head && invalidation_range.end >= head
-                        })
-                } else {
-                    false
-                };
-
-            if all_selections_inside_invalidation_ranges {
-                break;
-            } else {
-                self.pop();
-            }
-        }
-    }
-}
-
-impl<T> Default for InvalidationStack<T> {
-    fn default() -> Self {
-        Self(Default::default())
-    }
-}
-
-impl<T> Deref for InvalidationStack<T> {
-    type Target = Vec<T>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T> DerefMut for InvalidationStack<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl InvalidationRegion for SnippetState {
-    fn ranges(&self) -> &[Range<Anchor>] {
-        &self.ranges[self.active_index]
     }
 }
 
