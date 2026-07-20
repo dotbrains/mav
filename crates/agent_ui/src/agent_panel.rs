@@ -37,8 +37,7 @@ use crate::ManageProfiles;
 use crate::agent_connection_store::AgentConnectionStore;
 use crate::completion_provider::AgentContextSource;
 use crate::terminal_thread_metadata_store::{
-    TerminalThreadMetadata, TerminalThreadMetadataStore, compose_terminal_thread_title,
-    terminal_title_without_prefix,
+    TerminalThreadMetadata, TerminalThreadMetadataStore, terminal_title_without_prefix,
 };
 use crate::thread_metadata_store::{ThreadId, ThreadMetadataStore, ThreadMetadataStoreEvent};
 use crate::{
@@ -75,7 +74,7 @@ use agent_panel_prompts::{
     format_selection_for_terminal,
 };
 pub use agent_panel_terminal::{AgentPanelTerminalInfo, MaxIdleRetainedThreads, TerminalId};
-use agent_panel_terminal::{TERMINAL_AGENT_TELEMETRY_ID, terminal_program_to_report};
+use agent_panel_terminal::{AgentTerminal, TERMINAL_AGENT_TELEMETRY_ID};
 use agent_settings::AgentSettings;
 use ai_onboarding::AgentPanelOnboarding;
 use anyhow::{Context as _, Result, anyhow};
@@ -96,8 +95,7 @@ use futures::FutureExt as _;
 use gpui::{
     Action, Anchor, Animation, AnimationExt, AnyElement, App, AsyncWindowContext, ClipboardItem,
     Entity, EventEmitter, ExternalPaths, FocusHandle, Focusable, KeyContext, Pixels,
-    PlatformDisplay, Subscription, Task, TaskExt, WeakEntity, WindowHandle, prelude::*,
-    pulsating_between,
+    PlatformDisplay, Subscription, Task, TaskExt, WeakEntity, prelude::*, pulsating_between,
 };
 use language::LanguageRegistry;
 use language_model::LanguageModelRegistry;
@@ -653,128 +651,6 @@ pub struct CreateThreadOptions {
 
 pub(crate) struct AgentThread {
     conversation_view: Entity<ConversationView>,
-}
-
-struct AgentTerminal {
-    view: Entity<TerminalView>,
-    title_editor: Option<Entity<Editor>>,
-    title_editor_initial_title: Option<String>,
-    title_editor_subscription: Option<Subscription>,
-    last_known_title: String,
-    last_known_terminal_title: String,
-    last_observed_program: Option<String>,
-    working_directory: Option<PathBuf>,
-    created_at: DateTime<Utc>,
-    has_notification: bool,
-    notification_windows: Vec<WindowHandle<AgentNotification>>,
-    notification_subscriptions: Vec<Subscription>,
-    _subscriptions: Vec<Subscription>,
-}
-
-impl AgentTerminal {
-    fn terminal_title_for_view(view: &TerminalView, cx: &App) -> SharedString {
-        let terminal = view.terminal().read(cx);
-        if terminal.breadcrumb_text.is_empty() {
-            let title = terminal.title(true);
-            if title == "Terminal" {
-                SharedString::from("")
-            } else {
-                title.into()
-            }
-        } else {
-            terminal.breadcrumb_text.clone().into()
-        }
-    }
-
-    fn current_terminal_title(&self, cx: &App) -> SharedString {
-        let view = self.view.read(cx);
-        Self::terminal_title_for_view(view, cx)
-    }
-
-    fn terminal_title(&self, cx: &App) -> SharedString {
-        let title = self.current_terminal_title(cx);
-        if title.is_empty() && !self.last_known_terminal_title.is_empty() {
-            SharedString::from(self.last_known_terminal_title.clone())
-        } else {
-            title
-        }
-    }
-
-    fn title(&self, cx: &App) -> SharedString {
-        let terminal_title = self.terminal_title(cx);
-        let custom_title = self.custom_title(cx);
-        compose_terminal_thread_title(
-            terminal_title.as_ref(),
-            custom_title.as_ref().map(|title| title.as_ref()),
-        )
-    }
-
-    fn editable_title(&self, cx: &App) -> SharedString {
-        if let Some(custom_title) = self.custom_title(cx) {
-            custom_title
-        } else {
-            let terminal_title = self.terminal_title(cx);
-            SharedString::from(terminal_title_without_prefix(terminal_title.as_ref()).to_string())
-        }
-    }
-
-    fn refresh_title(&mut self, cx: &mut App) -> bool {
-        let terminal_title = self.current_terminal_title(cx);
-        if !terminal_title.is_empty() {
-            self.last_known_terminal_title = terminal_title.to_string();
-        }
-
-        let title = self.title(cx);
-        let changed = self.last_known_title != title.as_ref();
-        if changed {
-            self.last_known_title = title.to_string();
-        }
-        changed
-    }
-
-    fn refresh_metadata(&mut self, cx: &mut App) -> bool {
-        let title_changed = self.refresh_title(cx);
-        let current_working_directory = self.view.read(cx).terminal().read(cx).working_directory();
-        let working_directory_changed = current_working_directory
-            .as_ref()
-            .is_some_and(|current| self.working_directory.as_ref() != Some(current));
-        if working_directory_changed {
-            self.working_directory = current_working_directory;
-        }
-        title_changed || working_directory_changed
-    }
-
-    fn custom_title(&self, cx: &App) -> Option<SharedString> {
-        self.view.read(cx).custom_title().map(SharedString::from)
-    }
-
-    fn report_started_terminal_program(
-        &mut self,
-        terminal_id: TerminalId,
-        source: AgentThreadSource,
-        cx: &App,
-    ) {
-        let current_program = self
-            .view
-            .read(cx)
-            .terminal()
-            .read(cx)
-            .foreground_process_command_name();
-
-        if let Some(program) =
-            terminal_program_to_report(&mut self.last_observed_program, current_program)
-        {
-            telemetry::event!(
-                "Agent Terminal Program Started",
-                agent = TERMINAL_AGENT_TELEMETRY_ID,
-                terminal_id = terminal_id.to_key_string(),
-                program = program,
-                source = source.as_str(),
-                side = crate::sidebar_side(cx),
-                thread_location = "current_worktree",
-            );
-        }
-    }
 }
 
 enum BaseView {
