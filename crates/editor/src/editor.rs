@@ -78,6 +78,8 @@ mod navigation;
 mod navigation_overlay;
 #[path = "editor/prompt_editor.rs"]
 mod prompt_editor;
+#[path = "editor/remote_selection.rs"]
+mod remote_selection;
 mod rewrap;
 #[path = "editor/row_ext.rs"]
 mod row_ext;
@@ -145,6 +147,8 @@ pub use multi_buffer::{
 };
 pub use navigation_overlay::{NavigationOverlayLabel, NavigationTargetOverlay};
 use prompt_editor::{BreakpointPromptEditAction, PromptEditor, PromptEditorCallback};
+pub(crate) use remote_selection::HoveredCursor;
+pub use remote_selection::RemoteSelection;
 pub(crate) use row_ext::RowRangeExt;
 pub use row_ext::{RangeToAnchorExt, RowExt};
 pub(crate) use selection_ext::SelectionExt;
@@ -1213,23 +1217,6 @@ struct CharacterDimensions {
     em_width: Pixels,
     em_advance: Pixels,
     line_height: Pixels,
-}
-
-#[derive(Debug)]
-pub struct RemoteSelection {
-    pub replica_id: ReplicaId,
-    pub selection: Selection<Anchor>,
-    pub cursor_shape: CursorShape,
-    pub collaborator_id: CollaboratorId,
-    pub line_mode: bool,
-    pub user_name: Option<SharedString>,
-    pub color: PlayerColor,
-}
-
-#[derive(Clone, PartialEq, Eq, Hash)]
-struct HoveredCursor {
-    replica_id: ReplicaId,
-    selection_id: usize,
 }
 
 #[derive(Debug)]
