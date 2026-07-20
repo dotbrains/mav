@@ -1,6 +1,5 @@
 use std::{
     cell::Cell,
-    fmt,
     path::PathBuf,
     rc::Rc,
     sync::{
@@ -59,6 +58,10 @@ use crate::{
     Agent, AgentInitialContent, AgentThreadSource, ExternalSourcePrompt, NewExternalAgentThread,
     NewNativeAgentThreadFromSummary,
 };
+#[path = "agent_panel_terminal.rs"]
+mod agent_panel_terminal;
+pub use agent_panel_terminal::{AgentPanelTerminalInfo, MaxIdleRetainedThreads, TerminalId};
+use agent_panel_terminal::{TERMINAL_AGENT_TELEMETRY_ID, terminal_program_to_report};
 use agent_settings::AgentSettings;
 use ai_onboarding::AgentPanelOnboarding;
 use anyhow::{Context as _, Result, anyhow};
@@ -108,91 +111,7 @@ const AGENT_PANEL_KEY: &str = "agent_panel";
 const MIN_PANEL_WIDTH: Pixels = px(300.);
 const LAST_USED_AGENT_KEY: &str = "agent_panel__last_used_external_agent";
 const LAST_CREATED_ENTRY_KIND_KEY: &str = "agent_panel__last_created_entry_kind";
-const TERMINAL_AGENT_TELEMETRY_ID: &str = "terminal";
 const TERMINAL_INIT_COMMAND_STARTUP_TIMEOUT: Duration = Duration::from_secs(5);
-const KNOWN_TERMINAL_AGENT_COMMANDS: &[&str] = &[
-    "agent", // Unfortunately, both Cursor cli + grok
-    "agy",
-    "aider",
-    "amp",
-    "claude",
-    "codex",
-    "copilot",
-    "crush",
-    "devin",
-    "droid",
-    "gemini",
-    "goose",
-    "grok",
-    "openhands",
-    "opencode",
-    "pi",
-    "qwen",
-];
-
-fn is_known_terminal_agent_command(command: &str) -> bool {
-    KNOWN_TERMINAL_AGENT_COMMANDS.contains(&command)
-}
-
-fn terminal_program_to_report(
-    last_observed_program: &mut Option<String>,
-    current_program: Option<String>,
-) -> Option<String> {
-    let current_program =
-        current_program.filter(|program| is_known_terminal_agent_command(program));
-    let program_to_report =
-        if current_program.is_some() && current_program != *last_observed_program {
-            current_program.clone()
-        } else {
-            None
-        };
-    *last_observed_program = current_program;
-    program_to_report
-}
-
-/// Maximum number of idle threads kept in the agent panel's retained list.
-/// Set as a GPUI global to override; otherwise defaults to 5.
-pub struct MaxIdleRetainedThreads(pub usize);
-impl gpui::Global for MaxIdleRetainedThreads {}
-
-impl MaxIdleRetainedThreads {
-    pub fn global(cx: &App) -> usize {
-        cx.try_global::<Self>().map_or(5, |g| g.0)
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-pub struct TerminalId(uuid::Uuid);
-
-impl TerminalId {
-    pub(crate) fn new() -> Self {
-        Self(uuid::Uuid::new_v4())
-    }
-
-    pub(crate) fn to_key_string(self) -> String {
-        self.0.hyphenated().to_string()
-    }
-
-    pub(crate) fn from_key_string(key: &str) -> anyhow::Result<Self> {
-        Ok(Self(uuid::Uuid::parse_str(key)?))
-    }
-}
-
-impl fmt::Display for TerminalId {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(formatter)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct AgentPanelTerminalInfo {
-    pub id: TerminalId,
-    pub title: SharedString,
-    pub created_at: DateTime<Utc>,
-    pub has_notification: bool,
-    pub custom_title: Option<SharedString>,
-    pub working_directory: Option<PathBuf>,
-}
 
 #[derive(Serialize, Deserialize)]
 struct LastUsedAgent {
@@ -6939,51 +6858,6 @@ mod tests {
     use std::path::{Path, PathBuf};
     use std::sync::Arc;
     use std::time::Instant;
-
-    #[test]
-    fn test_is_known_terminal_agent_command() {
-        assert!(is_known_terminal_agent_command("claude"));
-        assert!(is_known_terminal_agent_command("codex"));
-        assert!(!is_known_terminal_agent_command("cargo"));
-        assert!(!is_known_terminal_agent_command("internal-agent"));
-    }
-
-    #[test]
-    fn test_terminal_program_reports_known_agent_transitions() {
-        let mut last_observed_program = None;
-
-        assert_eq!(
-            terminal_program_to_report(&mut last_observed_program, Some("codex".to_string())),
-            Some("codex".to_string())
-        );
-        assert_eq!(
-            terminal_program_to_report(&mut last_observed_program, Some("codex".to_string())),
-            None
-        );
-        assert_eq!(
-            terminal_program_to_report(&mut last_observed_program, Some("zsh".to_string())),
-            None
-        );
-        assert_eq!(
-            terminal_program_to_report(
-                &mut last_observed_program,
-                Some("customer-data-export".to_string())
-            ),
-            None
-        );
-        assert_eq!(
-            terminal_program_to_report(&mut last_observed_program, Some("codex".to_string())),
-            Some("codex".to_string())
-        );
-        assert_eq!(
-            terminal_program_to_report(&mut last_observed_program, None),
-            None
-        );
-        assert_eq!(
-            terminal_program_to_report(&mut last_observed_program, Some("codex".to_string())),
-            Some("codex".to_string())
-        );
-    }
 
     #[derive(Clone, Default)]
     struct SessionTrackingConnection {
