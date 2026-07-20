@@ -11,6 +11,7 @@
 //! Most of the interesting work happens at the local layer, as bulk of the complexity is with managing the lifecycle of language servers. The actual implementation of the LSP protocol is handled by [`lsp`] crate.
 pub mod clangd_ext;
 pub mod code_lens;
+mod completion_documentation;
 mod diagnostics_types;
 mod document_colors;
 mod document_links;
@@ -30,6 +31,7 @@ mod symbol_types;
 pub mod vue_language_server_ext;
 
 use self::code_lens::CodeLensData;
+pub use self::completion_documentation::CompletionDocumentation;
 use self::document_colors::DocumentColorData;
 use self::document_links::DocumentLinksData;
 use self::document_symbols::DocumentSymbolsData;
@@ -14515,66 +14517,6 @@ impl DiagnosticSummary {
             language_server_id: language_server_id.0 as u64,
             error_count: self.error_count as u32,
             warning_count: self.warning_count as u32,
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum CompletionDocumentation {
-    /// There is no documentation for this completion.
-    Undocumented,
-    /// A single line of documentation.
-    SingleLine(SharedString),
-    /// Multiple lines of plain text documentation.
-    MultiLinePlainText(SharedString),
-    /// Markdown documentation.
-    MultiLineMarkdown(SharedString),
-    /// Both single line and multiple lines of plain text documentation.
-    SingleLineAndMultiLinePlainText {
-        single_line: SharedString,
-        plain_text: Option<SharedString>,
-    },
-}
-
-impl CompletionDocumentation {
-    #[cfg(any(test, feature = "test-support"))]
-    pub fn text(&self) -> SharedString {
-        match self {
-            CompletionDocumentation::Undocumented => "".into(),
-            CompletionDocumentation::SingleLine(s) => s.clone(),
-            CompletionDocumentation::MultiLinePlainText(s) => s.clone(),
-            CompletionDocumentation::MultiLineMarkdown(s) => s.clone(),
-            CompletionDocumentation::SingleLineAndMultiLinePlainText { single_line, .. } => {
-                single_line.clone()
-            }
-        }
-    }
-}
-
-impl From<lsp::Documentation> for CompletionDocumentation {
-    fn from(docs: lsp::Documentation) -> Self {
-        match docs {
-            lsp::Documentation::String(text) => {
-                if text.lines().count() <= 1 {
-                    CompletionDocumentation::SingleLine(text.trim().to_string().into())
-                } else {
-                    CompletionDocumentation::MultiLinePlainText(text.into())
-                }
-            }
-
-            lsp::Documentation::MarkupContent(lsp::MarkupContent { kind, value }) => match kind {
-                lsp::MarkupKind::PlainText => {
-                    if value.lines().count() <= 1 {
-                        CompletionDocumentation::SingleLine(value.into())
-                    } else {
-                        CompletionDocumentation::MultiLinePlainText(value.into())
-                    }
-                }
-
-                lsp::MarkupKind::Markdown => {
-                    CompletionDocumentation::MultiLineMarkdown(value.into())
-                }
-            },
         }
     }
 }
