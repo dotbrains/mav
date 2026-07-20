@@ -15,6 +15,8 @@ mod numbered_code_block;
 mod sandbox_policy;
 #[path = "thread_view/token_usage_tooltip.rs"]
 mod token_usage_tooltip;
+#[path = "thread_view/tool_call_layout.rs"]
+mod tool_call_layout;
 #[path = "thread_view/ui_state.rs"]
 mod ui_state;
 #[path = "thread_view/workspace_utils.rs"]
@@ -61,6 +63,7 @@ use sandbox_policy::{
     augment_settings_sandbox_policy, sandbox_policy_grants_nothing, sandbox_section,
 };
 use token_usage_tooltip::TokenUsageTooltip;
+use tool_call_layout::ToolCallLayout;
 use ui_state::GeneratingSpinnerElement;
 pub(crate) use ui_state::PermissionSelection;
 pub use workspace_utils::open_markdown_in_workspace;
@@ -171,34 +174,6 @@ pub struct TurnFields {
     pub turn_generation: usize,
     pub turn_started_at: Option<Instant>,
     pub turn_tokens: Option<u64>,
-}
-
-/// How a tool call is rendered relative to its surroundings.
-///
-/// `Standalone` draws its own border/margin/location header. `Embedded` is
-/// hosted by a container that provides its own framing (e.g. the subagent
-/// card). `Floating` is like `Embedded`, but used for the floating
-/// awaiting-permission row above the message editor: the tool call's content
-/// is height-capped and scrollable so the row can never grow to consume the
-/// entire panel and squeeze the conversation list out of view.
-#[derive(Copy, Clone, PartialEq, Eq)]
-enum ToolCallLayout {
-    Standalone,
-    Embedded,
-    Floating,
-}
-
-impl ToolCallLayout {
-    /// Stable discriminant used to disambiguate element ids when the same tool
-    /// call is rendered in more than one layout at once (e.g. inline in the
-    /// list *and* in the floating awaiting-permission row).
-    fn id_str(self) -> &'static str {
-        match self {
-            ToolCallLayout::Standalone => "standalone",
-            ToolCallLayout::Embedded => "embedded",
-            ToolCallLayout::Floating => "floating",
-        }
-    }
 }
 
 impl ThreadView {
