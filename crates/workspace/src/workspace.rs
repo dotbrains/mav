@@ -37,6 +37,7 @@ pub mod workspace_error;
 mod workspace_event;
 mod workspace_id;
 mod workspace_keystrokes;
+mod workspace_location_helpers;
 mod workspace_open_options;
 mod workspace_providers;
 mod workspace_registries;
@@ -170,6 +171,9 @@ pub use workspace_actions::*;
 pub use workspace_event::Event;
 pub use workspace_id::WorkspaceId;
 use workspace_keystrokes::DispatchingKeystrokes;
+pub use workspace_location_helpers::{
+    WorkspaceHandle, last_opened_workspace_location, last_session_workspace_locations,
+};
 pub use workspace_open_options::{OpenOptions, OpenResult, OpenVisible, WorkspaceMatching};
 pub use workspace_providers::{DebuggerProvider, TerminalProvider};
 pub use workspace_registries::{
@@ -8111,47 +8115,6 @@ impl FollowerState {
     fn pane(&self) -> &Entity<Pane> {
         self.dock_pane.as_ref().unwrap_or(&self.center_pane)
     }
-}
-
-pub trait WorkspaceHandle {
-    fn file_project_paths(&self, cx: &App) -> Vec<ProjectPath>;
-}
-
-impl WorkspaceHandle for Entity<Workspace> {
-    fn file_project_paths(&self, cx: &App) -> Vec<ProjectPath> {
-        self.read(cx)
-            .worktrees(cx)
-            .flat_map(|worktree| {
-                let worktree_id = worktree.read(cx).id();
-                worktree.read(cx).files(true, 0).map(move |f| ProjectPath {
-                    worktree_id,
-                    path: f.path.clone(),
-                })
-            })
-            .collect::<Vec<_>>()
-    }
-}
-
-pub async fn last_opened_workspace_location(
-    db: &WorkspaceDb,
-    fs: &dyn fs::Fs,
-) -> Option<(WorkspaceId, SerializedWorkspaceLocation, PathList)> {
-    db.last_workspace(fs)
-        .await
-        .log_err()
-        .flatten()
-        .map(|workspace| (workspace.workspace_id, workspace.location, workspace.paths))
-}
-
-pub async fn last_session_workspace_locations(
-    db: &WorkspaceDb,
-    last_session_id: &str,
-    last_session_window_stack: Option<Vec<WindowId>>,
-    fs: &dyn fs::Fs,
-) -> Option<Vec<SessionWorkspace>> {
-    db.last_session_workspace_locations(last_session_id, last_session_window_stack, fs)
-        .await
-        .log_err()
 }
 
 pub async fn restore_multiworkspace(
