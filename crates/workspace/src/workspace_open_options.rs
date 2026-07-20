@@ -1,4 +1,4 @@
-use super::{ItemHandle, MultiWorkspace, OpenMode, OpenVisible, Workspace};
+use super::{ItemHandle, MultiWorkspace, OpenMode, Workspace};
 use collections::HashMap;
 use gpui::{Entity, WindowHandle};
 
@@ -17,6 +17,20 @@ pub enum WorkspaceMatching {
     /// For example, `mav -a foo/bar` will activate the `bar` workspace if it
     /// exists, otherwise it will open a new window with `foo/bar` as the root.
     MatchSubdirectory,
+}
+
+/// Controls which types of items should be made visible in the project panel
+/// when opened.
+#[derive(Debug, Clone)]
+pub enum OpenVisible {
+    /// Make all opened items visible (both files and directories).
+    All,
+    /// Don't make any opened items visible.
+    None,
+    /// Only make opened files visible, not directories.
+    OnlyFiles,
+    /// Only make opened directories visible, not files.
+    OnlyDirectories,
 }
 
 #[derive(Clone)]

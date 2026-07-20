@@ -35,6 +35,7 @@ mod workspace_actions;
 pub mod workspace_error;
 mod workspace_event;
 mod workspace_id;
+mod workspace_keystrokes;
 mod workspace_open_options;
 mod workspace_providers;
 mod workspace_registries;
@@ -138,7 +139,6 @@ pub use status_bar::{HideStatusItem, StatusItemView, add_hide_button_entry};
 use std::{
     cell::{Cell, RefCell},
     cmp,
-    collections::VecDeque,
     path::{Path, PathBuf},
     rc::Rc,
     sync::{
@@ -166,7 +166,8 @@ pub(crate) use window_chrome::window_bounds_env_override;
 pub use workspace_actions::*;
 pub use workspace_event::Event;
 pub use workspace_id::WorkspaceId;
-pub use workspace_open_options::{OpenOptions, OpenResult, WorkspaceMatching};
+use workspace_keystrokes::DispatchingKeystrokes;
+pub use workspace_open_options::{OpenOptions, OpenResult, OpenVisible, WorkspaceMatching};
 pub use workspace_providers::{DebuggerProvider, TerminalProvider};
 pub use workspace_registries::{
     FollowableViewRegistry, register_project_item, register_serializable_item,
@@ -425,20 +426,6 @@ impl AppState {
     }
 }
 
-/// Controls which types of items should be made visible in the project panel
-/// when opened.
-#[derive(Debug, Clone)]
-pub enum OpenVisible {
-    /// Make all opened items visible (both files and directories).
-    All,
-    /// Don't make any opened items visible.
-    None,
-    /// Only make opened files visible, not directories.
-    OnlyFiles,
-    /// Only make opened directories visible, not files.
-    OnlyDirectories,
-}
-
 enum WorkspaceLocation {
     // Valid local paths or SSH project to serialize
     Location(SerializedWorkspaceLocation, PathList),
@@ -466,13 +453,6 @@ type PromptForOpenPath = Box<
         &mut Context<Workspace>,
     ) -> oneshot::Receiver<Option<Vec<PathBuf>>>,
 >;
-
-#[derive(Default)]
-struct DispatchingKeystrokes {
-    dispatched: HashSet<Vec<Keystroke>>,
-    queue: VecDeque<Keystroke>,
-    task: Option<Shared<Task<()>>>,
-}
 
 /// Collects everything project-related for a certain window opened.
 /// In some way, is a counterpart of a window, as the [`WindowHandle`] could be downcast into `Workspace`.
