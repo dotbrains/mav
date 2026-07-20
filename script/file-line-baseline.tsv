@@ -27,7 +27,7 @@
     6768	crates/project/src/project.rs
     6679	crates/settings_ui/src/settings_ui.rs
     6389	crates/gpui/src/window.rs
-    1737	crates/collab/tests/integration/editor_tests.rs
+    1319	crates/collab/tests/integration/editor_tests.rs
     6352	crates/editor/src/split.rs
     6276	crates/multi_buffer/src/multi_buffer_tests.rs
     6168	crates/language/src/buffer.rs

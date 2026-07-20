@@ -30,6 +30,7 @@ mod editor_lsp_lens_tests;
 mod editor_lsp_status_tests;
 mod editor_remote_editing_tests;
 mod editor_rename_tests;
+mod editor_semantic_token_tests;
 mod editor_session_tests;
 mod editor_tests;
 mod following_tests;
