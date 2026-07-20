@@ -32,6 +32,7 @@ pub mod welcome;
 mod window_chrome;
 mod workspace_actions;
 pub mod workspace_error;
+mod workspace_event;
 mod workspace_id;
 mod workspace_open_options;
 mod workspace_providers;
@@ -71,11 +72,11 @@ use futures::{
     future::{Shared, try_join_all},
 };
 use gpui::{
-    Action, AnyEntity, AnyView, AnyWeakView, App, AsyncApp, AsyncWindowContext, Axis, Bounds,
-    Context, DragMoveEvent, Entity, EntityId, EventEmitter, FocusHandle, Focusable, Global,
-    KeyContext, Keystroke, ManagedView, PathPromptOptions, Point, PromptLevel, Render,
-    Subscription, SystemWindowTabController, Task, TaskExt, WeakEntity, WindowBounds, WindowHandle,
-    WindowId, WindowOptions, actions, canvas, relative,
+    Action, AnyEntity, AnyWeakView, App, AsyncApp, AsyncWindowContext, Axis, Bounds, Context,
+    DragMoveEvent, Entity, EntityId, EventEmitter, FocusHandle, Focusable, Global, KeyContext,
+    Keystroke, ManagedView, PathPromptOptions, Point, PromptLevel, Render, Subscription,
+    SystemWindowTabController, Task, TaskExt, WeakEntity, WindowBounds, WindowHandle, WindowId,
+    WindowOptions, actions, canvas, relative,
 };
 pub use history_manager::*;
 pub use item::{
@@ -132,7 +133,6 @@ pub use remote_workspace_position::{WorkspacePosition, remote_workspace_position
 use status_bar::StatusBar;
 pub use status_bar::{HideStatusItem, StatusItemView, add_hide_button_entry};
 use std::{
-    borrow::Cow,
     cell::{Cell, RefCell},
     cmp,
     collections::VecDeque,
@@ -161,6 +161,7 @@ use uuid::Uuid;
 pub use window_chrome::client_side_decorations;
 pub(crate) use window_chrome::window_bounds_env_override;
 pub use workspace_actions::*;
+pub use workspace_event::Event;
 pub use workspace_id::WorkspaceId;
 pub use workspace_open_options::{OpenOptions, OpenResult, WorkspaceMatching};
 pub use workspace_providers::{DebuggerProvider, TerminalProvider};
@@ -419,35 +420,6 @@ impl AppState {
             session,
         })
     }
-}
-
-pub enum Event {
-    PaneAdded(Entity<Pane>),
-    PaneRemoved,
-    ItemAdded {
-        item: Box<dyn ItemHandle>,
-    },
-    ActiveItemChanged,
-    ItemRemoved {
-        item_id: EntityId,
-    },
-    UserSavedItem {
-        pane: WeakEntity<Pane>,
-        item: Box<dyn WeakItemHandle>,
-        save_intent: SaveIntent,
-    },
-    ContactRequestedJoin(u64),
-    WorkspaceCreated(WeakEntity<Workspace>),
-    OpenBundledFile {
-        text: Cow<'static, str>,
-        title: &'static str,
-        language: &'static str,
-    },
-    ZoomChanged,
-    ModalOpened,
-    Activate,
-    PanelAdded(AnyView),
-    WorktreeCreationChanged,
 }
 
 /// Controls which types of items should be made visible in the project panel
