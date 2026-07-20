@@ -76,6 +76,8 @@ mod markdown_actions;
 mod navigation;
 #[path = "editor/navigation_overlay.rs"]
 mod navigation_overlay;
+#[path = "editor/navigation_types.rs"]
+mod navigation_types;
 #[path = "editor/prompt_editor.rs"]
 mod prompt_editor;
 #[path = "editor/remote_selection.rs"]
@@ -148,6 +150,9 @@ pub use multi_buffer::{
     ToPoint,
 };
 pub use navigation_overlay::{NavigationOverlayLabel, NavigationTargetOverlay};
+pub use navigation_types::{
+    FormatTarget, GotoDefinitionKind, JumpData, MultibufferSelectionMode, RewrapOptions,
+};
 use prompt_editor::{BreakpointPromptEditAction, PromptEditor, PromptEditorCallback};
 pub(crate) use remote_selection::HoveredCursor;
 pub use remote_selection::RemoteSelection;
@@ -1349,47 +1354,9 @@ pub(crate) struct NavigationData {
     scroll_top_row: u32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum GotoDefinitionKind {
-    Symbol,
-    Declaration,
-    Type,
-    Implementation,
-}
-
-pub enum FormatTarget {
-    Buffers(HashSet<Entity<Buffer>>),
-    Ranges(Vec<Range<MultiBufferPoint>>),
-}
-
 pub(crate) struct FocusedBlock {
     id: BlockId,
     focus_handle: WeakFocusHandle,
-}
-
-#[derive(Clone, Debug)]
-pub enum JumpData {
-    MultiBufferRow {
-        row: MultiBufferRow,
-        line_offset_from_top: u32,
-    },
-    MultiBufferPoint {
-        anchor: language::Anchor,
-        position: Point,
-        line_offset_from_top: u32,
-    },
-}
-
-pub enum MultibufferSelectionMode {
-    First,
-    All,
-}
-
-#[derive(Clone, Copy, Debug, Default)]
-pub struct RewrapOptions {
-    pub override_language_settings: bool,
-    pub preserve_existing_whitespace: bool,
-    pub line_length: Option<usize>,
 }
 
 impl Editor {
