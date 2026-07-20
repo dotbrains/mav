@@ -176,7 +176,7 @@ impl AgentPanel {
         )
     }
 
-    fn insert_display_only_terminal(
+    pub(super) fn insert_display_only_terminal(
         &mut self,
         terminal_id: TerminalId,
         working_directory: Option<PathBuf>,
