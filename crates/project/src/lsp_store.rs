@@ -25,6 +25,7 @@ mod progress_token;
 pub mod rust_analyzer_ext;
 mod semantic_tokens;
 mod server_identity;
+mod store_mode;
 pub mod vue_language_server_ext;
 
 use self::code_lens::CodeLensData;
@@ -174,6 +175,8 @@ pub use semantic_tokens::{
 use server_identity::{
     DynamicRegistrations, LanguageServerSeed, LanguageServerSeedSettings, UnifiedLanguageServer,
 };
+use store_mode::LspStoreMode;
+pub use store_mode::{FormattableBuffer, RemoteLspStore};
 
 pub use worktree::{
     Entry, EntryKind, FS_WATCH_LATENCY, File, LocalWorktree, PathChange, ProjectEntryId,
@@ -3881,30 +3884,6 @@ fn notify_server_capabilities_updated(server: &LanguageServer, cx: &mut Context<
                 },
             ),
         });
-    }
-}
-
-#[derive(Debug)]
-pub struct FormattableBuffer {
-    handle: Entity<Buffer>,
-    abs_path: Option<PathBuf>,
-    env: Option<HashMap<String, String>>,
-    ranges: Option<Vec<Range<Anchor>>>,
-}
-
-pub struct RemoteLspStore {
-    upstream_client: Option<AnyProtoClient>,
-    upstream_project_id: u64,
-}
-
-pub(crate) enum LspStoreMode {
-    Local(LocalLspStore),   // ssh host and collab host
-    Remote(RemoteLspStore), // collab guest
-}
-
-impl LspStoreMode {
-    fn is_local(&self) -> bool {
-        matches!(self, LspStoreMode::Local(_))
     }
 }
 
