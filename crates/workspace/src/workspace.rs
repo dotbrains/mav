@@ -24,6 +24,7 @@ pub mod shared_screen;
 pub use shared_screen::SharedScreen;
 pub mod focus_follows_mouse;
 mod legacy_panel_size;
+mod remote_project_deserialize;
 mod remote_workspace_position;
 mod status_bar;
 pub mod tasks;
@@ -139,6 +140,7 @@ use settings::{
 
 pub(crate) use delayed_edit_action::DelayedDebouncedEditAction;
 use mav_actions::{Spawn, feedback::FileBugReport, theme::ToggleMode};
+use remote_project_deserialize::deserialize_remote_project;
 pub use remote_workspace_position::{WorkspacePosition, remote_workspace_position_from_db};
 use status_bar::StatusBar;
 pub use status_bar::{HideStatusItem, StatusItemView, add_hide_button_entry};
@@ -9078,31 +9080,6 @@ async fn open_remote_project_inner(
     });
 
     Ok(items.into_iter().map(|item| item?.ok()).collect())
-}
-
-fn deserialize_remote_project(
-    connection_options: RemoteConnectionOptions,
-    paths: Vec<PathBuf>,
-    cx: &AsyncApp,
-) -> Task<Result<(WorkspaceId, Option<SerializedWorkspace>)>> {
-    let db = cx.update(|cx| WorkspaceDb::global(cx));
-    cx.background_spawn(async move {
-        let remote_connection_id = db
-            .get_or_create_remote_connection(connection_options)
-            .await?;
-
-        let serialized_workspace = db.remote_workspace_for_roots(&paths, remote_connection_id);
-
-        let workspace_id = if let Some(workspace_id) =
-            serialized_workspace.as_ref().map(|workspace| workspace.id)
-        {
-            workspace_id
-        } else {
-            db.next_id().await?
-        };
-
-        Ok((workspace_id, serialized_workspace))
-    })
 }
 
 pub fn join_in_room_project(
