@@ -46,6 +46,8 @@ pub mod semantic_tokens;
 mod split;
 pub mod split_editor_view;
 
+#[path = "editor/addon.rs"]
+mod addon;
 mod bookmarks;
 #[cfg(test)]
 mod code_completion_tests;
@@ -91,6 +93,8 @@ mod remote_selection;
 mod rewrap;
 #[path = "editor/row_ext.rs"]
 mod row_ext;
+#[path = "editor/scrollbar_marker_state.rs"]
+mod scrollbar_marker_state;
 mod selection;
 #[path = "editor/selection_ext.rs"]
 mod selection_ext;
@@ -102,6 +106,7 @@ mod selection_state;
 mod snapshot;
 
 pub(crate) use actions::*;
+pub use addon::Addon;
 pub use change_list::ChangeList;
 pub use clipboard::ClipboardSelection;
 pub use code_actions::CodeActionProvider;
@@ -183,6 +188,7 @@ pub(crate) use remote_selection::HoveredCursor;
 pub use remote_selection::RemoteSelection;
 pub(crate) use row_ext::RowRangeExt;
 pub use row_ext::{RangeToAnchorExt, RowExt};
+pub(crate) use scrollbar_marker_state::ScrollbarMarkerState;
 pub(crate) use selection_ext::SelectionExt;
 pub(crate) use selection_history::{
     DeferredSelectionEffectsState, SelectionHistory, SelectionHistoryEntry, SelectionHistoryMode,
@@ -433,55 +439,6 @@ type BackgroundHighlight = (
     Arc<[Range<Anchor>]>,
 );
 type GutterHighlight = (fn(&App) -> Hsla, Vec<Range<Anchor>>);
-
-#[derive(Default)]
-struct ScrollbarMarkerState {
-    scrollbar_size: Size<Pixels>,
-    dirty: bool,
-    markers: Arc<[PaintQuad]>,
-    pending_refresh: Option<Task<Result<()>>>,
-}
-
-impl ScrollbarMarkerState {
-    fn should_refresh(&self, scrollbar_size: Size<Pixels>) -> bool {
-        self.pending_refresh.is_none() && (self.scrollbar_size != scrollbar_size || self.dirty)
-    }
-}
-
-/// Addons allow storing per-editor state in other crates (e.g. Vim)
-pub trait Addon: 'static {
-    fn extend_key_context(&self, _: &mut KeyContext, _: &App) {}
-
-    fn render_buffer_header_controls(
-        &self,
-        _: &ExcerptBoundaryInfo,
-        _: &language::BufferSnapshot,
-        _: &Window,
-        _: &App,
-    ) -> Option<AnyElement> {
-        None
-    }
-
-    fn extend_buffer_header_context_menu(
-        &self,
-        menu: ui::ContextMenu,
-        _: &language::BufferSnapshot,
-        _: &mut Window,
-        _: &mut App,
-    ) -> ui::ContextMenu {
-        menu
-    }
-
-    fn override_status_for_buffer_id(&self, _: BufferId, _: &App) -> Option<FileStatus> {
-        None
-    }
-
-    fn to_any(&self) -> &dyn std::any::Any;
-
-    fn to_any_mut(&mut self) -> Option<&mut dyn std::any::Any> {
-        None
-    }
-}
 
 /// Mav's primary implementation of text input, allowing users to edit a [`MultiBuffer`].
 ///
