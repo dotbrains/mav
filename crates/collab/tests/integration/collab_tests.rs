@@ -26,6 +26,7 @@ mod project_formatting_tests;
 mod project_navigation_tests;
 mod project_query_tests;
 mod project_save_sync_tests;
+mod project_symbol_tests;
 mod project_worktree_sync_tests;
 mod random_channel_buffer_tests;
 mod random_project_collaboration_tests;
