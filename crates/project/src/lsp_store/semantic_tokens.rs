@@ -1,4 +1,9 @@
-use std::{collections::hash_map, ops::Range, slice::ChunksExact, sync::Arc};
+mod buffer_conversion;
+mod raw_tokens;
+mod stylizer;
+mod token_types;
+
+use std::{collections::hash_map, sync::Arc};
 
 use anyhow::Result;
 
@@ -12,22 +17,21 @@ use gpui::{App, AppContext, AsyncApp, Context, Entity, ReadGlobal as _, SharedSt
 use language::{Buffer, LanguageName, language_settings::all_language_settings};
 use lsp::{AdapterServerCapabilities, LanguageServerId};
 use rpc::{TypedEnvelope, proto};
-use settings::{
-    DefaultSemanticTokenRules, SemanticTokenRule, SemanticTokenRules, Settings as _, SettingsStore,
-};
-use smol::future::yield_now;
-
-use text::{Anchor, Bias, OffsetUtf16, PointUtf16, Unclipped};
+use settings::{SemanticTokenRules, Settings as _, SettingsStore};
 use util::ResultExt as _;
 
 use crate::{
     LanguageServerToQuery, LspStore, LspStoreEvent,
-    lsp_command::{
-        LspCommand, SemanticTokensDelta, SemanticTokensEdit, SemanticTokensFull,
-        SemanticTokensResponse,
-    },
+    lsp_command::{LspCommand, SemanticTokensDelta, SemanticTokensFull, SemanticTokensResponse},
     project_settings::ProjectSettings,
 };
+
+use self::buffer_conversion::raw_to_buffer_semantic_tokens;
+#[cfg(test)]
+use self::raw_tokens::SemanticToken;
+use self::raw_tokens::{RawSemanticTokens, ServerSemanticTokens};
+pub use self::stylizer::SemanticTokenStylizer;
+pub use self::token_types::{BufferSemanticToken, BufferSemanticTokens, TokenType};
 
 pub(super) struct SemanticTokenConfig {
     stylizers: HashMap<(LanguageServerId, Option<LanguageName>), SemanticTokenStylizer>,
@@ -444,188 +448,6 @@ impl LspStore {
 pub type SemanticTokensTask =
     Shared<Task<std::result::Result<BufferSemanticTokens, Arc<anyhow::Error>>>>;
 
-#[derive(Debug, Default, Clone)]
-pub struct BufferSemanticTokens {
-    pub tokens: Option<HashMap<LanguageServerId, Arc<[BufferSemanticToken]>>>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct TokenType(pub u32);
-
-#[derive(Debug, Clone)]
-pub struct BufferSemanticToken {
-    /// The range of the token in the buffer.
-    ///
-    /// Guaranteed to contain a buffer id.
-    pub range: Range<Anchor>,
-    pub token_type: TokenType,
-    pub token_modifiers: u32,
-}
-
-pub struct SemanticTokenStylizer {
-    server_id: LanguageServerId,
-    rules_by_token_type: HashMap<TokenType, Vec<SemanticTokenRule>>,
-    token_type_names: HashMap<TokenType, SharedString>,
-    modifier_mask: HashMap<SharedString, u32>,
-}
-
-impl SemanticTokenStylizer {
-    pub fn new(
-        server_id: LanguageServerId,
-        legend: &lsp::SemanticTokensLegend,
-        language_rules: Option<&SemanticTokenRules>,
-        cx: &App,
-    ) -> Self {
-        let token_types: HashMap<TokenType, SharedString> = legend
-            .token_types
-            .iter()
-            .enumerate()
-            .map(|(i, token_type)| {
-                (
-                    TokenType(i as u32),
-                    SharedString::from(token_type.as_str().to_string()),
-                )
-            })
-            .collect();
-        let modifier_mask: HashMap<SharedString, u32> = legend
-            .token_modifiers
-            .iter()
-            .enumerate()
-            .map(|(i, modifier)| (SharedString::from(modifier.as_str().to_string()), 1 << i))
-            .collect();
-
-        let global_rules = &ProjectSettings::get_global(cx)
-            .global_lsp_settings
-            .semantic_token_rules;
-        let default_rules = cx.global::<DefaultSemanticTokenRules>();
-
-        let rules_by_token_type = token_types
-            .iter()
-            .map(|(index, token_type_name)| {
-                let filter = |rule: &&SemanticTokenRule| {
-                    rule.token_type
-                        .as_ref()
-                        .is_none_or(|rule_token_type| rule_token_type == token_type_name.as_ref())
-                };
-                let matching_rules: Vec<SemanticTokenRule> = global_rules
-                    .rules
-                    .iter()
-                    .chain(language_rules.into_iter().flat_map(|lr| &lr.rules))
-                    .chain(default_rules.0.rules.iter())
-                    .rev()
-                    .filter(filter)
-                    .cloned()
-                    .collect();
-                (*index, matching_rules)
-            })
-            .collect();
-
-        SemanticTokenStylizer {
-            server_id,
-            rules_by_token_type,
-            token_type_names: token_types,
-            modifier_mask,
-        }
-    }
-
-    pub fn server_id(&self) -> LanguageServerId {
-        self.server_id
-    }
-
-    pub fn token_type_name(&self, token_type: TokenType) -> Option<&SharedString> {
-        self.token_type_names.get(&token_type)
-    }
-
-    pub fn has_modifier(&self, token_modifiers: u32, modifier: &str) -> bool {
-        let Some(mask) = self.modifier_mask.get(modifier) else {
-            return false;
-        };
-        (token_modifiers & mask) != 0
-    }
-
-    pub fn token_modifiers(&self, token_modifiers: u32) -> Option<String> {
-        let modifiers: Vec<&str> = self
-            .modifier_mask
-            .iter()
-            .filter(|(_, mask)| (token_modifiers & *mask) != 0)
-            .map(|(name, _)| name.as_ref())
-            .collect();
-        if modifiers.is_empty() {
-            None
-        } else {
-            Some(modifiers.join(", "))
-        }
-    }
-
-    pub fn rules_for_token(&self, token_type: TokenType) -> Option<&[SemanticTokenRule]> {
-        self.rules_by_token_type
-            .get(&token_type)
-            .map(|v| v.as_slice())
-    }
-}
-
-async fn raw_to_buffer_semantic_tokens(
-    raw_tokens: RawSemanticTokens,
-    buffer_snapshot: text::BufferSnapshot,
-) -> HashMap<LanguageServerId, Arc<[BufferSemanticToken]>> {
-    let mut res = HashMap::default();
-    for (&server_id, server_tokens) in &raw_tokens.servers {
-        let mut last = 0;
-        // We don't do `collect` here due to the filter map not pre-allocating
-        // we'd rather over allocate here than not since we have to re-allocate into an arc slice anyways
-        let mut buffer_tokens = Vec::with_capacity(server_tokens.data.len() / 5);
-        let mut tokens = server_tokens.tokens();
-        // 5000 was chosen by profiling, on a decent machine this will take about 1ms per chunk
-        // This is to avoid blocking the main thread for hundreds of milliseconds at a time for very big files
-        // If we every change the below code to not query the underlying rope 6 times per token we can bump this up
-        const CHUNK_LEN: usize = 5000;
-        loop {
-            let mut changed = false;
-            let chunk = tokens
-                .by_ref()
-                .take(CHUNK_LEN)
-                .inspect(|_| changed = true)
-                .filter_map(|token| {
-                    let start = Unclipped(PointUtf16::new(token.line, token.start));
-                    let clipped_start = buffer_snapshot.clip_point_utf16(start, Bias::Left);
-                    let start_offset = buffer_snapshot
-                        .as_rope()
-                        .point_utf16_to_offset_utf16(clipped_start);
-                    let end_offset = start_offset + OffsetUtf16(token.length as usize);
-
-                    let start = buffer_snapshot
-                        .as_rope()
-                        .offset_utf16_to_offset(start_offset);
-                    if start < last {
-                        return None;
-                    }
-
-                    let end = buffer_snapshot.as_rope().offset_utf16_to_offset(end_offset);
-                    last = end;
-
-                    if start == end {
-                        return None;
-                    }
-
-                    Some(BufferSemanticToken {
-                        range: buffer_snapshot.anchor_range_inside(start..end),
-                        token_type: token.token_type,
-                        token_modifiers: token.token_modifiers,
-                    })
-                });
-            buffer_tokens.extend(chunk);
-
-            if !changed {
-                break;
-            }
-            yield_now().await;
-        }
-
-        res.insert(server_id, buffer_tokens.into());
-    }
-    res
-}
-
 #[derive(Default, Debug)]
 pub struct SemanticTokensData {
     pub(super) raw_tokens: RawSemanticTokens,
@@ -638,113 +460,6 @@ impl SemanticTokensData {
         self.raw_tokens.servers.remove(&server_id);
         self.latest_invalidation_requests.remove(&server_id);
         self.update = None;
-    }
-}
-
-/// All the semantic token tokens for a buffer.
-///
-/// This aggregates semantic tokens from multiple language servers in a specific order.
-/// Semantic tokens later in the list will override earlier ones in case of overlap.
-#[derive(Default, Debug, Clone)]
-pub(super) struct RawSemanticTokens {
-    pub servers: HashMap<lsp::LanguageServerId, Arc<ServerSemanticTokens>>,
-}
-
-/// All the semantic tokens for a buffer, from a single language server.
-#[derive(Debug, Clone)]
-pub struct ServerSemanticTokens {
-    /// Each value is:
-    /// data[5*i] - deltaLine: token line number, relative to the start of the previous token
-    /// data[5*i+1] - deltaStart: token start character, relative to the start of the previous token (relative to 0 or the previous token’s start if they are on the same line)
-    /// data[5*i+2] - length: the length of the token.
-    /// data[5*i+3] - tokenType: will be looked up in SemanticTokensLegend.tokenTypes. We currently ask that tokenType < 65536.
-    /// data[5*i+4] - tokenModifiers: each set bit will be looked up in SemanticTokensLegend.tokenModifiers
-    ///
-    /// See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/ for more.
-    data: Vec<u32>,
-
-    pub(crate) result_id: Option<SharedString>,
-}
-
-pub struct SemanticTokensIter<'a> {
-    prev: Option<(u32, u32)>,
-    data: ChunksExact<'a, u32>,
-}
-
-// A single item from `data`.
-struct SemanticTokenValue {
-    delta_line: u32,
-    delta_start: u32,
-    length: u32,
-    token_type: TokenType,
-    token_modifiers: u32,
-}
-
-/// A semantic token, independent of its position.
-#[derive(Debug, PartialEq, Eq)]
-pub struct SemanticToken {
-    pub line: u32,
-    pub start: u32,
-    pub length: u32,
-    pub token_type: TokenType,
-    pub token_modifiers: u32,
-}
-
-impl ServerSemanticTokens {
-    pub fn from_full(data: Vec<u32>, result_id: Option<SharedString>) -> Self {
-        ServerSemanticTokens { data, result_id }
-    }
-
-    pub(crate) fn apply(&mut self, edits: &[SemanticTokensEdit]) {
-        for edit in edits {
-            let start = (edit.start as usize).min(self.data.len());
-            let end = (start + edit.delete_count as usize).min(self.data.len());
-            self.data.splice(start..end, edit.data.iter().copied());
-        }
-    }
-
-    pub fn tokens(&self) -> SemanticTokensIter<'_> {
-        SemanticTokensIter {
-            prev: None,
-            data: self.data.chunks_exact(5),
-        }
-    }
-}
-
-impl Iterator for SemanticTokensIter<'_> {
-    type Item = SemanticToken;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let chunk = self.data.next()?;
-        let token = SemanticTokenValue {
-            delta_line: chunk[0],
-            delta_start: chunk[1],
-            length: chunk[2],
-            token_type: TokenType(chunk[3]),
-            token_modifiers: chunk[4],
-        };
-
-        let (line, start) = if let Some((last_line, last_start)) = self.prev {
-            let line = last_line + token.delta_line;
-            let start = if token.delta_line == 0 {
-                last_start + token.delta_start
-            } else {
-                token.delta_start
-            };
-            (line, start)
-        } else {
-            (token.delta_line, token.delta_start)
-        };
-
-        self.prev = Some((line, start));
-
-        Some(SemanticToken {
-            line,
-            start,
-            length: token.length,
-            token_type: token.token_type,
-            token_modifiers: token.token_modifiers,
-        })
     }
 }
 
