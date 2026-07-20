@@ -21,6 +21,7 @@ mod editor_code_action_tests;
 mod editor_completion_tests;
 mod editor_document_color_tests;
 mod editor_document_link_tests;
+mod editor_git_blame_tests;
 mod editor_inlay_hint_tests;
 mod editor_lsp_lens_tests;
 mod editor_lsp_status_tests;
