@@ -21,6 +21,7 @@ mod git_tests;
 mod integration_tests;
 mod notification_tests;
 mod project_save_sync_tests;
+mod project_worktree_sync_tests;
 mod random_channel_buffer_tests;
 mod random_project_collaboration_tests;
 mod randomized_test_helpers;
