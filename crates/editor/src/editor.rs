@@ -188,9 +188,10 @@ pub(crate) use selection_history::{
 };
 pub use selection_state::RowHighlightOptions;
 pub(crate) use selection_state::{
-    AddSelectionsGroup, AddSelectionsState, AutocloseRegion, RowHighlight, SelectNextState,
-    SnippetState,
+    AddSelectionsGroup, AddSelectionsState, AutocloseRegion, ColumnarSelectionState,
+    GutterHoverButton, RowHighlight, SelectNextState, SelectionDragState, SnippetState,
 };
+pub use selection_state::{ColumnarMode, SelectMode, SelectPhase};
 pub use snapshot::{EditorSnapshot, GutterDimensions, column_pixels};
 pub use split::{SplittableEditor, ToggleSplitDiff};
 pub use split_editor_view::SplitEditorView;
@@ -426,45 +427,6 @@ trait InvalidationRegion {
     fn ranges(&self) -> &[Range<Anchor>];
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum SelectPhase {
-    Begin {
-        position: DisplayPoint,
-        add: bool,
-        click_count: usize,
-    },
-    BeginColumnar {
-        position: DisplayPoint,
-        reset: bool,
-        mode: ColumnarMode,
-        goal_column: u32,
-    },
-    Extend {
-        position: DisplayPoint,
-        click_count: usize,
-    },
-    Update {
-        position: DisplayPoint,
-        goal_column: u32,
-        scroll_delta: gpui::Point<f32>,
-    },
-    End,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum ColumnarMode {
-    FromMouse,
-    FromSelection,
-}
-
-#[derive(Clone, Debug)]
-pub enum SelectMode {
-    Character,
-    Word(Range<Anchor>),
-    Line(Range<Anchor>),
-    All,
-}
-
 type CompletionId = usize;
 
 pub struct ContextMenuOptions {
@@ -545,43 +507,6 @@ pub trait Addon: 'static {
     fn to_any_mut(&mut self) -> Option<&mut dyn std::any::Any> {
         None
     }
-}
-
-enum SelectionDragState {
-    /// State when no drag related activity is detected.
-    None,
-    /// State when the mouse is down on a selection that is about to be dragged.
-    ReadyToDrag {
-        selection: Selection<Anchor>,
-        click_position: gpui::Point<Pixels>,
-        mouse_down_time: Instant,
-    },
-    /// State when the mouse is dragging the selection in the editor.
-    Dragging {
-        selection: Selection<Anchor>,
-        drop_cursor: Selection<Anchor>,
-        hide_drop_cursor: bool,
-    },
-}
-
-enum ColumnarSelectionState {
-    FromMouse {
-        selection_tail: Anchor,
-        display_point: Option<DisplayPoint>,
-    },
-    FromSelection {
-        selection_tail: Anchor,
-    },
-}
-
-/// Represents a button that shows up when hovering over lines in the gutter that don't have
-/// any button on them already (like a bookmark, breakpoint or run indicator).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct GutterHoverButton {
-    display_row: DisplayRow,
-    /// There's a small debounce between hovering over the line and showing the indicator.
-    /// We don't want to show the indicator when moving the mouse from editor to e.g. project panel.
-    is_active: bool,
 }
 
 enum CodeActionsForSelection {
