@@ -65,10 +65,14 @@ mod completions;
 mod config;
 mod diagnostics;
 mod edit_prediction;
+#[path = "editor/erased_editor.rs"]
+mod erased_editor;
 mod input;
 mod markdown_actions;
 mod navigation;
 mod rewrap;
+#[path = "editor/row_ext.rs"]
+mod row_ext;
 mod selection;
 
 pub(crate) use actions::*;
@@ -105,6 +109,7 @@ pub use element::{
     CursorLayout, EditorElement, HighlightedRange, HighlightedRangeLine, PointForPosition,
     render_breadcrumb_text,
 };
+use erased_editor::ErasedEditorImpl;
 pub use git::blame::BlameRenderer;
 pub(crate) use git::{DiffHunkKey, StoredReviewComment};
 use git::{
@@ -124,6 +129,8 @@ pub use multi_buffer::{
     MultiBufferOffset, MultiBufferOffsetUtf16, MultiBufferSnapshot, PathKey, RowInfo, ToOffset,
     ToPoint,
 };
+pub(crate) use row_ext::RowRangeExt;
+pub use row_ext::{RangeToAnchorExt, RowExt};
 pub use split::{SplittableEditor, ToggleSplitDiff};
 pub use split_editor_view::SplitEditorView;
 pub use text::Bias;
@@ -11828,124 +11835,6 @@ impl<T: InvalidationRegion> InvalidationStack<T> {
     }
 }
 
-#[derive(Clone)]
-struct ErasedEditorImpl(Entity<Editor>);
-
-impl ui_input::ErasedEditor for ErasedEditorImpl {
-    fn text(&self, cx: &App) -> String {
-        self.0.read(cx).text(cx)
-    }
-
-    fn set_text(&self, text: &str, window: &mut Window, cx: &mut App) {
-        self.0.update(cx, |this, cx| {
-            this.set_text(text, window, cx);
-        })
-    }
-
-    fn clear(&self, window: &mut Window, cx: &mut App) {
-        self.0.update(cx, |this, cx| this.clear(window, cx));
-    }
-
-    fn set_placeholder_text(&self, text: &str, window: &mut Window, cx: &mut App) {
-        self.0.update(cx, |this, cx| {
-            this.set_placeholder_text(text, window, cx);
-        });
-    }
-
-    fn set_multiline(&self, max_lines: Option<usize>, _window: &mut Window, cx: &mut App) {
-        self.0.update(cx, |this, cx| {
-            if let Some(max_lines) = max_lines {
-                this.set_mode(EditorMode::AutoHeight {
-                    min_lines: 1,
-                    max_lines: Some(max_lines),
-                });
-                this.set_soft_wrap_mode(language_settings::SoftWrap::EditorWidth, cx);
-            } else {
-                this.set_mode(EditorMode::SingleLine);
-            }
-            cx.notify();
-        });
-    }
-
-    fn focus_handle(&self, cx: &App) -> FocusHandle {
-        self.0.read(cx).focus_handle(cx)
-    }
-
-    fn render(&self, _: &mut Window, cx: &App) -> AnyElement {
-        let settings = ThemeSettings::get_global(cx);
-        let theme_color = cx.theme().colors();
-
-        let text_style = TextStyle {
-            font_family: settings.ui_font.family.clone(),
-            font_features: settings.ui_font.features.clone(),
-            font_size: rems(0.875).into(),
-            font_weight: settings.ui_font.weight,
-            font_style: FontStyle::Normal,
-            line_height: relative(1.2),
-            color: theme_color.text,
-            ..Default::default()
-        };
-        let editor_style = EditorStyle {
-            background: theme_color.ghost_element_background,
-            local_player: cx.theme().players().local(),
-            syntax: cx.theme().syntax().clone(),
-            text: text_style,
-            ..Default::default()
-        };
-        EditorElement::new(&self.0, editor_style).into_any()
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        &self.0
-    }
-
-    fn move_selection_to_end(&self, window: &mut Window, cx: &mut App) {
-        self.0.update(cx, |editor, cx| {
-            let editor_offset = editor.buffer().read(cx).len(cx);
-            editor.change_selections(
-                SelectionEffects::scroll(Autoscroll::Next),
-                window,
-                cx,
-                |s| s.select_ranges(Some(editor_offset..editor_offset)),
-            );
-        });
-    }
-
-    fn select_all(&self, window: &mut Window, cx: &mut App) {
-        self.0.update(cx, |editor, cx| {
-            editor.select_all(&Default::default(), window, cx);
-        });
-    }
-
-    fn subscribe(
-        &self,
-        mut callback: Box<dyn FnMut(ui_input::ErasedEditorEvent, &mut Window, &mut App) + 'static>,
-        window: &mut Window,
-        cx: &mut App,
-    ) -> Subscription {
-        window.subscribe(&self.0, cx, move |_, event: &EditorEvent, window, cx| {
-            let event = match event {
-                EditorEvent::BufferEdited => ui_input::ErasedEditorEvent::BufferEdited,
-                EditorEvent::Blurred => ui_input::ErasedEditorEvent::Blurred,
-                _ => return,
-            };
-            (callback)(event, window, cx);
-        })
-    }
-
-    fn set_masked(&self, masked: bool, _window: &mut Window, cx: &mut App) {
-        self.0.update(cx, |editor, cx| {
-            editor.set_masked(masked, cx);
-        });
-    }
-
-    fn set_read_only(&self, read_only: bool, cx: &mut App) {
-        self.0.update(cx, |editor, cx| {
-            editor.set_read_only(read_only);
-            cx.notify();
-        });
-    }
-}
 impl<T> Default for InvalidationStack<T> {
     fn default() -> Self {
         Self(Default::default())
@@ -12034,105 +11923,6 @@ pub fn styled_runs_for_code_label<'a>(
                 runs
             }),
     )
-}
-
-pub trait RangeToAnchorExt: Sized {
-    fn to_anchors(self, snapshot: &MultiBufferSnapshot) -> Range<Anchor>;
-
-    fn to_display_points(self, snapshot: &EditorSnapshot) -> Range<DisplayPoint> {
-        let anchor_range = self.to_anchors(&snapshot.buffer_snapshot());
-        anchor_range.start.to_display_point(snapshot)..anchor_range.end.to_display_point(snapshot)
-    }
-}
-
-impl<T: ToOffset> RangeToAnchorExt for Range<T> {
-    fn to_anchors(self, snapshot: &MultiBufferSnapshot) -> Range<Anchor> {
-        let start_offset = self.start.to_offset(snapshot);
-        let end_offset = self.end.to_offset(snapshot);
-        if start_offset == end_offset {
-            snapshot.anchor_before(start_offset)..snapshot.anchor_before(end_offset)
-        } else {
-            snapshot.anchor_after(self.start)..snapshot.anchor_before(self.end)
-        }
-    }
-}
-
-pub trait RowExt {
-    fn as_f64(&self) -> f64;
-
-    fn next_row(&self) -> Self;
-
-    fn previous_row(&self) -> Self;
-
-    fn minus(&self, other: Self) -> u32;
-}
-
-impl RowExt for DisplayRow {
-    fn as_f64(&self) -> f64 {
-        self.0 as _
-    }
-
-    fn next_row(&self) -> Self {
-        Self(self.0 + 1)
-    }
-
-    fn previous_row(&self) -> Self {
-        Self(self.0.saturating_sub(1))
-    }
-
-    fn minus(&self, other: Self) -> u32 {
-        self.0 - other.0
-    }
-}
-
-impl RowExt for MultiBufferRow {
-    fn as_f64(&self) -> f64 {
-        self.0 as _
-    }
-
-    fn next_row(&self) -> Self {
-        Self(self.0 + 1)
-    }
-
-    fn previous_row(&self) -> Self {
-        Self(self.0.saturating_sub(1))
-    }
-
-    fn minus(&self, other: Self) -> u32 {
-        self.0 - other.0
-    }
-}
-
-trait RowRangeExt {
-    type Row;
-
-    fn len(&self) -> usize;
-
-    fn iter_rows(&self) -> impl DoubleEndedIterator<Item = Self::Row>;
-}
-
-impl RowRangeExt for Range<MultiBufferRow> {
-    type Row = MultiBufferRow;
-
-    fn len(&self) -> usize {
-        (self.end.0 - self.start.0) as usize
-    }
-
-    fn iter_rows(&self) -> impl DoubleEndedIterator<Item = MultiBufferRow> {
-        (self.start.0..self.end.0).map(MultiBufferRow)
-    }
-}
-
-impl RowRangeExt for Range<DisplayRow> {
-    type Row = DisplayRow;
-
-    fn len(&self) -> usize {
-        (self.end.0 - self.start.0) as usize
-    }
-
-    fn iter_rows(&self) -> impl DoubleEndedIterator<Item = DisplayRow> {
-        (self.start.0..self.end.0).map(DisplayRow)
-    }
 }
 
 /// If select range has more than one line, we
