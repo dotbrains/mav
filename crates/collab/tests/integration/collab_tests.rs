@@ -36,7 +36,9 @@ mod randomized_test_helpers;
 mod remote_editing_collaboration_tests;
 mod remote_git_diff_tests;
 mod remote_git_status_tests;
+mod screen_sharing_tests;
 mod test_server;
+mod workspace_ui_tests;
 
 pub use randomized_test_helpers::{
     RandomizedTest, TestError, UserTestPlan, run_randomized_test, save_randomized_test_plan,
