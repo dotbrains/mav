@@ -11,13 +11,13 @@ flowchart TD
 
 ## Runner Policy
 
-All Linux jobs use GitHub-hosted runners:
+All Linux jobs run in GitHub-hosted cloud runners:
 
 ```yaml
 runs-on: ubuntu-latest
 ```
 
-Do not introduce self-hosted or third-party runner labels unless a job explicitly needs dedicated infrastructure.
+Do not introduce self-hosted, Blacksmith, or other third-party runner labels unless a job explicitly needs dedicated infrastructure and documents why GitHub-hosted runners are insufficient.
 
 ## Adding Jobs
 
