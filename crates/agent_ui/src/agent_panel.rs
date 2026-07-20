@@ -59,6 +59,8 @@ use crate::{
 mod agent_panel_persistence;
 #[path = "agent_panel_prompts.rs"]
 mod agent_panel_prompts;
+#[path = "agent_panel_rules.rs"]
+mod agent_panel_rules;
 #[path = "agent_panel_terminal.rs"]
 mod agent_panel_terminal;
 use agent_panel_persistence::{
@@ -73,6 +75,7 @@ use agent_panel_prompts::{
     build_conflict_resolution_prompt, build_conflicted_files_resolution_prompt,
     format_selection_for_terminal,
 };
+use agent_panel_rules::{open_global_rules, open_project_rules, project_agents_md_path};
 pub use agent_panel_terminal::{AgentPanelTerminalInfo, MaxIdleRetainedThreads, TerminalId};
 use agent_panel_terminal::{AgentTerminal, TERMINAL_AGENT_TELEMETRY_ID};
 use agent_settings::AgentSettings;
@@ -129,60 +132,6 @@ const TERMINAL_INIT_COMMAND_STARTUP_TIMEOUT: Duration = Duration::from_secs(5);
 struct SourcePanelInitialization {
     agent: Agent,
     initial_content: Option<AgentInitialContent>,
-}
-
-fn project_agents_md_path(
-    project: &Entity<Project>,
-    require_existing_file: bool,
-    cx: &App,
-) -> Option<PathBuf> {
-    let rel_path = util::rel_path::RelPath::unix("AGENTS.md").ok()?;
-    project
-        .read(cx)
-        .visible_worktrees(cx)
-        .next()
-        .and_then(|worktree| {
-            let worktree = worktree.read(cx);
-
-            if require_existing_file {
-                let entry = worktree.entry_for_path(rel_path)?;
-                if !entry.is_file() {
-                    return None;
-                }
-            }
-
-            Some(worktree.absolutize(rel_path))
-        })
-}
-
-fn open_global_rules(workspace: &mut Workspace, window: &mut Window, cx: &mut Context<Workspace>) {
-    workspace
-        .open_abs_path(
-            paths::agents_file().clone(),
-            workspace::OpenOptions {
-                focus: Some(true),
-                ..Default::default()
-            },
-            window,
-            cx,
-        )
-        .detach_and_log_err(cx);
-}
-
-fn open_project_rules(workspace: &mut Workspace, window: &mut Window, cx: &mut Context<Workspace>) {
-    if let Some(path) = project_agents_md_path(workspace.project(), false, cx) {
-        workspace
-            .open_abs_path(
-                path,
-                workspace::OpenOptions {
-                    focus: Some(true),
-                    ..Default::default()
-                },
-                window,
-                cx,
-            )
-            .detach_and_log_err(cx);
-    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
