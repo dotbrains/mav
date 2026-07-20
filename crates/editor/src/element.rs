@@ -4,6 +4,7 @@ mod cursor_layout;
 mod gutter;
 mod header;
 mod highlighted_range;
+mod layout_data;
 mod line_numbers;
 mod mouse;
 mod position_map;
@@ -17,6 +18,10 @@ use gutter::Gutter;
 pub(crate) use header::StickyHeader;
 pub(crate) use header::{header_jump_data, render_buffer_header};
 pub use highlighted_range::{HighlightedRange, HighlightedRangeLine};
+pub(crate) use layout_data::BlockLayout;
+use layout_data::{
+    ColoredRange, ContextMenuLayout, CreaseTrailerLayout, ScrollbarLayoutInformation,
+};
 pub(super) use line_numbers::{LineNumberLayout, LineNumberSegment};
 pub use position_map::PointForPosition;
 pub(crate) use position_map::PositionMap;
@@ -9156,49 +9161,6 @@ pub(super) fn gutter_bounds(
     }
 }
 
-#[derive(Clone, Copy)]
-struct ContextMenuLayout {
-    y_flipped: bool,
-    bounds: Bounds<Pixels>,
-}
-
-/// Holds information required for layouting the editor scrollbars.
-struct ScrollbarLayoutInformation {
-    /// The bounds of the editor area (excluding the content offset).
-    editor_bounds: Bounds<Pixels>,
-    /// The available range to scroll within the document.
-    scroll_range: Size<Pixels>,
-    /// The space available for one glyph in the editor.
-    glyph_grid_cell: Size<Pixels>,
-}
-
-impl ScrollbarLayoutInformation {
-    pub fn new(
-        editor_bounds: Bounds<Pixels>,
-        glyph_grid_cell: Size<Pixels>,
-        document_size: Size<Pixels>,
-        longest_line_blame_width: Pixels,
-        settings: &EditorSettings,
-        scroll_beyond_last_line: ScrollBeyondLastLine,
-    ) -> Self {
-        let vertical_overscroll = match scroll_beyond_last_line {
-            ScrollBeyondLastLine::OnePage => editor_bounds.size.height,
-            ScrollBeyondLastLine::Off => glyph_grid_cell.height,
-            ScrollBeyondLastLine::VerticalScrollMargin => {
-                (1.0 + settings.vertical_scroll_margin) as f32 * glyph_grid_cell.height
-            }
-        };
-
-        let overscroll = size(longest_line_blame_width, vertical_overscroll);
-
-        ScrollbarLayoutInformation {
-            editor_bounds,
-            scroll_range: document_size + overscroll,
-            glyph_grid_cell,
-        }
-    }
-}
-
 impl IntoElement for EditorElement {
     type Element = Self;
 
@@ -9261,12 +9223,6 @@ impl EditorLayout {
     }
 }
 
-struct ColoredRange<T> {
-    start: T,
-    end: T,
-    color: Hsla,
-}
-
 impl Along for ScrollbarAxes {
     type Unit = bool;
 
@@ -9289,22 +9245,6 @@ impl Along for ScrollbarAxes {
             },
         }
     }
-}
-
-struct CreaseTrailerLayout {
-    element: AnyElement,
-    bounds: Bounds<Pixels>,
-}
-
-pub(crate) struct BlockLayout {
-    pub(crate) id: BlockId,
-    pub(crate) x_offset: Pixels,
-    pub(crate) row: Option<DisplayRow>,
-    pub(crate) element: AnyElement,
-    pub(crate) available_space: Size<AvailableSpace>,
-    pub(crate) style: BlockStyle,
-    pub(crate) overlaps_gutter: bool,
-    pub(crate) is_buffer_header: bool,
 }
 
 pub fn layout_line(
