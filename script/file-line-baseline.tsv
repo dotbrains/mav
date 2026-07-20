@@ -19,7 +19,7 @@
     8142	crates/acp_thread/src/acp_thread.rs
     8120	crates/agent/src/thread.rs
     7609	crates/project_panel/src/project_panel.rs
-    2115	crates/collab/tests/integration/integration_tests.rs
+    1667	crates/collab/tests/integration/integration_tests.rs
     7141	crates/zeta_prompt/src/zeta_prompt.rs
     7035	crates/git_ui/src/git_graph.rs
     6930	crates/worktree/src/worktree.rs
