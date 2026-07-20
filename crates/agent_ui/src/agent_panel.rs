@@ -17,7 +17,6 @@ use agent_settings::UserAgentsMd;
 use db::kvp::{Dismissable, KeyValueStore};
 use itertools::Itertools;
 use project::AgentId;
-use serde::{Deserialize, Serialize};
 use settings::{LanguageModelProviderSetting, LanguageModelSelection};
 
 use mav_actions::{
@@ -57,10 +56,18 @@ use crate::{
     Agent, AgentInitialContent, AgentThreadSource, ExternalSourcePrompt, NewExternalAgentThread,
     NewNativeAgentThreadFromSummary,
 };
+#[path = "agent_panel_persistence.rs"]
+mod agent_panel_persistence;
 #[path = "agent_panel_prompts.rs"]
 mod agent_panel_prompts;
 #[path = "agent_panel_terminal.rs"]
 mod agent_panel_terminal;
+use agent_panel_persistence::{
+    AGENT_PANEL_KEY, AgentPanelEntryKind, SerializedActiveThread, SerializedAgentPanel,
+    read_global_last_created_entry_kind, read_global_last_used_agent, read_legacy_serialized_panel,
+    read_serialized_panel, save_serialized_panel, write_global_last_created_entry_kind,
+    write_global_last_used_agent,
+};
 #[cfg(test)]
 use agent_panel_prompts::conflict_resource_block;
 use agent_panel_prompts::{
@@ -108,7 +115,7 @@ use ui::{
 use util::ResultExt as _;
 use workspace::{
     CollaboratorId, DraggedSelection, DraggedTab, MultiWorkspace, PaneKind, PathList,
-    SerializedPathList, ToggleSidebar, ToggleZoom, Workspace, WorkspaceId,
+    ToggleSidebar, ToggleZoom, Workspace, WorkspaceId,
     dock::{DockPosition, Panel, PanelEvent},
     item::ItemEvent,
 };
@@ -118,51 +125,12 @@ use collections::HashSet;
 #[cfg(test)]
 use mav_actions::agent::ConflictContent;
 
-const AGENT_PANEL_KEY: &str = "agent_panel";
 const MIN_PANEL_WIDTH: Pixels = px(300.);
-const LAST_USED_AGENT_KEY: &str = "agent_panel__last_used_external_agent";
-const LAST_CREATED_ENTRY_KIND_KEY: &str = "agent_panel__last_created_entry_kind";
 const TERMINAL_INIT_COMMAND_STARTUP_TIMEOUT: Duration = Duration::from_secs(5);
-
-#[derive(Serialize, Deserialize)]
-struct LastUsedAgent {
-    agent: Agent,
-}
-
-#[derive(Serialize, Deserialize)]
-struct LastCreatedEntryKind {
-    entry_kind: AgentPanelEntryKind,
-}
 
 struct SourcePanelInitialization {
     agent: Agent,
     initial_content: Option<AgentInitialContent>,
-}
-
-/// Reads the most recently used agent across all workspaces. Used as a fallback
-/// when opening a workspace that has no per-workspace agent preference yet.
-fn read_global_last_used_agent(kvp: &KeyValueStore) -> Option<Agent> {
-    kvp.read_kvp(LAST_USED_AGENT_KEY)
-        .log_err()
-        .flatten()
-        .and_then(|json| serde_json::from_str::<LastUsedAgent>(&json).log_err())
-        .map(|entry| entry.agent)
-}
-
-async fn write_global_last_used_agent(kvp: KeyValueStore, agent: Agent) {
-    if let Some(json) = serde_json::to_string(&LastUsedAgent { agent }).log_err() {
-        kvp.write_kvp(LAST_USED_AGENT_KEY.to_string(), json)
-            .await
-            .log_err();
-    }
-}
-
-fn read_global_last_created_entry_kind(kvp: &KeyValueStore) -> Option<AgentPanelEntryKind> {
-    kvp.read_kvp(LAST_CREATED_ENTRY_KIND_KEY)
-        .log_err()
-        .flatten()
-        .and_then(|json| serde_json::from_str::<LastCreatedEntryKind>(&json).log_err())
-        .map(|entry| entry.entry_kind)
 }
 
 fn project_agents_md_path(
@@ -219,85 +187,12 @@ fn open_project_rules(workspace: &mut Workspace, window: &mut Window, cx: &mut C
     }
 }
 
-async fn write_global_last_created_entry_kind(kvp: KeyValueStore, entry_kind: AgentPanelEntryKind) {
-    if let Some(json) = serde_json::to_string(&LastCreatedEntryKind { entry_kind }).log_err() {
-        kvp.write_kvp(LAST_CREATED_ENTRY_KIND_KEY.to_string(), json)
-            .await
-            .log_err();
-    }
-}
-
-fn read_serialized_panel(
-    workspace_id: workspace::WorkspaceId,
-    kvp: &KeyValueStore,
-) -> Option<SerializedAgentPanel> {
-    let scope = kvp.scoped(AGENT_PANEL_KEY);
-    let key = i64::from(workspace_id).to_string();
-    scope
-        .read(&key)
-        .log_err()
-        .flatten()
-        .and_then(|json| serde_json::from_str::<SerializedAgentPanel>(&json).log_err())
-}
-
-async fn save_serialized_panel(
-    workspace_id: workspace::WorkspaceId,
-    panel: SerializedAgentPanel,
-    kvp: KeyValueStore,
-) -> Result<()> {
-    let scope = kvp.scoped(AGENT_PANEL_KEY);
-    let key = i64::from(workspace_id).to_string();
-    scope.write(key, serde_json::to_string(&panel)?).await?;
-    Ok(())
-}
-
-/// Migration: reads the original single-panel format stored under the
-/// `"agent_panel"` KVP key before per-workspace keying was introduced.
-fn read_legacy_serialized_panel(kvp: &KeyValueStore) -> Option<SerializedAgentPanel> {
-    kvp.read_kvp(AGENT_PANEL_KEY)
-        .log_err()
-        .flatten()
-        .and_then(|json| serde_json::from_str::<SerializedAgentPanel>(&json).log_err())
-}
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ThreadTitleRegenerationResult {
     NotOpen,
     Started,
     NoModel,
     AlreadyGenerating,
-}
-
-#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-enum AgentPanelEntryKind {
-    #[default]
-    Thread,
-    Terminal,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct SerializedAgentPanel {
-    selected_agent: Option<Agent>,
-    #[serde(default)]
-    last_created_entry_kind: AgentPanelEntryKind,
-    #[serde(default)]
-    last_active_thread: Option<SerializedActiveThread>,
-    #[serde(default)]
-    last_active_terminal_id: Option<String>,
-    #[serde(default)]
-    new_draft_thread_id: Option<ThreadId>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct SerializedActiveThread {
-    /// For drafts this is `None`; use `thread_id` to address them instead.
-    session_id: Option<String>,
-    /// Optional for back-compat with older serialized payloads that only carried `session_id`.
-    #[serde(default)]
-    thread_id: Option<ThreadId>,
-    agent_type: Agent,
-    title: Option<String>,
-    work_dirs: Option<SerializedPathList>,
 }
 
 pub fn init(cx: &mut App) {
