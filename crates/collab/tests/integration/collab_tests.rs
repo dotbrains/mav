@@ -21,6 +21,7 @@ mod editor_code_action_tests;
 mod editor_completion_tests;
 mod editor_lsp_lens_tests;
 mod editor_lsp_status_tests;
+mod editor_remote_editing_tests;
 mod editor_rename_tests;
 mod editor_session_tests;
 mod editor_tests;
