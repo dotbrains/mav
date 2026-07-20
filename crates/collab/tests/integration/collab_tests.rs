@@ -19,6 +19,7 @@ mod contact_request_tests;
 mod db_tests;
 mod editor_code_action_tests;
 mod editor_completion_tests;
+mod editor_copy_path_tests;
 mod editor_debug_lsp_tests;
 mod editor_document_color_tests;
 mod editor_document_link_tests;
