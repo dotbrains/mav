@@ -15,6 +15,7 @@ mod document_colors;
 mod document_links;
 mod document_symbols;
 mod folding_ranges;
+mod formatting_types;
 mod inlay_hints;
 pub mod json_language_server_ext;
 pub mod log_store;
@@ -154,6 +155,8 @@ pub use document_links::{
     ResolvedDocumentLink,
 };
 pub use folding_ranges::LspFoldingRange;
+use formatting_types::OpenLspBuffer;
+pub use formatting_types::{FormatTrigger, LspFormatTarget, OpenLspBufferHandle};
 pub use fs::*;
 pub use language::Location;
 pub use lsp_store::inlay_hints::{CacheInlayHints, InvalidationStrategy};
@@ -176,32 +179,6 @@ pub const SERVER_PROGRESS_THROTTLE_TIMEOUT: Duration = Duration::from_millis(100
 const WORKSPACE_DIAGNOSTICS_TOKEN_START: &str = "id:";
 const SERVER_DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(10);
 static NEXT_PROMPT_REQUEST_ID: AtomicUsize = AtomicUsize::new(0);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum FormatTrigger {
-    Save,
-    Manual,
-}
-
-pub enum LspFormatTarget {
-    Buffers,
-    Ranges(BTreeMap<BufferId, Vec<Range<Anchor>>>),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct OpenLspBufferHandle(Entity<OpenLspBuffer>);
-
-struct OpenLspBuffer(Entity<Buffer>);
-
-impl FormatTrigger {
-    fn from_proto(value: i32) -> FormatTrigger {
-        match value {
-            0 => FormatTrigger::Save,
-            1 => FormatTrigger::Manual,
-            _ => FormatTrigger::Save,
-        }
-    }
-}
 
 #[derive(Clone)]
 struct UnifiedLanguageServer {
