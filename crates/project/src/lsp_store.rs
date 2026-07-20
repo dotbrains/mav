@@ -26,10 +26,12 @@ pub mod lsp_ext_command;
 mod lsp_store_events;
 mod progress_token;
 mod prompt_and_log;
+mod query_types;
 mod rename_watchers;
 pub mod rust_analyzer_ext;
 mod semantic_tokens;
 mod server_identity;
+mod settings_helpers;
 mod ssh_lsp_adapter;
 mod store_mode;
 mod symbol_types;
@@ -44,7 +46,9 @@ use self::document_symbols::DocumentSymbolsData;
 use self::inlay_hints::BufferInlayHints;
 pub use self::lsp_store_events::{LanguageServerStatus, LspStoreEvent};
 pub use self::prompt_and_log::{LanguageServerLogType, LanguageServerPromptRequest};
+pub use self::query_types::{LanguageServerToQuery, ResolvedHint};
 use self::rename_watchers::{LanguageServerWatchedPaths, LazyGlobSet, RenamePathsWatchedForServer};
+pub use self::settings_helpers::{language_server_settings, language_server_settings_for};
 pub use self::ssh_lsp_adapter::SshLspAdapter;
 use crate::{
     CodeAction, Completion, CompletionDisplayOptions, CompletionResponse, CompletionSource,
@@ -14039,14 +14043,6 @@ async fn populate_labels_for_completions(
     completions
 }
 
-#[derive(Debug)]
-pub enum LanguageServerToQuery {
-    /// Query language servers in order of users preference, up until one capable of handling the request is found.
-    FirstCapable,
-    /// Query a specific language server.
-    Other(LanguageServerId),
-}
-
 struct LspBufferSnapshot {
     version: i32,
     snapshot: TextBufferSnapshot,
@@ -14114,11 +14110,6 @@ impl std::fmt::Debug for LanguageServerState {
     }
 }
 
-pub enum ResolvedHint {
-    Resolved(InlayHint),
-    Resolving(Shared<Task<()>>),
-}
-
 pub fn glob_literal_prefix(glob: &Path) -> PathBuf {
     glob.components()
         .take_while(|component| match component {
@@ -14126,29 +14117,6 @@ pub fn glob_literal_prefix(glob: &Path) -> PathBuf {
             _ => true,
         })
         .collect()
-}
-
-pub fn language_server_settings<'a>(
-    delegate: &'a dyn LspAdapterDelegate,
-    language: &LanguageServerName,
-    cx: &'a App,
-) -> Option<&'a LspSettings> {
-    language_server_settings_for(
-        SettingsLocation {
-            worktree_id: delegate.worktree_id(),
-            path: RelPath::empty(),
-        },
-        language,
-        cx,
-    )
-}
-
-pub fn language_server_settings_for<'a>(
-    location: SettingsLocation<'a>,
-    language: &LanguageServerName,
-    cx: &'a App,
-) -> Option<&'a LspSettings> {
-    ProjectSettings::get(Some(location), cx).lsp.get(language)
 }
 
 pub struct LocalLspAdapterDelegate {
