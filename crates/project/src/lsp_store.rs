@@ -22,6 +22,7 @@ mod document_links;
 mod document_symbols;
 mod folding_ranges;
 mod formatting_requests;
+mod formatting_transaction;
 mod formatting_types;
 mod inlay_hints;
 pub mod json_language_server_ext;
@@ -30,6 +31,7 @@ mod local_formatting;
 mod local_lsp_adapter_delegate;
 mod local_server_lookup;
 pub mod log_store;
+mod lsp_buffer_snapshot;
 pub mod lsp_ext_command;
 mod lsp_store_events;
 mod progress_token;
@@ -196,10 +198,12 @@ pub use document_links::{
     ResolvedDocumentLink,
 };
 pub use folding_ranges::LspFoldingRange;
+use formatting_transaction::extend_formatting_transaction;
 use formatting_types::OpenLspBuffer;
 pub use formatting_types::{FormatTrigger, LspFormatTarget, OpenLspBufferHandle};
 pub use fs::*;
 pub use language::Location;
+use lsp_buffer_snapshot::{LspBufferSnapshot, include_text};
 pub use lsp_store::inlay_hints::{CacheInlayHints, InvalidationStrategy};
 #[cfg(any(test, feature = "test-support"))]
 pub use prettier::FORMAT_SUFFIX as TEST_PRETTIER_FORMAT_SUFFIX;
@@ -11527,47 +11531,3 @@ impl LspStore {
 }
 
 impl EventEmitter<LspStoreEvent> for LspStore {}
-
-struct LspBufferSnapshot {
-    version: i32,
-    snapshot: TextBufferSnapshot,
-}
-
-fn include_text(server: &lsp::LanguageServer) -> Option<bool> {
-    match server.capabilities().text_document_sync.as_ref()? {
-        lsp::TextDocumentSyncCapability::Options(opts) => match opts.save.as_ref()? {
-            // Server wants didSave but didn't specify includeText.
-            lsp::TextDocumentSyncSaveOptions::Supported(true) => Some(false),
-            // Server doesn't want didSave at all.
-            lsp::TextDocumentSyncSaveOptions::Supported(false) => None,
-            // Server provided SaveOptions.
-            lsp::TextDocumentSyncSaveOptions::SaveOptions(save_options) => {
-                Some(save_options.include_text.unwrap_or(false))
-            }
-        },
-        // We do not have any save info. Kind affects didChange only.
-        lsp::TextDocumentSyncCapability::Kind(_) => None,
-    }
-}
-
-/// Apply edits to the buffer that will become part of the formatting transaction.
-/// Fails if the buffer has been edited since the start of that transaction.
-fn extend_formatting_transaction(
-    buffer: &FormattableBuffer,
-    formatting_transaction_id: text::TransactionId,
-    cx: &mut AsyncApp,
-    operation: impl FnOnce(&mut Buffer, &mut Context<Buffer>),
-) -> anyhow::Result<()> {
-    buffer.handle.update(cx, |buffer, cx| {
-        let last_transaction_id = buffer.peek_undo_stack().map(|t| t.transaction_id());
-        if last_transaction_id != Some(formatting_transaction_id) {
-            anyhow::bail!("Buffer edited while formatting. Aborting")
-        }
-        buffer.start_transaction();
-        operation(buffer, cx);
-        if let Some(transaction_id) = buffer.end_transaction(cx) {
-            buffer.merge_transactions(transaction_id, formatting_transaction_id);
-        }
-        Ok(())
-    })
-}
