@@ -14,6 +14,8 @@ mod channel_buffer_tests;
 mod channel_guest_tests;
 mod channel_tests;
 mod collab_panel_tests;
+mod contact_presence_tests;
+mod contact_request_tests;
 mod db_tests;
 mod editor_tests;
 mod following_tests;
