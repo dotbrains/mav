@@ -65,6 +65,8 @@ mod agent_panel_prompts;
 mod agent_panel_rules;
 #[path = "agent_panel_terminal.rs"]
 mod agent_panel_terminal;
+#[path = "agent_panel_thread_types.rs"]
+mod agent_panel_thread_types;
 #[path = "agent_panel_view_state.rs"]
 mod agent_panel_view_state;
 use agent_panel_diagnostics::thread_metadata_to_debug_json;
@@ -83,6 +85,8 @@ use agent_panel_prompts::{
 use agent_panel_rules::{open_global_rules, open_project_rules, project_agents_md_path};
 pub use agent_panel_terminal::{AgentPanelTerminalInfo, MaxIdleRetainedThreads, TerminalId};
 use agent_panel_terminal::{AgentTerminal, TERMINAL_AGENT_TELEMETRY_ID};
+use agent_panel_thread_types::SourcePanelInitialization;
+pub use agent_panel_thread_types::{CreateThreadOptions, ThreadTitleRegenerationResult};
 use agent_panel_view_state::{AgentThread, BaseView, OverlayView, VisibleSurface, WhichFontSize};
 use agent_settings::AgentSettings;
 use ai_onboarding::AgentPanelOnboarding;
@@ -134,19 +138,6 @@ use mav_actions::agent::ConflictContent;
 
 const MIN_PANEL_WIDTH: Pixels = px(300.);
 const TERMINAL_INIT_COMMAND_STARTUP_TIMEOUT: Duration = Duration::from_secs(5);
-
-struct SourcePanelInitialization {
-    agent: Agent,
-    initial_content: Option<AgentInitialContent>,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ThreadTitleRegenerationResult {
-    NotOpen,
-    Started,
-    NoModel,
-    AlreadyGenerating,
-}
 
 pub fn init(cx: &mut App) {
     cx.observe_new(
@@ -541,26 +532,6 @@ pub fn init(cx: &mut App) {
         },
     )
     .detach();
-}
-
-/// Optional parameters for `AgentPanel::create_thread_with_options`. All
-/// fields default to the panel's current selection so the agent tool only
-/// needs to override what it actually cares about.
-#[derive(Default)]
-pub struct CreateThreadOptions {
-    /// Title to assign to the new thread up front.
-    pub title: Option<SharedString>,
-    /// Initial content to populate in the thread (optionally auto-submitted).
-    pub initial_content: Option<AgentInitialContent>,
-    /// Agent to use. Defaults to the panel's selected agent.
-    pub agent: Option<Agent>,
-    /// Model override, as `provider/model-id`. Only applied when the thread
-    /// uses the native Mav agent.
-    pub model: Option<String>,
-    /// Working directories to attach to the new thread (e.g., the path of a
-    /// freshly-created sibling worktree). When `None`, the thread inherits
-    /// the project's default path list.
-    pub work_dirs: Option<PathList>,
 }
 
 pub struct AgentPanel {
