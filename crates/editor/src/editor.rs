@@ -82,6 +82,8 @@ mod row_ext;
 mod selection;
 #[path = "editor/selection_ext.rs"]
 mod selection_ext;
+#[path = "editor/selection_history.rs"]
+mod selection_history;
 
 pub(crate) use actions::*;
 pub use change_list::ChangeList;
@@ -143,6 +145,9 @@ use prompt_editor::{BreakpointPromptEditAction, PromptEditor, PromptEditorCallba
 pub(crate) use row_ext::RowRangeExt;
 pub use row_ext::{RangeToAnchorExt, RowExt};
 pub(crate) use selection_ext::SelectionExt;
+pub(crate) use selection_history::{
+    DeferredSelectionEffectsState, SelectionHistory, SelectionHistoryEntry, SelectionHistoryMode,
+};
 pub use split::{SplittableEditor, ToggleSplitDiff};
 pub use split_editor_view::SplitEditorView;
 pub use text::Bias;
@@ -1233,23 +1238,6 @@ pub struct RemoteSelection {
     pub color: PlayerColor,
 }
 
-#[derive(Clone, Debug)]
-struct SelectionHistoryEntry {
-    selections: Arc<[Selection<Anchor>]>,
-    select_next_state: Option<SelectNextState>,
-    select_prev_state: Option<SelectNextState>,
-    add_selections_state: Option<AddSelectionsState>,
-}
-
-#[derive(Copy, Clone, Default, Debug, PartialEq, Eq)]
-enum SelectionHistoryMode {
-    #[default]
-    Normal,
-    Undoing,
-    Redoing,
-    Skipping,
-}
-
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct HoveredCursor {
     replica_id: ReplicaId,
@@ -1321,98 +1309,6 @@ impl SelectionEffects {
         Self {
             from_search,
             ..self
-        }
-    }
-}
-
-struct DeferredSelectionEffectsState {
-    changed: bool,
-    effects: SelectionEffects,
-    old_cursor_position: Anchor,
-    history_entry: SelectionHistoryEntry,
-}
-
-#[derive(Default)]
-struct SelectionHistory {
-    #[allow(clippy::type_complexity)]
-    selections_by_transaction:
-        HashMap<TransactionId, (Arc<[Selection<Anchor>]>, Option<Arc<[Selection<Anchor>]>>)>,
-    mode: SelectionHistoryMode,
-    undo_stack: VecDeque<SelectionHistoryEntry>,
-    redo_stack: VecDeque<SelectionHistoryEntry>,
-}
-
-impl SelectionHistory {
-    #[track_caller]
-    fn insert_transaction(
-        &mut self,
-        transaction_id: TransactionId,
-        selections: Arc<[Selection<Anchor>]>,
-    ) {
-        if selections.is_empty() {
-            log::error!(
-                "SelectionHistory::insert_transaction called with empty selections. Caller: {}",
-                std::panic::Location::caller()
-            );
-            return;
-        }
-        self.selections_by_transaction
-            .insert(transaction_id, (selections, None));
-    }
-
-    #[allow(clippy::type_complexity)]
-    fn transaction(
-        &self,
-        transaction_id: TransactionId,
-    ) -> Option<&(Arc<[Selection<Anchor>]>, Option<Arc<[Selection<Anchor>]>>)> {
-        self.selections_by_transaction.get(&transaction_id)
-    }
-
-    #[allow(clippy::type_complexity)]
-    fn transaction_mut(
-        &mut self,
-        transaction_id: TransactionId,
-    ) -> Option<&mut (Arc<[Selection<Anchor>]>, Option<Arc<[Selection<Anchor>]>>)> {
-        self.selections_by_transaction.get_mut(&transaction_id)
-    }
-
-    fn push(&mut self, entry: SelectionHistoryEntry) {
-        if !entry.selections.is_empty() {
-            match self.mode {
-                SelectionHistoryMode::Normal => {
-                    self.push_undo(entry);
-                    self.redo_stack.clear();
-                }
-                SelectionHistoryMode::Undoing => self.push_redo(entry),
-                SelectionHistoryMode::Redoing => self.push_undo(entry),
-                SelectionHistoryMode::Skipping => {}
-            }
-        }
-    }
-
-    fn push_undo(&mut self, entry: SelectionHistoryEntry) {
-        if self
-            .undo_stack
-            .back()
-            .is_none_or(|e| e.selections != entry.selections)
-        {
-            self.undo_stack.push_back(entry);
-            if self.undo_stack.len() > MAX_SELECTION_HISTORY_LEN {
-                self.undo_stack.pop_front();
-            }
-        }
-    }
-
-    fn push_redo(&mut self, entry: SelectionHistoryEntry) {
-        if self
-            .redo_stack
-            .back()
-            .is_none_or(|e| e.selections != entry.selections)
-        {
-            self.redo_stack.push_back(entry);
-            if self.redo_stack.len() > MAX_SELECTION_HISTORY_LEN {
-                self.redo_stack.pop_front();
-            }
         }
     }
 }
