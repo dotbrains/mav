@@ -216,6 +216,33 @@ impl BufferSerialization {
     }
 }
 
+pub(crate) type CompletionId = usize;
+
+pub struct ContextMenuOptions {
+    pub min_entries_visible: usize,
+    pub max_entries_visible: usize,
+    pub placement: Option<ContextMenuPlacement>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ContextMenuPlacement {
+    Above,
+    Below,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord, Debug, Default)]
+pub(crate) struct EditorActionId(usize);
+
+impl EditorActionId {
+    pub(crate) fn post_inc(&mut self) -> Self {
+        let answer = self.0;
+
+        *self = Self(answer + 1);
+
+        Self(answer)
+    }
+}
+
 #[derive(Clone)]
 pub struct EditorStyle {
     pub background: Hsla,

@@ -121,10 +121,10 @@ pub(crate) use constants::{
     CODE_ACTION_TIMEOUT, CURSORS_VISIBLE_FOR, EDIT_PREDICTION_KEY_CONTEXT, FORMAT_TIMEOUT,
     MAX_LINE_LEN, MINIMAP_FONT_SIZE, SCROLL_CENTER_TOP_BOTTOM_DEBOUNCE_TIMEOUT,
 };
-pub(crate) use core_types::BreadcrumbsVisibility;
+pub(crate) use core_types::{BreadcrumbsVisibility, CompletionId, EditorActionId};
 pub use core_types::{
-    BufferSerialization, EditorMode, EditorStyle, MinimapVisibility, Navigated, SizingBehavior,
-    SoftWrap, make_inlay_hints_style,
+    BufferSerialization, ContextMenuOptions, ContextMenuPlacement, EditorMode, EditorStyle,
+    MinimapVisibility, Navigated, SizingBehavior, SoftWrap, make_inlay_hints_style,
 };
 use diagnostics::{ActiveDiagnostic, GlobalDiagnosticRenderer, InlineDiagnostic};
 pub use diagnostics::{DiagnosticRenderer, set_diagnostic_renderer};
@@ -426,33 +426,6 @@ pub struct SearchWithinRange;
 
 trait InvalidationRegion {
     fn ranges(&self) -> &[Range<Anchor>];
-}
-
-type CompletionId = usize;
-
-pub struct ContextMenuOptions {
-    pub min_entries_visible: usize,
-    pub max_entries_visible: usize,
-    pub placement: Option<ContextMenuPlacement>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ContextMenuPlacement {
-    Above,
-    Below,
-}
-
-#[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord, Debug, Default)]
-struct EditorActionId(usize);
-
-impl EditorActionId {
-    pub fn post_inc(&mut self) -> Self {
-        let answer = self.0;
-
-        *self = Self(answer + 1);
-
-        Self(answer)
-    }
 }
 
 type BackgroundHighlight = (
