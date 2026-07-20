@@ -24,6 +24,7 @@ mod folding_ranges;
 mod formatting_requests;
 mod formatting_transaction;
 mod formatting_types;
+mod init_handlers;
 mod inlay_hints;
 pub mod json_language_server_ext;
 mod local_code_actions;
@@ -67,6 +68,7 @@ pub use self::diagnostic_summary::{DiagnosticSummary, LanguageServerProgress};
 use self::document_colors::DocumentColorData;
 use self::document_links::DocumentLinksData;
 use self::document_symbols::DocumentSymbolsData;
+use self::init_handlers::register_lsp_handlers;
 use self::inlay_hints::BufferInlayHints;
 pub use self::local_lsp_adapter_delegate::LocalLspAdapterDelegate;
 pub use self::lsp_store_events::{LanguageServerStatus, LspStoreEvent};
@@ -1831,54 +1833,7 @@ pub struct LspStore {
 
 impl LspStore {
     pub fn init(client: &AnyProtoClient) {
-        client.add_entity_request_handler(Self::handle_lsp_query);
-        client.add_entity_message_handler(Self::handle_lsp_query_response);
-        client.add_entity_request_handler(Self::handle_restart_language_servers);
-        client.add_entity_request_handler(Self::handle_stop_language_servers);
-        client.add_entity_request_handler(Self::handle_cancel_language_server_work);
-        client.add_entity_message_handler(Self::handle_start_language_server);
-        client.add_entity_message_handler(Self::handle_update_language_server);
-        client.add_entity_message_handler(Self::handle_language_server_log);
-        client.add_entity_message_handler(Self::handle_update_diagnostic_summary);
-        client.add_entity_request_handler(Self::handle_format_buffers);
-        client.add_entity_request_handler(Self::handle_apply_code_action_kind);
-        client.add_entity_request_handler(Self::handle_resolve_completion_documentation);
-        client.add_entity_request_handler(Self::handle_apply_code_action);
-        client.add_entity_request_handler(Self::handle_get_project_symbols);
-        client.add_entity_request_handler(Self::handle_resolve_inlay_hint);
-        client.add_entity_request_handler(Self::handle_resolve_code_action);
-        client.add_entity_request_handler(Self::handle_resolve_document_link);
-        client.add_entity_request_handler(Self::handle_get_color_presentation);
-        client.add_entity_request_handler(Self::handle_open_buffer_for_symbol);
-        client.add_entity_request_handler(Self::handle_refresh_inlay_hints);
-        client.add_entity_request_handler(Self::handle_refresh_semantic_tokens);
-        client.add_entity_request_handler(Self::handle_refresh_code_lens);
-        client.add_entity_request_handler(Self::handle_on_type_formatting);
-        client.add_entity_request_handler(Self::handle_apply_additional_edits_for_completion);
-        client.add_entity_request_handler(Self::handle_register_buffer_with_language_servers);
-        client.add_entity_request_handler(Self::handle_rename_project_entry);
-        client.add_entity_request_handler(Self::handle_pull_workspace_diagnostics);
-        client.add_entity_request_handler(Self::handle_lsp_get_completions);
-        client.add_entity_request_handler(Self::handle_lsp_command::<GetDocumentHighlights>);
-        client.add_entity_request_handler(Self::handle_lsp_command::<GetDocumentSymbols>);
-        client.add_entity_request_handler(Self::handle_lsp_command::<PrepareRename>);
-        client.add_entity_request_handler(Self::handle_lsp_command::<PerformRename>);
-        client.add_entity_request_handler(Self::handle_lsp_command::<LinkedEditingRange>);
-
-        client.add_entity_request_handler(Self::handle_lsp_ext_cancel_flycheck);
-        client.add_entity_request_handler(Self::handle_lsp_ext_run_flycheck);
-        client.add_entity_request_handler(Self::handle_lsp_ext_clear_flycheck);
-        client.add_entity_request_handler(Self::handle_lsp_command::<lsp_ext_command::ExpandMacro>);
-        client.add_entity_request_handler(Self::handle_lsp_command::<lsp_ext_command::OpenDocs>);
-        client.add_entity_request_handler(
-            Self::handle_lsp_command::<lsp_ext_command::GoToParentModule>,
-        );
-        client.add_entity_request_handler(
-            Self::handle_lsp_command::<lsp_ext_command::GetLspRunnables>,
-        );
-        client.add_entity_request_handler(
-            Self::handle_lsp_command::<lsp_ext_command::SwitchSourceHeader>,
-        );
+        register_lsp_handlers(client);
     }
 
     pub fn as_remote(&self) -> Option<&RemoteLspStore> {
