@@ -34,6 +34,7 @@ mod workspace_id;
 mod workspace_providers;
 mod workspace_registries;
 mod workspace_settings;
+mod workspace_types;
 
 pub use dock::Panel;
 pub use multi_workspace::{
@@ -130,7 +131,6 @@ use std::{
     cell::{Cell, RefCell},
     cmp,
     collections::VecDeque,
-    hash::Hash,
     path::{Path, PathBuf},
     rc::Rc,
     sync::{
@@ -167,6 +167,9 @@ pub(crate) use workspace_registries::{
 pub use workspace_settings::{
     AutosaveSetting, EncodingDisplayOptions, FocusFollowsMouse, RestoreOnStartupBehavior,
     SidebarSettings, StatusBarSettings, TabBarSettings, ToolbarSettings, WorkspaceSettings,
+};
+pub use workspace_types::{
+    ActiveWorktreeCreation, AutoWatch, CollaboratorId, OpenMode, PreviousWorkspaceState, ViewId,
 };
 
 pub(crate) fn workspace_card_gap(cx: &App) -> Pixels {
@@ -349,45 +352,10 @@ struct GlobalAppState(Arc<AppState>);
 
 impl Global for GlobalAppState {}
 
-/// Tracks worktree creation progress for the workspace.
-/// Read by the title bar to show a loading indicator on the worktree button.
-#[derive(Default)]
-pub struct ActiveWorktreeCreation {
-    pub label: Option<SharedString>,
-    pub is_switch: bool,
-}
-
-/// Captured workspace state used when switching between worktrees.
-/// Stores the layout and open files so they can be restored in the new workspace.
-pub struct PreviousWorkspaceState {
-    pub dock_structure: DockStructure,
-    pub open_file_paths: Vec<PathBuf>,
-    pub active_file_path: Option<PathBuf>,
-    pub focused_dock: Option<DockPosition>,
-}
-
 pub struct WorkspaceStore {
     workspaces: HashSet<(gpui::AnyWindowHandle, WeakEntity<Workspace>)>,
     client: Arc<Client>,
     _subscriptions: Vec<client::Subscription>,
-}
-
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
-pub enum CollaboratorId {
-    PeerId(PeerId),
-    Agent,
-}
-
-impl From<PeerId> for CollaboratorId {
-    fn from(peer_id: PeerId) -> Self {
-        CollaboratorId::PeerId(peer_id)
-    }
-}
-
-impl From<&PeerId> for CollaboratorId {
-    fn from(peer_id: &PeerId) -> Self {
-        CollaboratorId::PeerId(*peer_id)
-    }
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
@@ -652,12 +620,6 @@ pub struct Workspace {
 
 impl EventEmitter<Event> for Workspace {}
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct ViewId {
-    pub creator: CollaboratorId,
-    pub id: u64,
-}
-
 pub struct FollowerState {
     center_pane: Entity<Pane>,
     dock_pane: Option<Entity<Pane>>,
@@ -665,33 +627,9 @@ pub struct FollowerState {
     items_by_leader_view_id: HashMap<ViewId, FollowerView>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AutoWatch {
-    Off,
-    Active { watched_peer: Option<PeerId> },
-    Paused,
-}
-
-impl AutoWatch {
-    pub fn enabled(&self) -> bool {
-        matches!(self, AutoWatch::Active { .. } | AutoWatch::Paused)
-    }
-}
-
 struct FollowerView {
     view: Box<dyn FollowableItemHandle>,
     location: Option<proto::PanelId>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum OpenMode {
-    /// Open the workspace in a new window.
-    NewWindow,
-    /// Add to the window's multi workspace without activating it (used during deserialization).
-    Add,
-    /// Add to the window's multi workspace and activate it.
-    #[default]
-    Activate,
 }
 
 impl Workspace {
@@ -8474,29 +8412,6 @@ impl WorkspaceStore {
         &self,
     ) -> impl Iterator<Item = (gpui::AnyWindowHandle, &WeakEntity<Workspace>)> {
         self.workspaces.iter().map(|(window, weak)| (*window, weak))
-    }
-}
-
-impl ViewId {
-    pub(crate) fn from_proto(message: proto::ViewId) -> Result<Self> {
-        Ok(Self {
-            creator: message
-                .creator
-                .map(CollaboratorId::PeerId)
-                .context("creator is missing")?,
-            id: message.id,
-        })
-    }
-
-    pub(crate) fn to_proto(self) -> Option<proto::ViewId> {
-        if let CollaboratorId::PeerId(peer_id) = self.creator {
-            Some(proto::ViewId {
-                creator: Some(peer_id),
-                id: self.id,
-            })
-        } else {
-            None
-        }
     }
 }
 
