@@ -40,6 +40,7 @@ mod workspace_event;
 mod workspace_id;
 mod workspace_keystrokes;
 mod workspace_location_helpers;
+mod workspace_notifications;
 mod workspace_open_items;
 mod workspace_open_options;
 mod workspace_open_prompt;
@@ -142,7 +143,7 @@ use settings::{
 };
 
 pub(crate) use delayed_edit_action::DelayedDebouncedEditAction;
-use mav_actions::{Spawn, feedback::FileBugReport, theme::ToggleMode};
+use mav_actions::{Spawn, theme::ToggleMode};
 pub use remote_workspace_position::{WorkspacePosition, remote_workspace_position_from_db};
 use status_bar::StatusBar;
 pub use status_bar::{HideStatusItem, StatusItemView, add_hide_button_entry};
@@ -180,6 +181,7 @@ use workspace_keystrokes::DispatchingKeystrokes;
 pub use workspace_location_helpers::{
     WorkspaceHandle, last_opened_workspace_location, last_session_workspace_locations,
 };
+use workspace_notifications::notify_if_database_failed;
 pub(crate) use workspace_open_items::open_items;
 pub use workspace_open_options::{OpenOptions, OpenResult, OpenVisible, WorkspaceMatching};
 use workspace_open_prompt::prompt_and_open_paths;
@@ -7678,34 +7680,6 @@ fn dock_has_focus_target(dock: &Entity<Dock>, cx: &App) -> bool {
 
     dock.active_panel()
         .is_some_and(|panel| PanelPaneKind::for_panel_key(panel.panel_key()).is_none())
-}
-
-fn notify_if_database_failed(window: WindowHandle<MultiWorkspace>, cx: &mut AsyncApp) {
-    window
-        .update(cx, |multi_workspace, _, cx| {
-            let workspace = multi_workspace.workspace().clone();
-            workspace.update(cx, |workspace, cx| {
-                if (*db::ALL_FILE_DB_FAILED).load(std::sync::atomic::Ordering::Acquire) {
-                    struct DatabaseFailedNotification;
-
-                    workspace.show_notification(
-                        NotificationId::unique::<DatabaseFailedNotification>(),
-                        cx,
-                        |cx| {
-                            cx.new(|cx| {
-                                MessageNotification::new("Failed to load the database file.", cx)
-                                    .primary_message("File an Issue")
-                                    .primary_icon(IconName::Plus)
-                                    .primary_on_click(|window, cx| {
-                                        window.dispatch_action(Box::new(FileBugReport), cx)
-                                    })
-                            })
-                        },
-                    );
-                }
-            });
-        })
-        .log_err();
 }
 
 impl Focusable for Workspace {
