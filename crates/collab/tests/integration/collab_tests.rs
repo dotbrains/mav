@@ -20,10 +20,12 @@ mod following_tests;
 mod git_tests;
 mod integration_tests;
 mod notification_tests;
+mod project_save_sync_tests;
 mod random_channel_buffer_tests;
 mod random_project_collaboration_tests;
 mod randomized_test_helpers;
 mod remote_editing_collaboration_tests;
+mod remote_git_diff_tests;
 mod test_server;
 
 pub use randomized_test_helpers::{
