@@ -106,6 +106,8 @@ mod selection_history;
 mod selection_state;
 #[path = "editor/snapshot.rs"]
 mod snapshot;
+#[path = "editor/state_types.rs"]
+mod state_types;
 
 pub(crate) use actions::*;
 pub use addon::Addon;
@@ -208,6 +210,11 @@ pub use selection_state::{ColumnarMode, SelectMode, SelectPhase, SelectionEffect
 pub use snapshot::{EditorSnapshot, GutterDimensions, column_pixels};
 pub use split::{SplittableEditor, ToggleSplitDiff};
 pub use split_editor_view::SplitEditorView;
+pub(crate) use state_types::{
+    AccentData, CharacterDimensions, FocusedBlock, LineHighlight, NavigationData,
+    NextScrollCursorCenterTopBottom, debounce_value,
+};
+pub use state_types::{RenameState, multibuffer_context_lines};
 pub use text::Bias;
 
 use ::git::{Blame, status::FileStatus};
@@ -700,65 +707,6 @@ pub struct Editor {
     sticky_headers_task: Task<()>,
     sticky_headers: Option<Vec<OutlineItem<Anchor>>>,
     pub(crate) colorize_brackets_task: Task<()>,
-}
-
-#[derive(Debug, PartialEq)]
-struct AccentData {
-    colors: AccentColors,
-    overrides: Vec<SharedString>,
-}
-
-fn debounce_value(debounce_ms: u64) -> Option<Duration> {
-    if debounce_ms > 0 {
-        Some(Duration::from_millis(debounce_ms))
-    } else {
-        None
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
-enum NextScrollCursorCenterTopBottom {
-    #[default]
-    Center,
-    Top,
-    Bottom,
-}
-
-impl NextScrollCursorCenterTopBottom {
-    fn next(&self) -> Self {
-        match self {
-            Self::Center => Self::Top,
-            Self::Top => Self::Bottom,
-            Self::Bottom => Self::Center,
-        }
-    }
-}
-
-struct CharacterDimensions {
-    em_width: Pixels,
-    em_advance: Pixels,
-    line_height: Pixels,
-}
-
-#[doc(hidden)]
-pub struct RenameState {
-    pub range: Range<Anchor>,
-    pub old_name: Arc<str>,
-    pub editor: Entity<Editor>,
-    block_id: CustomBlockId,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct NavigationData {
-    cursor_anchor: Anchor,
-    cursor_position: Point,
-    scroll_anchor: ScrollAnchor,
-    scroll_top_row: u32,
-}
-
-pub(crate) struct FocusedBlock {
-    id: BlockId,
-    focus_handle: WeakFocusHandle,
 }
 
 impl Editor {
@@ -10071,18 +10019,3 @@ impl Render for Editor {
 }
 
 const UPDATE_DEBOUNCE: Duration = Duration::from_millis(50);
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct LineHighlight {
-    pub background: Background,
-    pub border: Option<gpui::Hsla>,
-    pub include_gutter: bool,
-    pub type_id: Option<TypeId>,
-}
-
-pub fn multibuffer_context_lines(cx: &App) -> u32 {
-    EditorSettings::try_get(cx)
-        .map(|settings| settings.excerpt_context_lines)
-        .unwrap_or(2)
-        .min(32)
-}
