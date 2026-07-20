@@ -1,7 +1,9 @@
-use super::{MultiWorkspace, WorkspaceLocation};
+use super::{AppState, MultiWorkspace, OpenMode, Workspace, WorkspaceLocation};
 use crate::persistence::model::SerializedWorkspaceLocation;
+use anyhow::Context as _;
 use gpui::{App, AsyncApp, WindowHandle};
 use remote::RemoteConnectionOptions;
+use std::sync::Arc;
 
 pub fn activate_any_workspace_window(cx: &mut AsyncApp) -> Option<WindowHandle<MultiWorkspace>> {
     cx.update(|cx| {
@@ -22,6 +24,29 @@ pub fn activate_any_workspace_window(cx: &mut AsyncApp) -> Option<WindowHandle<M
         }
         None
     })
+}
+
+pub async fn get_any_active_multi_workspace(
+    app_state: Arc<AppState>,
+    mut cx: AsyncApp,
+) -> anyhow::Result<WindowHandle<MultiWorkspace>> {
+    // find an existing workspace to focus and show call controls
+    let active_window = activate_any_workspace_window(&mut cx);
+    if active_window.is_none() {
+        cx.update(|cx| {
+            Workspace::new_local(
+                vec![],
+                app_state.clone(),
+                None,
+                None,
+                None,
+                OpenMode::Activate,
+                cx,
+            )
+        })
+        .await?;
+    }
+    activate_any_workspace_window(&mut cx).context("could not open mav")
 }
 
 pub fn workspace_windows_for_location(

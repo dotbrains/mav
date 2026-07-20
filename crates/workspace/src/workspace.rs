@@ -191,7 +191,9 @@ pub use workspace_store::WorkspaceStore;
 pub use workspace_types::{
     ActiveWorktreeCreation, AutoWatch, CollaboratorId, OpenMode, PreviousWorkspaceState, ViewId,
 };
-pub use workspace_window_lookup::{activate_any_workspace_window, workspace_windows_for_location};
+pub use workspace_window_lookup::{
+    activate_any_workspace_window, get_any_active_multi_workspace, workspace_windows_for_location,
+};
 
 pub(crate) fn workspace_card_gap(cx: &App) -> Pixels {
     gpui::px(WorkspaceSettings::get_global(cx).card_gap.max(0.0))
@@ -8567,29 +8569,6 @@ pub fn join_channel(
         // return ok, we showed the error to the user.
         anyhow::Ok(())
     })
-}
-
-pub async fn get_any_active_multi_workspace(
-    app_state: Arc<AppState>,
-    mut cx: AsyncApp,
-) -> anyhow::Result<WindowHandle<MultiWorkspace>> {
-    // find an existing workspace to focus and show call controls
-    let active_window = activate_any_workspace_window(&mut cx);
-    if active_window.is_none() {
-        cx.update(|cx| {
-            Workspace::new_local(
-                vec![],
-                app_state.clone(),
-                None,
-                None,
-                None,
-                OpenMode::Activate,
-                cx,
-            )
-        })
-        .await?;
-    }
-    activate_any_workspace_window(&mut cx).context("could not open mav")
 }
 
 pub async fn find_existing_workspace(
