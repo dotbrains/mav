@@ -18,7 +18,7 @@
     8171	crates/outline_panel/src/outline_panel.rs
     8142	crates/acp_thread/src/acp_thread.rs
     8120	crates/agent/src/thread.rs
-    5651	crates/agent/src/tests/mod.rs
+    5004	crates/agent/src/tests/mod.rs
     7609	crates/project_panel/src/project_panel.rs
     7399	crates/collab/tests/integration/integration_tests.rs
     7141	crates/zeta_prompt/src/zeta_prompt.rs
