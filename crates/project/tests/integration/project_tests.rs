@@ -79,6 +79,9 @@ mod signature_help;
 mod task_inventory;
 mod task_language_servers;
 mod trusted_worktrees;
+mod trusted_worktrees_basic;
+mod trusted_worktrees_cycles;
+mod trusted_worktrees_path_coverage;
 mod yarn;
 
 pub(crate) use project_git_helpers::*;

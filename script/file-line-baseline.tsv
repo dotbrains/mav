@@ -388,7 +388,7 @@
      969	crates/collab/tests/integration/db_tests/channel_tests.rs
      966	crates/edit_prediction/src/zeta.rs
      966	crates/debugger_ui/src/session/running/stack_frame_list.rs
-     957	crates/project/tests/integration/trusted_worktrees.rs
+    35	crates/project/tests/integration/trusted_worktrees.rs
      957	crates/docs_preprocessor/src/main.rs
      955	crates/scheduler/src/test_scheduler.rs
      952	crates/agent_ui/src/conversation_view/thread_search_bar.rs
