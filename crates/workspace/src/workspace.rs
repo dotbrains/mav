@@ -44,6 +44,7 @@ mod workspace_registries;
 mod workspace_settings;
 mod workspace_store;
 mod workspace_types;
+mod workspace_window_lookup;
 
 pub use active_call::{
     ActiveCallEvent, AnyActiveCall, GlobalAnyActiveCall, ParticipantLocation, RemoteCollaborator,
@@ -190,6 +191,7 @@ pub use workspace_store::WorkspaceStore;
 pub use workspace_types::{
     ActiveWorktreeCreation, AutoWatch, CollaboratorId, OpenMode, PreviousWorkspaceState, ViewId,
 };
+pub use workspace_window_lookup::{activate_any_workspace_window, workspace_windows_for_location};
 
 pub(crate) fn workspace_card_gap(cx: &App) -> Pixels {
     gpui::px(WorkspaceSettings::get_global(cx).card_gap.max(0.0))
@@ -8588,77 +8590,6 @@ pub async fn get_any_active_multi_workspace(
         .await?;
     }
     activate_any_workspace_window(&mut cx).context("could not open mav")
-}
-
-pub fn activate_any_workspace_window(cx: &mut AsyncApp) -> Option<WindowHandle<MultiWorkspace>> {
-    cx.update(|cx| {
-        if let Some(workspace_window) = cx
-            .active_window()
-            .and_then(|window| window.downcast::<MultiWorkspace>())
-        {
-            return Some(workspace_window);
-        }
-
-        for window in cx.windows() {
-            if let Some(workspace_window) = window.downcast::<MultiWorkspace>() {
-                workspace_window
-                    .update(cx, |_, window, _| window.activate_window())
-                    .ok();
-                return Some(workspace_window);
-            }
-        }
-        None
-    })
-}
-
-pub fn workspace_windows_for_location(
-    serialized_location: &SerializedWorkspaceLocation,
-    cx: &App,
-) -> Vec<WindowHandle<MultiWorkspace>> {
-    cx.windows()
-        .into_iter()
-        .filter_map(|window| window.downcast::<MultiWorkspace>())
-        .filter(|multi_workspace| {
-            let same_host = |left: &RemoteConnectionOptions, right: &RemoteConnectionOptions| match (left, right) {
-                (RemoteConnectionOptions::Ssh(a), RemoteConnectionOptions::Ssh(b)) => {
-                    (&a.host, &a.username, &a.port) == (&b.host, &b.username, &b.port)
-                }
-                (RemoteConnectionOptions::Wsl(a), RemoteConnectionOptions::Wsl(b)) => {
-                    // The WSL username is not consistently populated in the workspace location, so ignore it for now.
-                    a.distro_name == b.distro_name
-                }
-                (RemoteConnectionOptions::Docker(a), RemoteConnectionOptions::Docker(b)) => {
-                    a.container_id == b.container_id
-                }
-                #[cfg(any(test, feature = "test-support"))]
-                (RemoteConnectionOptions::Mock(a), RemoteConnectionOptions::Mock(b)) => {
-                    a.id == b.id
-                }
-                _ => false,
-            };
-
-            multi_workspace.read(cx).is_ok_and(|multi_workspace| {
-                multi_workspace.workspaces().any(|workspace| {
-                    match workspace.read(cx).workspace_location(cx) {
-                        WorkspaceLocation::Location(location, _) => {
-                            match (&location, serialized_location) {
-                                (
-                                    SerializedWorkspaceLocation::Local,
-                                    SerializedWorkspaceLocation::Local,
-                                ) => true,
-                                (
-                                    SerializedWorkspaceLocation::Remote(a),
-                                    SerializedWorkspaceLocation::Remote(b),
-                                ) => same_host(a, b),
-                                _ => false,
-                            }
-                        }
-                        _ => false,
-                    }
-                })
-            })
-        })
-        .collect()
 }
 
 pub async fn find_existing_workspace(
