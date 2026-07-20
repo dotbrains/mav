@@ -173,7 +173,7 @@
     1814	crates/agent_settings/src/agent_settings.rs
     1805	crates/project/src/context_server_store.rs
     1799	crates/gpui_macos/src/metal_renderer.rs
-    1794	crates/project/tests/integration/git_store.rs
+    0	crates/project/tests/integration/git_store.rs
     1793	crates/sandbox/src/windows_wsl.rs
     1783	crates/git_ui/src/worktree_service.rs
     1777	crates/collab/tests/integration/remote_editing_collaboration_tests.rs
