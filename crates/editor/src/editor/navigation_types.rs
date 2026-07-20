@@ -31,6 +31,15 @@ pub enum MultibufferSelectionMode {
     All,
 }
 
+/// If select range has more than one line, point the cursor to range.start.
+pub fn collapse_multiline_range(range: Range<Point>) -> Range<Point> {
+    if range.start.row == range.end.row {
+        range
+    } else {
+        range.start..range.start
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 pub struct RewrapOptions {
     pub override_language_settings: bool,
