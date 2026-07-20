@@ -1,14 +1,15 @@
 use super::*;
+#[path = "editor/completion_edits.rs"]
+mod completion_edits;
+use completion_edits::{CompletionEdit, process_completion_for_edit};
 
 impl Editor {
     pub fn set_completion_provider(&mut self, provider: Option<Rc<dyn CompletionProvider>>) {
         self.completion_provider = provider;
     }
-
     pub fn set_show_completions_on_input(&mut self, show_completions_on_input: Option<bool>) {
         self.show_completions_on_input_override = show_completions_on_input;
     }
-
     pub fn text_layout_details(&self, window: &mut Window, cx: &mut App) -> TextLayoutDetails {
         TextLayoutDetails {
             text_system: window.text_system().clone(),
@@ -19,7 +20,6 @@ impl Editor {
             vertical_scroll_margin: self.scroll_manager.vertical_scroll_margin,
         }
     }
-
     pub fn show_word_completions(
         &mut self,
         _: &ShowWordCompletions,
