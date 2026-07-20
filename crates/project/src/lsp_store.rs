@@ -24,6 +24,7 @@ pub mod lsp_ext_command;
 mod progress_token;
 pub mod rust_analyzer_ext;
 mod semantic_tokens;
+mod server_identity;
 pub mod vue_language_server_ext;
 
 use self::code_lens::CodeLensData;
@@ -50,7 +51,7 @@ use crate::{
         ManifestTree,
     },
     prettier_store::{self, PrettierStore, PrettierStoreEvent},
-    project_settings::{BinarySettings, LspSettings, ProjectSettings},
+    project_settings::{LspSettings, ProjectSettings},
     toolchain_store::{LocalToolchainStore, ToolchainStoreEvent},
     trusted_worktrees::{PathTrust, TrustedWorktrees, TrustedWorktreesEvent},
     worktree_store::{WorktreeStore, WorktreeStoreEvent},
@@ -170,6 +171,9 @@ pub use progress_token::ProgressToken;
 pub use semantic_tokens::{
     BufferSemanticToken, BufferSemanticTokens, RefreshForServer, SemanticTokenStylizer, TokenType,
 };
+use server_identity::{
+    DynamicRegistrations, LanguageServerSeed, LanguageServerSeedSettings, UnifiedLanguageServer,
+};
 
 pub use worktree::{
     Entry, EntryKind, FS_WATCH_LATENCY, File, LocalWorktree, PathChange, ProjectEntryId,
@@ -181,36 +185,6 @@ pub const SERVER_PROGRESS_THROTTLE_TIMEOUT: Duration = Duration::from_millis(100
 const WORKSPACE_DIAGNOSTICS_TOKEN_START: &str = "id:";
 const SERVER_DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(10);
 static NEXT_PROMPT_REQUEST_ID: AtomicUsize = AtomicUsize::new(0);
-
-#[derive(Clone)]
-struct UnifiedLanguageServer {
-    id: LanguageServerId,
-    project_roots: HashSet<Arc<RelPath>>,
-}
-
-/// Settings that affect language server identity.
-///
-/// Dynamic settings (`LspSettings::settings`) are excluded because they can be
-/// updated via `workspace/didChangeConfiguration` without restarting the server.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-struct LanguageServerSeedSettings {
-    binary: Option<BinarySettings>,
-    initialization_options: Option<serde_json::Value>,
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-struct LanguageServerSeed {
-    worktree_id: WorktreeId,
-    name: LanguageServerName,
-    toolchain: Option<Toolchain>,
-    settings: LanguageServerSeedSettings,
-}
-
-#[derive(Default, Debug)]
-struct DynamicRegistrations {
-    did_change_watched_files: HashSet<String>,
-    diagnostics: HashMap<Option<String>, DiagnosticServerCapabilities>,
-}
 
 pub struct LocalLspStore {
     weak: WeakEntity<LspStore>,
