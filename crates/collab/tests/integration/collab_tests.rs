@@ -5,6 +5,8 @@ use gpui::{Entity, TestAppContext};
 mod auto_watch_tests;
 mod call_concurrency_tests;
 mod call_lifecycle_tests;
+mod call_multi_connection_tests;
+mod call_project_sharing_tests;
 mod call_room_state_tests;
 mod call_server_restart_tests;
 mod channel_buffer_tests;
