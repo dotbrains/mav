@@ -79,3 +79,77 @@ fn test_parse_git_commit_url(cx: &mut TestAppContext) {
             .contains("missing repo query parameter")
     );
 }
+
+#[gpui::test]
+fn test_parse_git_clone_url(cx: &mut TestAppContext) {
+    let _app_state = init_test(cx);
+
+    let request = cx.update(|cx| {
+        OpenRequest::parse(
+            RawOpenRequest {
+                urls: vec![
+                    "mav://git/clone/?repo=https://github.com/mav-industries/mav.git".into(),
+                ],
+                ..Default::default()
+            },
+            cx,
+        )
+        .unwrap()
+    });
+
+    match request.kind {
+        Some(OpenRequestKind::GitClone { repo_url }) => {
+            assert_eq!(repo_url, "https://github.com/mav-industries/mav.git");
+        }
+        _ => panic!("Expected GitClone kind"),
+    }
+}
+
+#[gpui::test]
+fn test_parse_git_clone_url_without_slash(cx: &mut TestAppContext) {
+    let _app_state = init_test(cx);
+
+    let request = cx.update(|cx| {
+        OpenRequest::parse(
+            RawOpenRequest {
+                urls: vec!["mav://git/clone?repo=https://github.com/mav-industries/mav.git".into()],
+                ..Default::default()
+            },
+            cx,
+        )
+        .unwrap()
+    });
+
+    match request.kind {
+        Some(OpenRequestKind::GitClone { repo_url }) => {
+            assert_eq!(repo_url, "https://github.com/mav-industries/mav.git");
+        }
+        _ => panic!("Expected GitClone kind"),
+    }
+}
+
+#[gpui::test]
+fn test_parse_git_clone_url_with_encoding(cx: &mut TestAppContext) {
+    let _app_state = init_test(cx);
+
+    let request = cx.update(|cx| {
+        OpenRequest::parse(
+            RawOpenRequest {
+                urls: vec![
+                    "mav://git/clone/?repo=https%3A%2F%2Fgithub.com%2Fmav-industries%2Fmav.git"
+                        .into(),
+                ],
+                ..Default::default()
+            },
+            cx,
+        )
+        .unwrap()
+    });
+
+    match request.kind {
+        Some(OpenRequestKind::GitClone { repo_url }) => {
+            assert_eq!(repo_url, "https://github.com/mav-industries/mav.git");
+        }
+        _ => panic!("Expected GitClone kind"),
+    }
+}
