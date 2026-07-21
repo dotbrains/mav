@@ -112,6 +112,13 @@ pub(super) struct InlineDecorationLayouts {
     pub(super) inline_code_actions: Option<AnyElement>,
 }
 
+pub(super) struct GutterIndicatorLayouts {
+    pub(super) test_indicators: Vec<AnyElement>,
+    pub(super) bookmarks: Vec<AnyElement>,
+    pub(super) breakpoints: Vec<AnyElement>,
+    pub(super) diff_review_button: Option<AnyElement>,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,
