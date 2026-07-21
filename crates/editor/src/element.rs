@@ -39,6 +39,7 @@ mod position_map;
 mod prepaint_helpers;
 mod register_actions;
 mod request_layout;
+mod row_activity;
 mod row_highlights;
 mod scrollbar_layouts;
 mod scrollbar_markers;
@@ -494,41 +495,17 @@ impl Element for EditorElement {
                             cx,
                         );
 
-                    // relative rows are based on newest selection, even outside the visible area
-                    let current_selection_head = self.editor.update(cx, |editor, cx| {
-                        (editor.selections.count() != 0).then(|| {
-                            let newest = editor
-                                .selections
-                                .newest::<Point>(&editor.display_snapshot(cx));
-
-                            SelectionLayout::new(
-                                newest,
-                                editor.selections.line_mode(),
-                                editor.cursor_offset_on_selection,
-                                editor.cursor_shape,
-                                &snapshot,
-                                true,
-                                true,
-                                None,
-                            )
-                            .head
-                            .row()
-                        })
-                    });
-
-                    let run_indicator_rows = self.editor.update(cx, |editor, cx| {
-                        editor.active_run_indicators(start_row..end_row, window, cx)
-                    });
-
-                    let mut breakpoint_rows = self.editor.update(cx, |editor, cx| {
-                        editor.active_breakpoints(start_row..end_row, window, cx)
-                    });
-
-                    for (display_row, (_, bp, state)) in &breakpoint_rows {
-                        if bp.is_enabled() && state.is_none_or(|s| s.verified) {
-                            active_rows.entry(*display_row).or_default().breakpoint = true;
-                        }
-                    }
+                    let layout_data::RowActivity {
+                        current_selection_head,
+                        run_indicator_rows,
+                        mut breakpoint_rows,
+                    } = self.layout_row_activity(
+                        start_row..end_row,
+                        &snapshot,
+                        &mut active_rows,
+                        window,
+                        cx,
+                    );
 
                     let gutter = Gutter {
                         line_height,

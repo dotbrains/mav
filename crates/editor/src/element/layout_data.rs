@@ -71,6 +71,13 @@ pub(super) struct EditorSurface {
     pub(super) content_origin: gpui::Point<Pixels>,
 }
 
+pub(super) struct RowActivity {
+    pub(super) current_selection_head: Option<DisplayRow>,
+    pub(super) run_indicator_rows: HashSet<DisplayRow>,
+    pub(super) breakpoint_rows:
+        HashMap<DisplayRow, (Anchor, Breakpoint, Option<BreakpointSessionState>)>,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,
