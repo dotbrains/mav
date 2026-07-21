@@ -25,12 +25,16 @@ mod edits_summary;
 mod fast_mode_controls;
 #[path = "thread_view/fast_mode_warning.rs"]
 mod fast_mode_warning;
+#[path = "thread_view/feedback_editor.rs"]
+mod feedback_editor;
 #[path = "thread_view/feedback_state.rs"]
 mod feedback_state;
 #[path = "thread_view/generation_state.rs"]
 mod generation_state;
 #[path = "thread_view/link_opening.rs"]
 mod link_opening;
+#[path = "thread_view/markdown_helpers.rs"]
+mod markdown_helpers;
 #[path = "thread_view/message_context_menu.rs"]
 mod message_context_menu;
 #[path = "thread_view/message_controls.rs"]
@@ -3119,64 +3123,6 @@ impl ThreadView {
         }
     }
 
-    fn render_feedback_feedback_editor(editor: Entity<Editor>, cx: &Context<Self>) -> Div {
-        h_flex()
-            .key_context("AgentFeedbackMessageEditor")
-            .on_action(cx.listener(move |this, _: &menu::Cancel, _, cx| {
-                this.thread_feedback.dismiss_comments();
-                cx.notify();
-            }))
-            .on_action(cx.listener(move |this, _: &menu::Confirm, _window, cx| {
-                this.submit_feedback_message(cx);
-            }))
-            .p_2()
-            .mb_2()
-            .mx_5()
-            .gap_1()
-            .rounded_md()
-            .border_1()
-            .border_color(cx.theme().colors().border)
-            .bg(cx.theme().colors().editor_background)
-            .child(div().w_full().child(editor))
-            .child(
-                h_flex()
-                    .child(
-                        IconButton::new("dismiss-feedback-message", IconName::Close)
-                            .icon_color(Color::Error)
-                            .icon_size(IconSize::XSmall)
-                            .shape(ui::IconButtonShape::Square)
-                            .on_click(cx.listener(move |this, _, _window, cx| {
-                                this.thread_feedback.dismiss_comments();
-                                cx.notify();
-                            })),
-                    )
-                    .child(
-                        IconButton::new("submit-feedback-message", IconName::Return)
-                            .icon_size(IconSize::XSmall)
-                            .shape(ui::IconButtonShape::Square)
-                            .on_click(cx.listener(move |this, _, _window, cx| {
-                                this.submit_feedback_message(cx);
-                            })),
-                    ),
-            )
-    }
-
-    pub fn open_thread_as_markdown(
-        &self,
-        workspace: Entity<Workspace>,
-        window: &mut Window,
-        cx: &mut App,
-    ) -> Task<Result<()>> {
-        let thread = self.thread.read(cx);
-        let thread_title = thread
-            .title()
-            .unwrap_or_else(|| DEFAULT_THREAD_TITLE.into())
-            .to_string();
-        let markdown = thread.to_markdown(cx);
-
-        open_markdown_in_workspace(thread_title, markdown, workspace, window, cx)
-    }
-
     fn render_tool_call(
         &self,
         active_session_id: &acp::SessionId,
@@ -3683,21 +3629,6 @@ impl ThreadView {
                 }
             })
             .children(tool_output_display)
-    }
-
-    fn render_markdown(
-        &self,
-        markdown: Entity<Markdown>,
-        style: MarkdownStyle,
-        cx: &App,
-    ) -> MarkdownElement {
-        render_agent_markdown(
-            markdown,
-            style,
-            &self.workspace,
-            &self.code_span_resolver,
-            cx,
-        )
     }
 }
 
