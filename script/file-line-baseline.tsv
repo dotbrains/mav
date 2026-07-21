@@ -51,7 +51,7 @@
    5619	crates/project/src/project.rs
     5677	crates/settings_ui/src/settings_ui.rs
    5654	crates/gpui/src/window.rs
-    5762	crates/editor/src/split.rs
+   5304	crates/editor/src/split.rs
     6276	crates/multi_buffer/src/multi_buffer_tests.rs
    5611	crates/language/src/buffer.rs
     5752	crates/workspace/src/persistence.rs
