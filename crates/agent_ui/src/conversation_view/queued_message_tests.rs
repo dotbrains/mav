@@ -184,6 +184,107 @@ async fn test_paste_image_into_queued_message_promotes_to_main_editor(cx: &mut T
     );
 }
 
+#[gpui::test]
+async fn test_queued_message_steer_defaults_off_and_toggles(cx: &mut TestAppContext) {
+    init_test(cx);
+
+    let (conversation_view, cx) =
+        setup_conversation_view(StubAgentServer::default_response(), cx).await;
+    add_to_workspace(conversation_view.clone(), cx);
+
+    let id = active_thread(&conversation_view, cx).update_in(cx, |thread, window, cx| {
+        thread.add_to_queue(
+            vec![acp::ContentBlock::Text(acp::TextContent::new(
+                "queued".to_string(),
+            ))],
+            vec![],
+            window,
+            cx,
+        );
+        thread.message_queue.first_id().unwrap()
+    });
+    cx.run_until_parked();
+
+    active_thread(&conversation_view, cx).read_with(cx, |thread, _cx| {
+        assert!(
+            !thread.message_queue.front_wants_steer(),
+            "steering should default off"
+        );
+    });
+
+    active_thread(&conversation_view, cx).update(cx, |thread, _cx| {
+        thread.message_queue.toggle_steer(id);
+    });
+    active_thread(&conversation_view, cx).read_with(cx, |thread, _cx| {
+        assert!(
+            thread.message_queue.front_wants_steer(),
+            "steering should be on after toggling"
+        );
+    });
+}
+
+#[gpui::test]
+async fn test_queue_resumes_after_stop_and_new_message(cx: &mut TestAppContext) {
+    init_test(cx);
+
+    let connection = StubAgentConnection::new();
+    let (conversation_view, cx) =
+        setup_conversation_view(StubAgentServer::new(connection.clone()), cx).await;
+    add_to_workspace(conversation_view.clone(), cx);
+
+    let message_editor = message_editor(&conversation_view, cx);
+    message_editor.update_in(cx, |editor, window, cx| {
+        editor.set_text("first", window, cx);
+    });
+    active_thread(&conversation_view, cx).update_in(cx, |view, window, cx| view.send(window, cx));
+    cx.run_until_parked();
+
+    active_thread(&conversation_view, cx).update_in(cx, |thread, window, cx| {
+        thread.add_to_queue(
+            vec![acp::ContentBlock::Text(acp::TextContent::new(
+                "queued".to_string(),
+            ))],
+            vec![],
+            window,
+            cx,
+        );
+    });
+
+    active_thread(&conversation_view, cx)
+        .update_in(cx, |thread, _window, cx| thread.cancel_generation(cx));
+    cx.run_until_parked();
+
+    let queue_len = active_thread(&conversation_view, cx)
+        .read_with(cx, |thread, _cx| thread.message_queue.len());
+    assert_eq!(queue_len, 1, "stopping must not send the queued message");
+
+    message_editor.update_in(cx, |editor, window, cx| {
+        editor.set_text("second", window, cx);
+    });
+    active_thread(&conversation_view, cx).update_in(cx, |view, window, cx| view.send(window, cx));
+    cx.run_until_parked();
+
+    let session_id = conversation_view.read_with(cx, |view, cx| {
+        view.active_thread()
+            .unwrap()
+            .read(cx)
+            .thread
+            .read(cx)
+            .session_id()
+            .clone()
+    });
+
+    connection.end_turn(session_id, acp::StopReason::EndTurn);
+    cx.run_until_parked();
+
+    let queue_len = active_thread(&conversation_view, cx)
+        .read_with(cx, |thread, _cx| thread.message_queue.len());
+    assert_eq!(
+        queue_len, 0,
+        "queued message should be auto-sent after the user re-engages"
+    );
+}
+
 async fn paste_into_queued_message(
     cx: &mut TestAppContext,
     clipboard: ClipboardItem,
