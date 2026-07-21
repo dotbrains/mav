@@ -100,6 +100,12 @@ pub(super) struct VerticalAutoscroll {
     pub(super) needs_horizontal_autoscroll: NeedsHorizontalAutoscroll,
 }
 
+pub(super) struct ScrollPositionLayout {
+    pub(super) scroll_position: gpui::Point<ScrollOffset>,
+    pub(super) scroll_pixel_position: gpui::Point<ScrollPixelOffset>,
+    pub(super) scroll_max: gpui::Point<ScrollPixelOffset>,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,
