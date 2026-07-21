@@ -129,6 +129,10 @@ pub(super) struct DiffHunkControlLayouts {
     pub(super) diff_hunk_control_bounds: Vec<(DisplayRow, Bounds<Pixels>)>,
 }
 
+pub(super) struct PositionMapLayout {
+    pub(super) position_map: Rc<PositionMap>,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,

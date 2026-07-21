@@ -29,6 +29,64 @@ pub struct PointForPosition {
     pub column_overshoot_after_line_end: u32,
 }
 
+impl EditorElement {
+    pub(super) fn layout_position_map(
+        &self,
+        size: Size<Pixels>,
+        visible_row_range: Range<DisplayRow>,
+        scroll_position: gpui::Point<ScrollOffset>,
+        scroll_pixel_position: gpui::Point<ScrollPixelOffset>,
+        scroll_max: gpui::Point<ScrollPixelOffset>,
+        line_layouts: Vec<LineWithInvisibles>,
+        line_height: Pixels,
+        em_advance: Pixels,
+        em_layout_width: Pixels,
+        snapshot: EditorSnapshot,
+        content_width: Pixels,
+        gutter_hitbox: &Hitbox,
+        text_hitbox: &Hitbox,
+        inline_blame_layout: Option<&InlineBlameLayout>,
+        display_hunks: &[(DisplayDiffHunk, Option<Hitbox>)],
+        diff_hunk_control_bounds: Vec<(DisplayRow, Bounds<Pixels>)>,
+        scrollbars_layout: Option<&EditorScrollbars>,
+        right_margin: Pixels,
+        cx: &mut App,
+    ) -> layout_data::PositionMapLayout {
+        let position_map = Rc::new(PositionMap {
+            size,
+            visible_row_range,
+            scroll_position,
+            scroll_pixel_position,
+            scroll_max,
+            line_layouts,
+            line_height,
+            em_advance,
+            em_layout_width,
+            snapshot,
+            text_align: self.style.text.text_align,
+            content_width,
+            gutter_hitbox: gutter_hitbox.clone(),
+            text_hitbox: text_hitbox.clone(),
+            inline_blame_bounds: inline_blame_layout
+                .map(|layout| (layout.bounds, layout.buffer_id, layout.entry.clone())),
+            display_hunks: display_hunks.to_vec(),
+            diff_hunk_control_bounds,
+        });
+
+        let visible_horizontal_scrollbar = scrollbars_layout.is_some_and(|scrollbars_layout| {
+            scrollbars_layout.visible && scrollbars_layout.horizontal.is_some()
+        });
+
+        self.editor.update(cx, |editor, _| {
+            editor.last_position_map = Some(position_map.clone());
+            editor.last_right_margin = right_margin;
+            editor.last_horizontal_scrollbar_visible = visible_horizontal_scrollbar;
+        });
+
+        layout_data::PositionMapLayout { position_map }
+    }
+}
+
 impl PointForPosition {
     pub fn as_valid(&self) -> Option<DisplayPoint> {
         if self.previous_valid == self.exact_unclipped && self.next_valid == self.exact_unclipped {

@@ -1080,9 +1080,9 @@ impl Element for EditorElement {
                         cx,
                     );
 
-                    let position_map = Rc::new(PositionMap {
-                        size: bounds.size,
-                        visible_row_range,
+                    let layout_data::PositionMapLayout { position_map } = self.layout_position_map(
+                        bounds.size,
+                        visible_row_range.clone(),
                         scroll_position,
                         scroll_pixel_position,
                         scroll_max,
@@ -1091,27 +1091,16 @@ impl Element for EditorElement {
                         em_advance,
                         em_layout_width,
                         snapshot,
-                        text_align: self.style.text.text_align,
-                        content_width: text_hitbox.size.width,
-                        gutter_hitbox: gutter_hitbox.clone(),
-                        text_hitbox: text_hitbox.clone(),
-                        inline_blame_bounds: inline_blame_layout
-                            .as_ref()
-                            .map(|layout| (layout.bounds, layout.buffer_id, layout.entry.clone())),
-                        display_hunks: display_hunks.clone(),
+                        text_hitbox.size.width,
+                        &gutter_hitbox,
+                        &text_hitbox,
+                        inline_blame_layout.as_ref(),
+                        &display_hunks,
                         diff_hunk_control_bounds,
-                    });
-
-                    let visible_horizontal_scrollbar =
-                        scrollbars_layout.as_ref().is_some_and(|scrollbars_layout| {
-                            scrollbars_layout.visible && scrollbars_layout.horizontal.is_some()
-                        });
-
-                    self.editor.update(cx, |editor, _| {
-                        editor.last_position_map = Some(position_map.clone());
-                        editor.last_right_margin = right_margin;
-                        editor.last_horizontal_scrollbar_visible = visible_horizontal_scrollbar;
-                    });
+                        scrollbars_layout.as_ref(),
+                        right_margin,
+                        cx,
+                    );
 
                     EditorLayout {
                         mode,
