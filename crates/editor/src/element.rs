@@ -16,6 +16,7 @@ mod diff_hunk_controls;
 mod document_colors;
 mod editor_layout;
 mod element_helpers;
+mod final_surface_layout;
 mod guides_layout;
 mod gutter;
 mod gutter_controls;
@@ -552,156 +553,70 @@ impl Element for EditorElement {
                         cx,
                     );
 
-                    let visible_row_range = start_row..end_row;
-                    let layout_data::CursorSurfaceLayouts {
+                    let final_surface_layout::FinalSurfaceLayouts {
                         cursors,
                         visible_cursors,
                         navigation_overlay_paint_commands,
                         scrollbars_layout,
-                    } = self.layout_cursor_surface(
+                        mouse_context_menu,
+                        test_indicators,
+                        bookmarks,
+                        breakpoints,
+                        diff_review_button,
+                        wrap_guides,
+                        minimap,
+                        tab_invisible,
+                        space_invisible,
+                        mode,
+                        diff_hunk_controls,
+                        position_map,
+                        crease_toggles,
+                        expand_toggles,
+                    } = self.layout_final_surface(
+                        bounds.size,
+                        start_row..end_row,
                         &snapshot,
                         &selections,
                         &row_block_types,
-                        visible_row_range.clone(),
-                        &line_layouts,
+                        line_layouts,
                         &text_hitbox,
+                        &gutter_hitbox,
                         content_origin,
                         scroll_position,
                         scroll_pixel_position,
+                        scroll_max,
                         line_height,
                         em_width,
                         em_advance,
+                        em_layout_width,
                         autoscroll_containing_element,
                         &redacted_ranges,
                         &scrollbar_layout_information,
                         content_offset,
                         right_margin,
                         editor_width,
-                        window,
-                        cx,
-                    );
-
-                    let gutter_settings = EditorSettings::get_global(cx).gutter;
-
-                    let layout_data::MenuPopoverLayouts { mouse_context_menu } = self
-                        .layout_menus_and_popovers(
-                            &snapshot,
-                            &hitbox,
-                            &text_hitbox,
-                            content_origin,
-                            right_margin,
-                            gutter_dimensions,
-                            scroll_pixel_position,
-                            newest_selection_head,
-                            start_row..end_row,
-                            &line_layouts,
-                            line_height,
-                            em_width,
-                            style,
-                            window,
-                            cx,
-                        );
-
-                    let layout_data::GutterIndicatorLayouts {
-                        test_indicators,
-                        bookmarks,
-                        breakpoints,
-                        diff_review_button,
-                    } = self.layout_gutter_indicators(
+                        &hitbox,
+                        gutter_dimensions,
                         &gutter,
-                        start_row..end_row,
                         &row_infos,
-                        &snapshot,
                         &run_indicator_rows,
                         &mut breakpoint_rows,
-                        gutter_settings,
-                        gutter_dimensions,
-                        line_height,
-                        em_width,
-                        window,
-                        cx,
-                    );
-
-                    window.with_element_namespace("crease_toggles", |window| {
-                        self.prepaint_crease_toggles(
-                            &mut crease_toggles,
-                            line_height,
-                            &gutter_dimensions,
-                            gutter_settings,
-                            scroll_position,
-                            start_row,
-                            &gutter_hitbox,
-                            window,
-                            cx,
-                        )
-                    });
-
-                    window.with_element_namespace("expand_toggles", |window| {
-                        self.prepaint_expand_toggles(&mut expand_toggles, window, cx)
-                    });
-
-                    let layout_data::FinalVisualLayouts {
-                        wrap_guides,
-                        minimap,
-                        tab_invisible,
-                        space_invisible,
-                        mode,
-                    } = self.layout_final_visuals(
-                        &snapshot,
-                        em_advance,
-                        scroll_position,
-                        content_origin,
-                        scrollbars_layout.as_ref(),
-                        vertical_scrollbar_width,
-                        &hitbox,
-                        minimap_width,
-                        &scrollbar_layout_information,
-                        font_size,
-                        window,
-                        cx,
-                    );
-
-                    let layout_data::DiffHunkControlLayouts {
-                        diff_hunk_controls,
-                        diff_hunk_control_bounds,
-                    } = self.layout_diff_hunk_control_phase(
+                        newest_selection_head,
+                        style,
+                        current_selection_head,
                         is_read_only,
                         &sticky_headers,
                         sticky_buffer_header.is_some() || sticky_header_excerpt_id.is_some(),
                         &blocks,
-                        scroll_position,
-                        start_row..end_row,
-                        &row_infos,
-                        &text_hitbox,
-                        current_selection_head,
-                        line_height,
-                        right_margin,
-                        scroll_pixel_position,
                         &display_hunks,
                         &highlighted_rows,
-                        window,
-                        cx,
-                    );
-
-                    let layout_data::PositionMapLayout { position_map } = self.layout_position_map(
-                        bounds.size,
-                        visible_row_range.clone(),
-                        scroll_position,
-                        scroll_pixel_position,
-                        scroll_max,
-                        line_layouts,
-                        line_height,
-                        em_advance,
-                        em_layout_width,
-                        snapshot,
-                        text_hitbox.size.width,
-                        &gutter_hitbox,
-                        &text_hitbox,
+                        vertical_scrollbar_width,
+                        minimap_width,
+                        font_size,
                         inline_blame_layout.as_ref(),
-                        &display_hunks,
-                        diff_hunk_control_bounds,
-                        scrollbars_layout.as_ref(),
-                        right_margin,
+                        &mut crease_toggles,
+                        &mut expand_toggles,
+                        window,
                         cx,
                     );
 
