@@ -24,6 +24,8 @@ mod sidebar_chrome_rendering;
 mod sidebar_constructor;
 #[path = "sidebar/sidebar_entries.rs"]
 mod sidebar_entries;
+#[path = "sidebar/sidebar_rebuild_helpers.rs"]
+mod sidebar_rebuild_helpers;
 #[path = "sidebar/sidebar_runtime.rs"]
 mod sidebar_runtime;
 #[path = "sidebar/sidebar_state.rs"]
@@ -133,9 +135,10 @@ use util::ResultExt as _;
 use util::path_list::PathList;
 use workspace::{
     CloseWindow, MultiWorkspace, MultiWorkspaceEvent, NextProject, NextThread, Open, OpenMode,
-    PreviousProject, PreviousThread, ProjectGroupKey, SaveIntent, Sidebar as WorkspaceSidebar,
-    SidebarRenderState, SidebarSettings, SidebarSide, Toast, ToggleSidebar, Workspace,
-    notifications::NotificationId, render_sidebar_header_controls_with_state,
+    PreviousProject, PreviousThread, ProjectGroup, ProjectGroupKey, SaveIntent,
+    Sidebar as WorkspaceSidebar, SidebarRenderState, SidebarSettings, SidebarSide, Toast,
+    ToggleSidebar, Workspace, notifications::NotificationId,
+    render_sidebar_header_controls_with_state,
 };
 
 use git_ui::worktree_service::{RemoteBranchName, worktree_create_targets};
@@ -228,68 +231,11 @@ impl Sidebar {
             .iter()
             .any(|ws| !workspace_path_list(ws, cx).paths().is_empty());
 
-        let resolve_agent_icon = |agent_id: &AgentId| -> (IconName, Option<SharedString>) {
-            let agent = Agent::from(agent_id.clone());
-            let icon = match agent {
-                Agent::NativeAgent => IconName::MavAgent,
-                Agent::Custom { .. } => IconName::Terminal,
-
-                _ => IconName::MavAgent,
-            };
-            let icon_from_external_svg = agent_server_store
-                .as_ref()
-                .and_then(|store| store.read(cx).agent_icon(&agent_id));
-            (icon, icon_from_external_svg)
-        };
-
         let groups = mw.project_groups(cx);
-        let mut live_notified_terminal_ids: HashSet<TerminalId> = HashSet::new();
-        for workspace in &workspaces {
-            if let Some(agent_panel) = workspace.read(cx).panel::<AgentPanel>(cx) {
-                live_notified_terminal_ids.extend(
-                    agent_panel
-                        .read(cx)
-                        .terminals(cx)
-                        .into_iter()
-                        .filter_map(|terminal| terminal.has_notification.then_some(terminal.id)),
-                );
-            }
-        }
-
-        let mut all_paths: Vec<PathBuf> = groups
-            .iter()
-            .flat_map(|group| group.key.path_list().paths().iter().cloned())
-            .collect();
-        all_paths.sort_unstable();
-        all_paths.dedup();
-        let path_details =
-            util::disambiguate::compute_disambiguation_details(&all_paths, |path, detail| {
-                project::path_suffix(path, detail)
-            });
-        let path_detail_map: HashMap<PathBuf, usize> =
-            all_paths.into_iter().zip(path_details).collect();
-
-        let mut branch_by_path: HashMap<PathBuf, SharedString> = HashMap::new();
-        for ws in &workspaces {
-            let project = ws.read(cx).project().read(cx);
-            for repo in project.repositories(cx).values() {
-                let snapshot = repo.read(cx).snapshot();
-                if let Some(branch) = &snapshot.branch {
-                    branch_by_path.insert(
-                        snapshot.work_directory_abs_path.to_path_buf(),
-                        SharedString::from(Arc::<str>::from(branch.name())),
-                    );
-                }
-                for linked_wt in snapshot.linked_worktrees() {
-                    if let Some(branch) = linked_wt.branch_name() {
-                        branch_by_path.insert(
-                            linked_wt.path.clone(),
-                            SharedString::from(Arc::<str>::from(branch)),
-                        );
-                    }
-                }
-            }
-        }
+        let live_notified_terminal_ids =
+            sidebar_rebuild_helpers::live_notified_terminal_ids(&workspaces, cx);
+        let path_detail_map = sidebar_rebuild_helpers::path_detail_map(&groups);
+        let branch_by_path = sidebar_rebuild_helpers::branch_by_path(&workspaces, cx);
 
         for group in &groups {
             let group_key = &group.key;
@@ -310,75 +256,15 @@ impl Sidebar {
             };
             let linked_worktree_path_lists =
                 linked_worktree_path_lists_for_workspaces(group_workspaces, cx);
-            let make_terminal_entry =
-                |metadata: TerminalThreadMetadata, workspace: ThreadEntryWorkspace| {
-                    let worktrees =
-                        worktree_info_from_thread_paths(&metadata.worktree_paths, &branch_by_path);
-                    let has_notification =
-                        live_notified_terminal_ids.contains(&metadata.terminal_id);
-                    TerminalEntry {
-                        metadata,
-                        workspace,
-                        worktrees,
-                        has_notification,
-                        highlight_positions: Vec::new(),
-                    }
-                };
-
-            let mut terminals = Vec::new();
-            let terminal_store = TerminalThreadMetadataStore::global(cx);
-            let group_host = group_key.host();
-            let mut push_terminal_metadata =
-                |metadata: TerminalThreadMetadata, workspace: ThreadEntryWorkspace| {
-                    if !seen_terminal_ids.insert(metadata.terminal_id) {
-                        return;
-                    }
-                    terminals.push(make_terminal_entry(metadata, workspace));
-                };
-            for row in terminal_store
-                .read(cx)
-                .entries_for_main_worktree_path(group_key.path_list(), group_host.as_ref())
-                .cloned()
-            {
-                let workspace = resolve_workspace(row.folder_paths());
-                push_terminal_metadata(row, workspace);
-            }
-            for row in terminal_store
-                .read(cx)
-                .entries_for_path(group_key.path_list(), group_host.as_ref())
-                .cloned()
-            {
-                let workspace = resolve_workspace(row.folder_paths());
-                push_terminal_metadata(row, workspace);
-            }
-            for ws in group_workspaces {
-                let ws_paths = workspace_path_list(ws, cx);
-                if ws_paths.paths().is_empty() {
-                    continue;
-                }
-                for row in terminal_store
-                    .read(cx)
-                    .entries_for_path(&ws_paths, group_host.as_ref())
-                    .cloned()
-                {
-                    push_terminal_metadata(row, ThreadEntryWorkspace::Open(ws.clone()));
-                }
-            }
-            for worktree_path_list in &linked_worktree_path_lists {
-                for row in terminal_store
-                    .read(cx)
-                    .entries_for_path(worktree_path_list, group_host.as_ref())
-                    .cloned()
-                {
-                    push_terminal_metadata(
-                        row,
-                        ThreadEntryWorkspace::Closed {
-                            folder_paths: worktree_path_list.clone(),
-                            project_group_key: group_key.clone(),
-                        },
-                    );
-                }
-            }
+            let terminals = sidebar_rebuild_helpers::terminal_entries_for_group(
+                group_key,
+                group_workspaces,
+                &linked_worktree_path_lists,
+                &branch_by_path,
+                &live_notified_terminal_ids,
+                &mut seen_terminal_ids,
+                cx,
+            );
             current_terminal_ids.extend(
                 terminals
                     .iter()
@@ -417,7 +303,12 @@ impl Sidebar {
 
                 let make_thread_entry =
                     |row: ThreadMetadata, workspace: ThreadEntryWorkspace| -> Arc<ThreadEntry> {
-                        let (icon, icon_from_external_svg) = resolve_agent_icon(&row.agent_id);
+                        let (icon, icon_from_external_svg) =
+                            sidebar_rebuild_helpers::resolve_agent_icon(
+                                agent_server_store.as_ref(),
+                                &row.agent_id,
+                                cx,
+                            );
                         let worktrees =
                             worktree_info_from_thread_paths(&row.worktree_paths, &branch_by_path);
                         Arc::new(ThreadEntry {
