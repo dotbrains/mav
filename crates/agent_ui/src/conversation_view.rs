@@ -122,6 +122,8 @@ mod markdown_resolution;
 use markdown_resolution::{AgentCodeSpanResolver, render_agent_markdown};
 mod loading_draft_rendering;
 mod rendering;
+mod server_state;
+use server_state::{AuthState, ConnectedServerState, LoadingDraft, LoadingView, ServerState};
 
 impl ProfileProvider for Entity<agent::Thread> {
     fn profile_id(&self, cx: &App) -> AgentProfileId {
@@ -295,86 +297,6 @@ impl ConversationView {
                 conversation.set_work_dirs(work_dirs.clone(), cx);
             });
         }
-    }
-}
-
-enum ServerState {
-    Loading {
-        _loading: Entity<LoadingView>,
-        draft: Option<LoadingDraft>,
-    },
-    LoadError {
-        error: LoadError,
-    },
-    Connected(ConnectedServerState),
-}
-
-// current -> Entity
-// hashmap of threads, current becomes session_id
-pub struct ConnectedServerState {
-    auth_state: AuthState,
-    active_id: Option<acp::SessionId>,
-    pub(crate) threads: HashMap<acp::SessionId, Entity<ThreadView>>,
-    connection: Rc<dyn AgentConnection>,
-    conversation: Entity<Conversation>,
-    _connection_entry_subscription: Subscription,
-}
-
-enum AuthState {
-    Ok,
-    Unauthenticated {
-        description: Option<Entity<Markdown>>,
-        configuration_view: Option<AnyView>,
-        pending_auth_method: Option<acp::AuthMethodId>,
-        _subscription: Option<Subscription>,
-    },
-}
-
-impl AuthState {
-    pub fn is_ok(&self) -> bool {
-        matches!(self, Self::Ok)
-    }
-}
-
-struct LoadingView {
-    _load_task: Task<()>,
-}
-
-struct LoadingDraft {
-    message_editor: Entity<MessageEditor>,
-    agent_selector_menu_handle: PopoverMenuHandle<ContextMenu>,
-    _subscriptions: Vec<Subscription>,
-}
-
-impl ConnectedServerState {
-    pub fn active_view(&self) -> Option<&Entity<ThreadView>> {
-        self.active_id.as_ref().and_then(|id| self.threads.get(id))
-    }
-
-    pub fn has_thread_error(&self, cx: &App) -> bool {
-        self.active_view()
-            .map_or(false, |view| view.read(cx).thread_error.is_some())
-    }
-
-    pub fn navigate_to_thread(&mut self, session_id: acp::SessionId) {
-        if self.threads.contains_key(&session_id) {
-            self.active_id = Some(session_id);
-        }
-    }
-
-    pub fn close_all_sessions(&self, cx: &mut App) -> Task<()> {
-        let tasks = self.threads.values().filter_map(|view| {
-            if self.connection.supports_close_session() {
-                let session_id = view.read(cx).thread.read(cx).session_id().clone();
-                Some(self.connection.clone().close_session(&session_id, cx))
-            } else {
-                None
-            }
-        });
-        let task = futures::future::join_all(tasks);
-        cx.background_spawn(async move {
-            task.await;
-        })
     }
 }
 
