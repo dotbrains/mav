@@ -7,6 +7,7 @@ mod diff_transform;
 mod dimensions;
 mod edit_state;
 mod events;
+mod excerpt_ranges;
 mod excerpt_summary;
 mod expansion;
 mod lifecycle;
@@ -47,6 +48,7 @@ use cursor::*;
 use diff_state::*;
 use diff_transform::*;
 use edit_state::*;
+use excerpt_ranges::*;
 use futures_lite::future::yield_now;
 use gpui::{App, Context, Entity, EventEmitter};
 use itertools::Itertools;
@@ -1910,26 +1912,6 @@ impl MultiBuffer {
             source: BufferEditSource::User,
         });
     }
-}
-
-fn build_excerpt_ranges(
-    ranges: impl IntoIterator<Item = Range<Point>>,
-    context_line_count: u32,
-    buffer_snapshot: &BufferSnapshot,
-) -> Vec<ExcerptRange<Point>> {
-    ranges
-        .into_iter()
-        .map(|range| {
-            let start_row = range.start.row.saturating_sub(context_line_count);
-            let start = Point::new(start_row, 0);
-            let end_row = (range.end.row + context_line_count).min(buffer_snapshot.max_point().row);
-            let end = Point::new(end_row, buffer_snapshot.line_len(end_row));
-            ExcerptRange {
-                context: start..end,
-                primary: range,
-            }
-        })
-        .collect()
 }
 
 #[cfg(any(test, feature = "test-support"))]
