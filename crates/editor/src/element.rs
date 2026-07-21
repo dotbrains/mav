@@ -10,6 +10,7 @@ mod highlighted_range;
 mod layout_data;
 mod layout_primitives;
 mod line_builder;
+mod line_layout_model;
 mod line_metrics;
 mod line_numbers;
 mod line_paint;
@@ -35,6 +36,7 @@ use layout_data::{
     ColoredRange, ContextMenuLayout, CreaseTrailerLayout, ScrollbarLayoutInformation,
 };
 use layout_primitives::{InlineBlameLayout, LineHighlightSpec, LineNumberStyle, SelectionLayout};
+pub(crate) use line_layout_model::{Invisible, LineFragment, LineWithInvisibles};
 pub(super) use line_numbers::{LineNumberLayout, LineNumberSegment};
 use navigation_overlay::{
     NavigationLabelLayout, NavigationOverlayLayoutContext, NavigationOverlayPaintCommand,
@@ -6523,59 +6525,6 @@ impl EditorElement {
             }
         });
     }
-}
-
-#[derive(Debug)]
-pub(crate) struct LineWithInvisibles {
-    fragments: SmallVec<[LineFragment; 1]>,
-    invisibles: Vec<Invisible>,
-    len: usize,
-    pub(crate) width: Pixels,
-    font_size: Pixels,
-}
-
-enum LineFragment {
-    Text(ShapedLine),
-    Element {
-        id: ChunkRendererId,
-        element: Option<AnyElement>,
-        size: Size<Pixels>,
-        len: usize,
-    },
-}
-
-impl fmt::Debug for LineFragment {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            LineFragment::Text(shaped_line) => f.debug_tuple("Text").field(shaped_line).finish(),
-            LineFragment::Element { size, len, .. } => f
-                .debug_struct("Element")
-                .field("size", size)
-                .field("len", len)
-                .finish(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Invisible {
-    /// A tab character
-    ///
-    /// A tab character is internally represented by spaces (configured by the user's tab width)
-    /// aligned to the nearest column, so it's necessary to store the start and end offset for
-    /// adjacency checks.
-    Tab {
-        line_start_offset: usize,
-        line_end_offset: usize,
-    },
-    /// A whitespace character (ASCII space or any other Unicode whitespace).
-    ///
-    /// Storing both offsets correctly accounts for multi-byte whitespace characters
-    /// such as U+00A0 NO-BREAK SPACE, keeping adjacency checks correct.
-    Whitespace {
-        line_start_offset: usize,
-        line_end_offset: usize,
-    },
 }
 
 impl EditorElement {
