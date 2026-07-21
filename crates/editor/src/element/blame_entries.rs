@@ -1,4 +1,6 @@
 use super::*;
+use crate::git::blame::{BlameRenderer, GitBlame, GlobalBlameRenderer};
+use git::{Oid, commit::ParsedCommitMessage};
 
 pub(super) fn render_inline_blame_entry(
     blame_entry: BlameEntry,
