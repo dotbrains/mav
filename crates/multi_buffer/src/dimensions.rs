@@ -1,10 +1,6 @@
 use super::*;
 
 pub type MultiBufferPoint = Point;
-/// ExcerptOffset is offset into the non-deleted text of the multibuffer
-pub(super) type ExcerptOffset = ExcerptDimension<MultiBufferOffset>;
-/// ExcerptOffset is based on the non-deleted text of the multibuffer
-
 #[derive(Copy, Clone, Debug, Default, Eq, Ord, PartialOrd, PartialEq, Hash, serde::Deserialize)]
 #[serde(transparent)]
 pub struct MultiBufferRow(pub u32);
