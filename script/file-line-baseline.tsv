@@ -4,7 +4,6 @@
     403	crates/project/tests/integration/project_tests.rs
    13566	crates/agent_ui/src/agent_panel.rs
    12396	crates/editor/src/editor.rs
-    7182	crates/editor/src/element.rs
    12065	crates/agent_ui/src/conversation_view/thread_view.rs
     464	crates/project_panel/src/project_panel_tests.rs
    10763	crates/agent_ui/src/conversation_view.rs
@@ -326,7 +325,6 @@
     1195	crates/gpui/src/key_dispatch.rs
     1193	crates/http_proxy/src/proxy/connection.rs
     1192	crates/editor/src/folding_ranges.rs
-    1191	crates/editor/src/element/mouse.rs
     1185	crates/vim/src/normal/paste.rs
     1177	crates/agent/src/sandboxing.rs
     148	crates/project/tests/integration/context_server_store.rs
@@ -370,7 +368,6 @@
     1078	crates/gpui/src/text_system/line_layout.rs
     1078	crates/agent_ui/src/agent_configuration/manage_profiles_modal.rs
     1070	crates/gpui/src/color.rs
-    1069	crates/editor/src/element/header.rs
     1069	Cargo.toml
     1068	crates/workspace/src/multi_workspace_tests.rs
     1067	crates/proto/proto/lsp.proto
