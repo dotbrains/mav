@@ -1,6 +1,6 @@
     328	crates/editor/src/editor_tests.rs
    16246	crates/workspace/src/workspace.rs
-    8733	crates/project/src/lsp_store.rs
+    8511	crates/project/src/lsp_store.rs
     403	crates/project/tests/integration/project_tests.rs
    13566	crates/agent_ui/src/agent_panel.rs
    12396	crates/editor/src/editor.rs
