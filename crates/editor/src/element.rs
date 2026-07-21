@@ -46,6 +46,7 @@ mod paint_background;
 mod paint_helpers;
 mod position_map;
 mod post_scroll_prepaint;
+mod pre_scroll_layout;
 mod prepaint_helpers;
 mod register_actions;
 mod request_layout;
@@ -377,36 +378,30 @@ impl Element for EditorElement {
                         );
                     }
 
-                    let scrollbar_layout_information = self.layout_scrollbar_information(
-                        &snapshot,
-                        text_hitbox.bounds,
-                        glyph_grid_cell,
-                        max_row,
-                        line_height,
-                        em_advance,
-                        editor_width,
-                        is_row_soft_wrapped,
-                        scroll_beyond_last_line,
-                        style,
-                        window,
-                        cx,
-                    );
-
-                    let mut scroll_width = scrollbar_layout_information.scroll_range.width;
-
-                    let layout_data::BlockRenderPhase {
-                        blocks_output,
+                    let Some(pre_scroll_layout::PreScrollLayouts {
+                        scrollbar_layout_information,
+                        blocks,
+                        spacer_blocks,
+                        row_block_types,
                         sticky_header_excerpt_id,
-                        start_buffer_row,
-                        end_buffer_row,
-                        preliminary_scroll_pixel_position,
+                        sticky_buffer_header,
+                        scroll_position,
+                        scroll_pixel_position,
+                        scroll_max,
+                        sticky_headers,
                         indent_guides,
-                    } = self.layout_block_render_phase(
+                    }) = self.layout_pre_scroll_phase(
                         is_minimap,
+                        is_singleton,
+                        max_row,
                         start_row..end_row,
                         start_anchor,
                         end_anchor,
+                        current_selection_head,
                         scroll_position,
+                        max_scroll_top,
+                        glyph_grid_cell,
+                        em_advance,
                         em_layout_width,
                         line_height,
                         content_origin,
@@ -414,104 +409,33 @@ impl Element for EditorElement {
                         &snapshot,
                         &hitbox,
                         editor_width,
-                        &mut scroll_width,
                         &editor_margins,
                         em_width,
-                        gutter_dimensions.full_width(),
+                        gutter_dimensions,
+                        &gutter_hitbox,
+                        right_margin,
                         &mut line_layouts,
                         &local_selections,
                         &selected_buffer_ids,
                         &latest_selection_anchors,
                         is_row_soft_wrapped,
-                        window,
-                        cx,
-                    );
-                    let RenderBlocksOutput {
-                        non_spacer_blocks: blocks,
-                        spacer_blocks,
-                        row_block_types,
-                        resized_blocks,
-                    } = blocks_output;
-                    if let Some(resized_blocks) = resized_blocks {
-                        if request_layout.has_remaining_prepaint_depth() {
-                            self.editor.update(cx, |editor, cx| {
-                                editor.resize_blocks(
-                                    resized_blocks,
-                                    autoscroll_request.map(|(autoscroll, _)| autoscroll),
-                                    cx,
-                                )
-                            });
-                            return self.prepaint(
-                                None,
-                                _inspector_id,
-                                bounds,
-                                request_layout,
-                                window,
-                                cx,
-                            );
-                        } else {
-                            debug_panic!(
-                                "dropping block resize because prepaint depth \
-                                 limit was reached"
-                            );
-                        }
-                    }
-
-                    let sticky_buffer_header = self.layout_sticky_buffer_header_phase(
-                        sticky_header_excerpt_id,
-                        scroll_position,
-                        line_height,
-                        right_margin,
-                        &snapshot,
-                        &hitbox,
-                        &selected_buffer_ids,
-                        &blocks,
-                        &latest_selection_anchors,
-                        window,
-                        cx,
-                    );
-
-                    let layout_data::ScrollPositionLayout {
-                        scroll_position,
-                        scroll_pixel_position,
-                        scroll_max,
-                    } = self.layout_scroll_position(
-                        scroll_position,
-                        max_scroll_top,
-                        start_row,
-                        editor_width,
-                        scroll_width,
-                        em_advance,
-                        em_layout_width,
-                        line_height,
-                        &line_layouts,
+                        scroll_beyond_last_line,
                         needs_horizontal_autoscroll,
                         autoscroll_request,
+                        request_layout,
                         window,
                         cx,
-                    );
-                    let layout_data::StickyHeaderLayouts {
-                        sticky_headers,
-                        indent_guides,
-                    } = self.layout_sticky_headers_and_guides(
-                        is_minimap,
-                        is_singleton,
-                        &snapshot,
-                        editor_width,
-                        is_row_soft_wrapped,
-                        line_height,
-                        scroll_pixel_position,
-                        preliminary_scroll_pixel_position,
-                        content_origin,
-                        &gutter_dimensions,
-                        &gutter_hitbox,
-                        &text_hitbox,
-                        current_selection_head,
-                        start_buffer_row..end_buffer_row,
-                        indent_guides,
-                        window,
-                        cx,
-                    );
+                    )
+                    else {
+                        return self.prepaint(
+                            None,
+                            _inspector_id,
+                            bounds,
+                            request_layout,
+                            window,
+                            cx,
+                        );
+                    };
 
                     let post_scroll_prepaint::PostScrollPrepaintLayouts {
                         crease_trailers,
