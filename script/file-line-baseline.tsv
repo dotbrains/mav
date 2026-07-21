@@ -256,7 +256,7 @@
     1458	crates/settings_ui/src/pages/tool_permissions_setup.rs
     1443	crates/agent_ui/src/agent_configuration/configure_context_server_modal.rs
     1439	crates/gpui_windows/src/platform.rs
-    1437	crates/zeta_prompt/src/udiff.rs
+     198	crates/zeta_prompt/src/udiff.rs
     1436	crates/remote_server/src/server.rs
     1434	crates/collab/src/db/queries/rooms.rs
     1432	crates/settings_content/src/settings_content.rs
