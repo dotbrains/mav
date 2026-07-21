@@ -356,6 +356,16 @@ fn retained_user_request_messages_before(
     retained_messages
 }
 
+/// Describes where a streamed compaction summary should land in the thread
+/// once it completes successfully.
+pub(super) enum CompactionInsertion {
+    /// Automatic compaction inserts the summary at an index computed up front
+    /// (which may be before a trailing not-yet-answered user message).
+    Auto { insertion_ix: usize },
+    /// Manual `/compact` appends a zero-content user message followed by the summary.
+    Manual { marker_id: ClientUserMessageId },
+}
+
 pub(super) fn total_input_tokens(usage: language_model::TokenUsage) -> u64 {
     usage
         .input_tokens

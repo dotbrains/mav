@@ -100,7 +100,9 @@ use std::{
 use util::{ResultExt, debug_panic, markdown::MarkdownCodeBlock, paths::PathStyle};
 use uuid::Uuid;
 
-use compaction::{CompactionTelemetry, extend_request_history_until, total_input_tokens};
+use compaction::{
+    CompactionInsertion, CompactionTelemetry, extend_request_history_until, total_input_tokens,
+};
 pub use message::*;
 use running_turn::RunningTurn;
 
@@ -3693,16 +3695,6 @@ impl Thread {
             }),
         }
     }
-}
-
-/// Describes where a streamed compaction summary should land in the thread
-/// once it completes successfully.
-enum CompactionInsertion {
-    /// Automatic compaction inserts the summary at an index computed up front
-    /// (which may be before a trailing not-yet-answered user message).
-    Auto { insertion_ix: usize },
-    /// Manual `/compact` appends a zero-content user message followed by the summary.
-    Manual { marker_id: ClientUserMessageId },
 }
 
 pub(crate) fn messages_to_markdown(messages: &[Arc<Message>]) -> String {
