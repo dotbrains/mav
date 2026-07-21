@@ -22,6 +22,7 @@ mod gutter_controls;
 mod gutter_indicators;
 mod gutter_paint;
 mod header;
+mod highlight_inputs;
 mod highlighted_range;
 mod hover_popovers;
 mod initial_prepaint_layout;
@@ -281,45 +282,21 @@ impl Element for EditorElement {
                             .is_none_or(|info| info.buffer_row.is_none())
                     };
 
-                    let mut highlighted_rows = self
-                        .editor
-                        .update(cx, |editor, cx| editor.highlighted_display_rows(window, cx));
-
-                    let mut highlighted_ranges = self.collect_background_highlights(
+                    let highlight_inputs::HighlightInputs {
+                        highlighted_rows,
+                        mut highlighted_ranges,
+                        highlighted_gutter_ranges,
+                        document_colors,
+                        redacted_ranges,
+                    } = self.collect_highlight_inputs(
                         start_anchor,
                         end_anchor,
                         start_row,
                         end_row,
                         max_row,
+                        &row_infos,
                         &snapshot,
                         window,
-                        cx,
-                    );
-
-                    self.add_diff_and_drag_highlights(
-                        &mut highlighted_rows,
-                        &row_infos,
-                        start_row,
-                        &snapshot,
-                        cx,
-                    );
-
-                    let highlighted_gutter_ranges =
-                        self.editor.read(cx).gutter_highlights_in_range(
-                            start_anchor..end_anchor,
-                            &snapshot.display_snapshot,
-                            cx,
-                        );
-
-                    let document_colors = self
-                        .editor
-                        .read(cx)
-                        .colors
-                        .as_ref()
-                        .map(|colors| colors.editor_display_highlights(&snapshot));
-                    let redacted_ranges = self.editor.read(cx).redacted_ranges(
-                        start_anchor..end_anchor,
-                        &snapshot.display_snapshot,
                         cx,
                     );
 
