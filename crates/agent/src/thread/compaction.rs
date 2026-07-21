@@ -208,6 +208,154 @@ impl Thread {
     }
 }
 
+fn user_message_byte_len(message: &LanguageModelRequestMessage) -> usize {
+    message
+        .content
+        .iter()
+        .map(|content| match content {
+            MessageContent::Text(text) => text.len(),
+            MessageContent::Image(image) => image.len(),
+            // These can never occur in a user message
+            MessageContent::Thinking { .. }
+            | MessageContent::RedactedThinking(_)
+            | MessageContent::ToolResult(_)
+            | MessageContent::ToolUse(_)
+            | MessageContent::Compaction(_) => 0,
+        })
+        .sum()
+}
+
+pub(super) fn truncate_user_message_to_byte_budget(
+    mut message: LanguageModelRequestMessage,
+    byte_budget: usize,
+) -> Option<LanguageModelRequestMessage> {
+    let mut remaining_bytes = byte_budget;
+    let mut content = Vec::with_capacity(message.content.len());
+
+    for item in message.content {
+        match item {
+            MessageContent::Text(text) => {
+                let fits = text.len() <= remaining_bytes;
+                if let Some(text) = take_text_within_byte_budget(text, &mut remaining_bytes) {
+                    content.push(MessageContent::Text(text));
+                }
+                if !fits {
+                    break;
+                }
+            }
+            MessageContent::Image(image) => {
+                let byte_len = image.len();
+                if let Some(bytes) = remaining_bytes.checked_sub(byte_len) {
+                    remaining_bytes = bytes;
+                    content.push(MessageContent::Image(image));
+                } else {
+                    break;
+                }
+            }
+            // These can never occur in a user message
+            MessageContent::Thinking { .. }
+            | MessageContent::RedactedThinking(_)
+            | MessageContent::ToolResult(_)
+            | MessageContent::ToolUse(_)
+            | MessageContent::Compaction(_) => {}
+        }
+    }
+
+    if content.is_empty() {
+        None
+    } else {
+        message.content = content;
+        Some(message)
+    }
+}
+
+fn take_text_within_byte_budget(text: String, remaining_bytes: &mut usize) -> Option<String> {
+    if text.is_empty() || *remaining_bytes == 0 {
+        return None;
+    }
+
+    if let Some(bytes) = remaining_bytes.checked_sub(text.len()) {
+        *remaining_bytes = bytes;
+        return Some(text);
+    }
+
+    let end = text.floor_char_boundary((*remaining_bytes).min(text.len()));
+    *remaining_bytes = 0;
+
+    let text = text[..end].to_string();
+
+    if text.is_empty() { None } else { Some(text) }
+}
+
+pub(super) fn extend_request_history_until(
+    messages: &[Arc<Message>],
+    request_messages: &mut Vec<LanguageModelRequestMessage>,
+    end_ix: usize,
+) {
+    let end_ix = end_ix.min(messages.len());
+    let Some(compaction_ix) = latest_compaction_message_ix_before(messages, end_ix) else {
+        for message in &messages[..end_ix] {
+            request_messages.extend(message.to_request());
+        }
+        return;
+    };
+
+    if matches!(
+        &*messages[compaction_ix],
+        Message::Compaction(CompactionInfo::Summary(_))
+    ) {
+        request_messages.extend(retained_user_request_messages_before(
+            messages,
+            compaction_ix,
+        ));
+    }
+
+    for message in &messages[compaction_ix..end_ix] {
+        request_messages.extend(message.to_request());
+    }
+}
+
+fn latest_compaction_message_ix_before(messages: &[Arc<Message>], end_ix: usize) -> Option<usize> {
+    messages[..end_ix]
+        .iter()
+        .rposition(|message| matches!(&**message, Message::Compaction(_)))
+}
+
+fn retained_user_request_messages_before(
+    messages: &[Arc<Message>],
+    compaction_ix: usize,
+) -> Vec<LanguageModelRequestMessage> {
+    let mut remaining_bytes = COMPACTION_RETAINED_USER_MESSAGES_BYTE_BUDGET;
+    let mut retained_messages = Vec::new();
+
+    for message in messages[..compaction_ix].iter().rev() {
+        let Message::User(user_message) = &**message else {
+            continue;
+        };
+        if user_message.content.is_empty() {
+            continue;
+        }
+
+        let request_message = user_message.to_request();
+        let byte_count = user_message_byte_len(&request_message);
+        if let Some(bytes) = remaining_bytes.checked_sub(byte_count) {
+            remaining_bytes = bytes;
+            retained_messages.push(request_message);
+        } else {
+            if remaining_bytes > 0
+                && let Some(request_message) =
+                    truncate_user_message_to_byte_budget(request_message, remaining_bytes)
+            {
+                retained_messages.push(request_message);
+            }
+            break;
+        }
+    }
+
+    retained_messages.reverse();
+    retained_messages
+}
+
 pub(super) fn total_input_tokens(usage: language_model::TokenUsage) -> u64 {
     usage
         .input_tokens

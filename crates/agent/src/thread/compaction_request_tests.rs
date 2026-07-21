@@ -9,7 +9,7 @@ fn test_truncate_text_utf8_boundary() {
         reasoning_details: None,
     };
 
-    let truncated = truncate_user_message_to_byte_budget(message, 8).unwrap();
+    let truncated = super::compaction::truncate_user_message_to_byte_budget(message, 8).unwrap();
     assert_eq!(
         truncated.content,
         vec![MessageContent::Text("hello ".to_string())]
@@ -31,7 +31,7 @@ fn test_truncate_keeps_fitting_images() {
         reasoning_details: None,
     };
 
-    let truncated = truncate_user_message_to_byte_budget(message, 8).unwrap();
+    let truncated = super::compaction::truncate_user_message_to_byte_budget(message, 8).unwrap();
     assert_eq!(
         truncated.content,
         vec![

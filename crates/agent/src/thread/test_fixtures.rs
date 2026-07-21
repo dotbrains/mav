@@ -1,8 +1,5 @@
 use super::*;
 use gpui::TestAppContext;
-use language_model::LanguageModelToolUseId;
-use language_model::fake_provider::FakeLanguageModel;
-use serde_json::json;
 use std::sync::Arc;
 
 pub(super) async fn setup_thread_for_test(
