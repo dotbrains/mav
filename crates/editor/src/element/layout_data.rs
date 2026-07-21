@@ -124,6 +124,11 @@ pub(super) struct StickyHeaderLayouts {
     pub(super) indent_guides: Option<Vec<IndentGuideLayout>>,
 }
 
+pub(super) struct DiffHunkControlLayouts {
+    pub(super) diff_hunk_controls: Vec<AnyElement>,
+    pub(super) diff_hunk_control_bounds: Vec<(DisplayRow, Bounds<Pixels>)>,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,

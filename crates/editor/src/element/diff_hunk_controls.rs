@@ -1,6 +1,79 @@
 use super::*;
 
 impl EditorElement {
+    pub(super) fn layout_diff_hunk_control_phase(
+        &self,
+        is_read_only: bool,
+        sticky_headers: &Option<header::StickyHeaders>,
+        has_sticky_buffer_header: bool,
+        blocks: &[BlockLayout],
+        scroll_position: gpui::Point<ScrollOffset>,
+        row_range: Range<DisplayRow>,
+        row_infos: &[RowInfo],
+        text_hitbox: &Hitbox,
+        current_selection_head: Option<DisplayRow>,
+        line_height: Pixels,
+        right_margin: Pixels,
+        scroll_pixel_position: gpui::Point<ScrollPixelOffset>,
+        display_hunks: &[(DisplayDiffHunk, Option<Hitbox>)],
+        highlighted_rows: &BTreeMap<DisplayRow, LineHighlight>,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> layout_data::DiffHunkControlLayouts {
+        let sticky_scroll_header_height = sticky_headers
+            .as_ref()
+            .and_then(|headers| headers.lines.last())
+            .map_or(Pixels::ZERO, |last| last.offset + line_height);
+
+        let sticky_header_height = if has_sticky_buffer_header {
+            let full_height = FILE_HEADER_HEIGHT as f32 * line_height;
+            let display_row = blocks
+                .iter()
+                .filter(|block| block.is_buffer_header)
+                .find_map(|block| block.row.filter(|row| row.0 > scroll_position.y as u32));
+            let offset = match display_row {
+                Some(display_row) => {
+                    let max_row = display_row.0.saturating_sub(FILE_HEADER_HEIGHT);
+                    let offset = (scroll_position.y - max_row as f64).max(0.0);
+                    let slide_up = Pixels::from(offset * ScrollPixelOffset::from(line_height));
+
+                    (full_height - slide_up).max(Pixels::ZERO)
+                }
+                None => full_height,
+            };
+            let header_bottom_padding = BUFFER_HEADER_PADDING.to_pixels(window.rem_size());
+            sticky_scroll_header_height + offset - header_bottom_padding
+        } else {
+            sticky_scroll_header_height
+        };
+
+        let (diff_hunk_controls, diff_hunk_control_bounds) =
+            if is_read_only && !self.editor.read(cx).delegate_stage_and_restore {
+                (vec![], vec![])
+            } else {
+                self.layout_diff_hunk_controls(
+                    row_range,
+                    row_infos,
+                    text_hitbox,
+                    current_selection_head,
+                    line_height,
+                    right_margin,
+                    scroll_pixel_position,
+                    sticky_header_height,
+                    display_hunks,
+                    highlighted_rows,
+                    self.editor.clone(),
+                    window,
+                    cx,
+                )
+            };
+
+        layout_data::DiffHunkControlLayouts {
+            diff_hunk_controls,
+            diff_hunk_control_bounds,
+        }
+    }
+
     pub(super) fn layout_diff_hunk_controls(
         &self,
         row_range: Range<DisplayRow>,

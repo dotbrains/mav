@@ -1058,59 +1058,27 @@ impl Element for EditorElement {
 
                     let mode = snapshot.mode.clone();
 
-                    let sticky_scroll_header_height = sticky_headers
-                        .as_ref()
-                        .and_then(|headers| headers.lines.last())
-                        .map_or(Pixels::ZERO, |last| last.offset + line_height);
-
-                    let has_sticky_buffer_header =
-                        sticky_buffer_header.is_some() || sticky_header_excerpt_id.is_some();
-                    let sticky_header_height = if has_sticky_buffer_header {
-                        let full_height = FILE_HEADER_HEIGHT as f32 * line_height;
-                        let display_row = blocks
-                            .iter()
-                            .filter(|block| block.is_buffer_header)
-                            .find_map(|block| {
-                                block.row.filter(|row| row.0 > scroll_position.y as u32)
-                            });
-                        let offset = match display_row {
-                            Some(display_row) => {
-                                let max_row = display_row.0.saturating_sub(FILE_HEADER_HEIGHT);
-                                let offset = (scroll_position.y - max_row as f64).max(0.0);
-                                let slide_up =
-                                    Pixels::from(offset * ScrollPixelOffset::from(line_height));
-
-                                (full_height - slide_up).max(Pixels::ZERO)
-                            }
-                            None => full_height,
-                        };
-                        let header_bottom_padding =
-                            BUFFER_HEADER_PADDING.to_pixels(window.rem_size());
-                        sticky_scroll_header_height + offset - header_bottom_padding
-                    } else {
-                        sticky_scroll_header_height
-                    };
-
-                    let (diff_hunk_controls, diff_hunk_control_bounds) =
-                        if is_read_only && !self.editor.read(cx).delegate_stage_and_restore {
-                            (vec![], vec![])
-                        } else {
-                            self.layout_diff_hunk_controls(
-                                start_row..end_row,
-                                &row_infos,
-                                &text_hitbox,
-                                current_selection_head,
-                                line_height,
-                                right_margin,
-                                scroll_pixel_position,
-                                sticky_header_height,
-                                &display_hunks,
-                                &highlighted_rows,
-                                self.editor.clone(),
-                                window,
-                                cx,
-                            )
-                        };
+                    let layout_data::DiffHunkControlLayouts {
+                        diff_hunk_controls,
+                        diff_hunk_control_bounds,
+                    } = self.layout_diff_hunk_control_phase(
+                        is_read_only,
+                        &sticky_headers,
+                        sticky_buffer_header.is_some() || sticky_header_excerpt_id.is_some(),
+                        &blocks,
+                        scroll_position,
+                        start_row..end_row,
+                        &row_infos,
+                        &text_hitbox,
+                        current_selection_head,
+                        line_height,
+                        right_margin,
+                        scroll_pixel_position,
+                        &display_hunks,
+                        &highlighted_rows,
+                        window,
+                        cx,
+                    );
 
                     let position_map = Rc::new(PositionMap {
                         size: bounds.size,
