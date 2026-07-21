@@ -1,5 +1,6 @@
 mod action_registration;
 mod auto_height;
+mod autoscroll_layout;
 mod blame_entries;
 mod blame_layouts;
 mod block_layout;
@@ -101,8 +102,8 @@ use crate::{
     },
     inlay_hint_settings,
     scroll::{
-        ActiveScrollbarState, ScrollOffset, ScrollPixelOffset, ScrollbarThumbState,
-        scroll_amount::ScrollAmount,
+        ActiveScrollbarState, Autoscroll, ScrollOffset, ScrollPixelOffset, ScrollbarThumbState,
+        autoscroll::NeedsHorizontalAutoscroll, scroll_amount::ScrollAmount,
     },
 };
 use buffer_diff::{DiffHunkStatus, DiffHunkStatusKind};
@@ -371,34 +372,18 @@ impl Element for EditorElement {
                         }
                     };
 
-                    let (
+                    let layout_data::VerticalAutoscroll {
                         autoscroll_request,
                         autoscroll_containing_element,
                         needs_horizontal_autoscroll,
-                    ) = self.editor.update(cx, |editor, cx| {
-                        let autoscroll_request = editor.scroll_manager.take_autoscroll_request();
-
-                        let autoscroll_containing_element =
-                            autoscroll_request.is_some() || editor.has_pending_selection();
-
-                        let (needs_horizontal_autoscroll, was_scrolled) = editor
-                            .autoscroll_vertically(
-                                bounds,
-                                line_height,
-                                max_scroll_top,
-                                autoscroll_request,
-                                window,
-                                cx,
-                            );
-                        if was_scrolled.0 {
-                            snapshot = editor.snapshot(window, cx);
-                        }
-                        (
-                            autoscroll_request,
-                            autoscroll_containing_element,
-                            needs_horizontal_autoscroll,
-                        )
-                    });
+                    } = self.layout_vertical_autoscroll(
+                        bounds,
+                        line_height,
+                        max_scroll_top,
+                        &mut snapshot,
+                        window,
+                        cx,
+                    );
 
                     let mut scroll_position = snapshot.scroll_position();
                     if !line_height.is_zero() {

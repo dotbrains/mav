@@ -94,6 +94,12 @@ pub(super) struct RowActivity {
         HashMap<DisplayRow, (Anchor, Breakpoint, Option<BreakpointSessionState>)>,
 }
 
+pub(super) struct VerticalAutoscroll {
+    pub(super) autoscroll_request: Option<(Autoscroll, bool)>,
+    pub(super) autoscroll_containing_element: bool,
+    pub(super) needs_horizontal_autoscroll: NeedsHorizontalAutoscroll,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,
