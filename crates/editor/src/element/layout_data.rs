@@ -71,6 +71,22 @@ pub(super) struct EditorSurface {
     pub(super) content_origin: gpui::Point<Pixels>,
 }
 
+pub(super) struct EditorMetrics {
+    pub(super) font_size: Pixels,
+    pub(super) line_height: Pixels,
+    pub(super) em_width: Pixels,
+    pub(super) em_advance: Pixels,
+    pub(super) em_layout_width: Pixels,
+    pub(super) glyph_grid_cell: Size<Pixels>,
+    pub(super) gutter_dimensions: GutterDimensions,
+    pub(super) text_width: Pixels,
+    pub(super) vertical_scrollbar_width: Pixels,
+    pub(super) minimap_width: Pixels,
+    pub(super) right_margin: Pixels,
+    pub(super) editor_width: Pixels,
+    pub(super) editor_margins: EditorMargins,
+}
+
 pub(super) struct RowActivity {
     pub(super) current_selection_head: Option<DisplayRow>,
     pub(super) run_indicator_rows: HashSet<DisplayRow>,
