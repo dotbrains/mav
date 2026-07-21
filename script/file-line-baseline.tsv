@@ -15,7 +15,7 @@
     7468	crates/sidebar/src/sidebar.rs
     7435	crates/dev_container/src/devcontainer_manifest.rs
     8278	crates/multi_buffer/src/multi_buffer.rs
-    7725	crates/outline_panel/src/outline_panel.rs
+    7243	crates/outline_panel/src/outline_panel.rs
     7449	crates/acp_thread/src/acp_thread.rs
     7722	crates/agent/src/thread.rs
     7609	crates/project_panel/src/project_panel.rs
