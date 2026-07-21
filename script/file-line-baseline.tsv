@@ -57,7 +57,7 @@
 2368	crates/workspace/src/persistence.rs
 2673	crates/search/src/project_search.rs
 5180	crates/vim/src/motion.rs
-5294	crates/agent_ui/src/message_editor.rs
+1882	crates/agent_ui/src/message_editor.rs
 3761	crates/git/src/repository.rs
 5149	crates/markdown/src/markdown.rs
 4261	crates/worktree/tests/integration/worktree_tests.rs
@@ -570,3 +570,4 @@
 1794	crates/worktree/src/background_scanner.rs
 1170	crates/worktree/tests/integration/traversal_symlink_tests.rs
 5002	crates/migrator/src/tests.rs
+546	crates/agent_ui/src/message_editor/tests/completion_tests/context_completion_tests.rs
