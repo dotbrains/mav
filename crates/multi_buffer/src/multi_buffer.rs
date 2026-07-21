@@ -3,6 +3,7 @@ mod diff_state;
 mod dimensions;
 mod events;
 mod excerpt_summary;
+mod expansion;
 #[cfg(test)]
 mod multi_buffer_tests;
 mod path_key;
@@ -20,6 +21,7 @@ pub use dimensions::{
 pub use events::{Event, MultiBufferDiffHunk};
 pub(crate) use excerpt_summary::Excerpt;
 pub use excerpt_summary::{DiffTransformSummary, ExcerptRange, ExcerptSummary, MBTextSummary};
+pub use expansion::{ExpandExcerptDirection, IndentGuide};
 pub use row_info::{ExcerptBoundary, ExcerptBoundaryInfo, ExpandInfo, RowInfo};
 
 use anchor::{AnchorSeekTarget, ExcerptAnchor};
@@ -329,47 +331,6 @@ enum DiffChangeKind {
     BufferEdited,
     DiffUpdated { base_changed: bool },
     ExpandOrCollapseHunks { expand: bool },
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ExpandExcerptDirection {
-    Up,
-    Down,
-    UpAndDown,
-}
-
-impl ExpandExcerptDirection {
-    pub fn should_expand_up(&self) -> bool {
-        match self {
-            ExpandExcerptDirection::Up => true,
-            ExpandExcerptDirection::Down => false,
-            ExpandExcerptDirection::UpAndDown => true,
-        }
-    }
-
-    pub fn should_expand_down(&self) -> bool {
-        match self {
-            ExpandExcerptDirection::Up => false,
-            ExpandExcerptDirection::Down => true,
-            ExpandExcerptDirection::UpAndDown => true,
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct IndentGuide {
-    pub buffer_id: BufferId,
-    pub start_row: MultiBufferRow,
-    pub end_row: MultiBufferRow,
-    pub depth: u32,
-    pub tab_size: u32,
-    pub settings: IndentGuideSettings,
-}
-
-impl IndentGuide {
-    pub fn indent_level(&self) -> u32 {
-        self.depth * self.tab_size
-    }
 }
 
 impl MultiBuffer {
