@@ -58,6 +58,8 @@ mod subagent;
 #[cfg(test)]
 #[path = "thread/subagent_settings_tests.rs"]
 mod subagent_settings_tests;
+#[path = "thread/support_types.rs"]
+mod support_types;
 #[path = "thread/title_generation.rs"]
 mod title_generation;
 #[path = "thread/title_request.rs"]
@@ -167,6 +169,14 @@ use event_stream::ThreadEventStream;
 pub(crate) use markdown::messages_to_markdown;
 pub use message::*;
 use running_turn::RunningTurn;
+pub(crate) use support_types::{
+    BASE_RETRY_DELAY, COMPACTION_RETAINED_USER_MESSAGES_BYTE_BUDGET, CompletionError,
+    MAX_RETRY_ATTEMPTS, MIN_COMPACTION_CONTEXT_WINDOW, RetryStrategy, ThreadModel,
+};
+pub use support_types::{
+    NoModelConfiguredError, PromptId, SandboxStatusKey, SandboxStatusRefresh, SubagentContext,
+    VerifiedSandboxStatus,
+};
 pub use title_request::{
     TitleUpdated, TokenUsageUpdated, build_thread_title_request, stream_thread_title,
 };
@@ -177,93 +187,6 @@ pub use tool_input::{ToolInput, ToolInputPayload, ToolInputSender};
 const TOOL_CANCELED_MESSAGE: &str = "Tool canceled by user";
 pub const MAX_TOOL_NAME_LENGTH: usize = 64;
 pub const MAX_SUBAGENT_DEPTH: u8 = 1;
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct SandboxStatusKey {
-    pub settings_sandbox: ThreadSandbox,
-    pub thread_sandbox: ThreadSandbox,
-    pub baseline_writable_paths: Vec<PathBuf>,
-    pub git_paths: Vec<PathBuf>,
-    pub repository_paths: Vec<(PathBuf, PathBuf, PathBuf, PathBuf)>,
-    pub settings_allow_git_access: bool,
-    pub thread_allow_git_access: bool,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct VerifiedSandboxStatus {
-    pub settings_sandbox: ThreadSandbox,
-    pub thread_sandbox: ThreadSandbox,
-    pub baseline_writable_paths: Vec<PathBuf>,
-}
-
-pub enum SandboxStatusRefresh {
-    Ready(VerifiedSandboxStatus),
-    Pending(Task<VerifiedSandboxStatus>),
-}
-
-/// Auto-compaction is only available for models whose context window is at least
-/// this large. For smaller models there isn't enough headroom for a compaction
-/// pass to be worthwhile, so we leave the thread uncompacted and let the UI warn
-/// the user instead.
-pub const MIN_COMPACTION_CONTEXT_WINDOW: u64 = 80_000;
-
-// Using the heuristic that 1 token is about 4 bytes, keep the last 80K bytes of user-message content (~20k tokens).
-const COMPACTION_RETAINED_USER_MESSAGES_BYTE_BUDGET: usize = 80_000;
-
-/// Returned when a turn is attempted but no language model has been selected.
-#[derive(Debug)]
-pub struct NoModelConfiguredError;
-
-impl std::fmt::Display for NoModelConfiguredError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "no language model configured")
-    }
-}
-
-impl std::error::Error for NoModelConfiguredError {}
-
-/// Context passed to a subagent thread for lifecycle management
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct SubagentContext {
-    /// ID of the parent thread
-    pub parent_thread_id: acp::SessionId,
-
-    /// Current depth level (0 = root agent, 1 = first-level subagent, etc.)
-    pub depth: u8,
-}
-
-/// The ID of the user prompt that initiated a request.
-///
-/// This equates to the user physically submitting a message to the model (e.g., by pressing the Enter key).
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Serialize, Deserialize)]
-pub struct PromptId(Arc<str>);
-
-impl PromptId {
-    pub fn new() -> Self {
-        Self(Uuid::new_v4().to_string().into())
-    }
-}
-
-impl std::fmt::Display for PromptId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-pub(crate) const MAX_RETRY_ATTEMPTS: u8 = 4;
-pub(crate) const BASE_RETRY_DELAY: Duration = Duration::from_secs(5);
-
-#[derive(Debug, Clone)]
-enum RetryStrategy {
-    ExponentialBackoff {
-        initial_delay: Duration,
-        max_attempts: u8,
-    },
-    Fixed {
-        delay: Duration,
-        max_attempts: u8,
-    },
-}
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AgentMessage {
@@ -721,47 +644,6 @@ fn auto_resolve_permission_outcome(
         option.option_id.clone(),
         option.kind,
     ))
-}
-
-#[derive(Debug, thiserror::Error)]
-enum CompletionError {
-    #[error("max tokens")]
-    MaxTokens,
-    #[error("refusal")]
-    Refusal,
-    #[error(transparent)]
-    Other(#[from] anyhow::Error),
-}
-
-pub(crate) enum ThreadModel {
-    Ready(Arc<dyn LanguageModel>),
-    Unresolved(SelectedModel),
-    Unset,
-}
-
-impl ThreadModel {
-    fn as_model(&self) -> Option<&Arc<dyn LanguageModel>> {
-        match self {
-            Self::Ready(model) => Some(model),
-            Self::Unresolved(_) | Self::Unset => None,
-        }
-    }
-}
-
-impl From<&ThreadModel> for Option<DbLanguageModel> {
-    fn from(model: &ThreadModel) -> Self {
-        match model {
-            ThreadModel::Ready(model) => Some(DbLanguageModel {
-                provider: model.provider_id().to_string(),
-                model: model.id().0.to_string(),
-            }),
-            ThreadModel::Unresolved(selection) => Some(DbLanguageModel {
-                provider: selection.provider.0.to_string(),
-                model: selection.model.0.to_string(),
-            }),
-            ThreadModel::Unset => None,
-        }
-    }
 }
 
 pub struct Thread {
