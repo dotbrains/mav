@@ -16,7 +16,7 @@
     8088	crates/dev_container/src/devcontainer_manifest.rs
     8278	crates/multi_buffer/src/multi_buffer.rs
     7725	crates/outline_panel/src/outline_panel.rs
-    8142	crates/acp_thread/src/acp_thread.rs
+    7923	crates/acp_thread/src/acp_thread.rs
     8120	crates/agent/src/thread.rs
     7609	crates/project_panel/src/project_panel.rs
     7141	crates/zeta_prompt/src/zeta_prompt.rs
