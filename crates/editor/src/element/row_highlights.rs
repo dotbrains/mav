@@ -7,6 +7,54 @@ struct DiffHunkHighlightColors {
 }
 
 impl EditorElement {
+    pub(super) fn collect_background_highlights(
+        &self,
+        start_anchor: Anchor,
+        end_anchor: Anchor,
+        start_row: DisplayRow,
+        end_row: DisplayRow,
+        max_row: DisplayRow,
+        snapshot: &EditorSnapshot,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Vec<(Range<DisplayPoint>, Hsla)> {
+        self.editor_with_selections(cx)
+            .map(|editor| {
+                if editor == self.editor {
+                    editor.read(cx).background_highlights_in_range(
+                        start_anchor..end_anchor,
+                        &snapshot.display_snapshot,
+                        cx.theme(),
+                    )
+                } else {
+                    editor.update(cx, |editor, cx| {
+                        let snapshot = editor.snapshot(window, cx);
+                        let start_anchor = if start_row == Default::default() {
+                            Anchor::Min
+                        } else {
+                            snapshot.buffer_snapshot().anchor_before(
+                                DisplayPoint::new(start_row, 0).to_offset(&snapshot, Bias::Left),
+                            )
+                        };
+                        let end_anchor = if end_row > max_row {
+                            Anchor::Max
+                        } else {
+                            snapshot.buffer_snapshot().anchor_before(
+                                DisplayPoint::new(end_row, 0).to_offset(&snapshot, Bias::Right),
+                            )
+                        };
+
+                        editor.background_highlights_in_range(
+                            start_anchor..end_anchor,
+                            &snapshot.display_snapshot,
+                            cx.theme(),
+                        )
+                    })
+                }
+            })
+            .unwrap_or_default()
+    }
+
     pub(super) fn add_diff_and_drag_highlights(
         &self,
         highlighted_rows: &mut BTreeMap<DisplayRow, LineHighlight>,
