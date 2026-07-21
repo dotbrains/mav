@@ -24,12 +24,12 @@ pub mod toolchain_store;
 pub mod trusted_worktrees;
 pub mod worktree_store;
 
+mod accessors;
 mod environment;
 mod project_completion;
 mod project_lsp_types;
 mod project_support_types;
 mod project_types;
-mod accessors;
 use buffer_diff::BufferDiff;
 use context_server_store::ContextServerStore;
 pub use environment::ProjectEnvironmentEvent;

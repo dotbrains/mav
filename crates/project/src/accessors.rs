@@ -269,5 +269,4 @@ impl Project {
             PathList::new(&worktree_roots)
         }
     }
-
 }

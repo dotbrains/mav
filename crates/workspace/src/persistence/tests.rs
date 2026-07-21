@@ -1,4 +1,3 @@
-
 use super::*;
 use crate::OpenMode;
 use crate::PathList;

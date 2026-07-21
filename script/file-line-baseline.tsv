@@ -567,4 +567,4 @@
      520	crates/vim/test_data/test_change_surrounding_character_objects.json
      518	crates/vim/test_data/test_delete_surrounding_character_objects.json
 2862	crates/search/src/project_search/tests.rs
-3169	crates/workspace/src/persistence/tests.rs
+3168	crates/workspace/src/persistence/tests.rs
