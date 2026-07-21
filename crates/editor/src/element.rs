@@ -31,6 +31,7 @@ mod line_layout_model;
 mod line_metrics;
 mod line_numbers;
 mod line_paint;
+mod line_setup;
 mod metrics_layout;
 mod minimap;
 mod mouse;
@@ -471,87 +472,30 @@ impl Element for EditorElement {
                         row_infos: &row_infos,
                     };
 
-                    let line_numbers = self.layout_line_numbers(
+                    let layout_data::LineSetupLayouts {
+                        line_numbers,
+                        mut expand_toggles,
+                        mut crease_toggles,
+                        crease_trailers,
+                        display_hunks,
+                        mut line_layouts,
+                    } = self.layout_line_setup(
                         &gutter,
                         &active_rows,
                         current_selection_head,
-                        window,
-                        cx,
-                    );
-
-                    let mut expand_toggles =
-                        window.with_element_namespace("expand_toggles", |window| {
-                            self.layout_expand_toggles(
-                                &gutter_hitbox,
-                                gutter_dimensions,
-                                em_width,
-                                line_height,
-                                scroll_position,
-                                start_row,
-                                &row_infos,
-                                window,
-                                cx,
-                            )
-                        });
-
-                    let mut crease_toggles =
-                        window.with_element_namespace("crease_toggles", |window| {
-                            self.layout_crease_toggles(
-                                start_row..end_row,
-                                &row_infos,
-                                &active_rows,
-                                &snapshot,
-                                window,
-                                cx,
-                            )
-                        });
-                    let crease_trailers =
-                        window.with_element_namespace("crease_trailers", |window| {
-                            self.layout_crease_trailers(
-                                row_infos.iter().cloned(),
-                                &snapshot,
-                                window,
-                                cx,
-                            )
-                        });
-
-                    let display_hunks = self.layout_gutter_diff_hunks(
-                        line_height,
                         &gutter_hitbox,
-                        start_row..end_row,
-                        &snapshot,
+                        gutter_dimensions,
+                        em_width,
+                        line_height,
                         scroll_position,
-                        window,
-                        cx,
-                    );
-
-                    Self::layout_word_diff_highlights(
-                        &display_hunks,
+                        start_row..end_row,
                         &row_infos,
-                        start_row,
                         &snapshot,
                         &mut highlighted_ranges,
-                        cx,
-                    );
-
-                    let bg_segments_per_row = Self::bg_segments_per_row(
-                        start_row..end_row,
                         &selections,
-                        highlighted_ranges.iter().cloned().chain(
-                            document_colors
-                                .iter()
-                                .flat_map(|(_, colors)| colors.iter().cloned()),
-                        ),
-                        self.style.background,
-                    );
-
-                    let mut line_layouts = Self::layout_lines(
-                        start_row..end_row,
-                        &snapshot,
-                        &self.style,
+                        document_colors.as_ref(),
                         editor_width,
                         is_row_soft_wrapped,
-                        &bg_segments_per_row,
                         window,
                         cx,
                     );

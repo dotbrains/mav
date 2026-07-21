@@ -142,6 +142,15 @@ pub(super) struct BlockRenderPhase {
     pub(super) indent_guides: Option<Vec<IndentGuideLayout>>,
 }
 
+pub(super) struct LineSetupLayouts {
+    pub(super) line_numbers: Arc<HashMap<MultiBufferRow, LineNumberLayout>>,
+    pub(super) expand_toggles: Vec<Option<(AnyElement, gpui::Point<Pixels>)>>,
+    pub(super) crease_toggles: Vec<Option<AnyElement>>,
+    pub(super) crease_trailers: Vec<Option<AnyElement>>,
+    pub(super) display_hunks: Vec<(DisplayDiffHunk, Option<Hitbox>)>,
+    pub(super) line_layouts: Vec<LineWithInvisibles>,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,
