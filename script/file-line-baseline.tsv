@@ -13,7 +13,8 @@
     7339	crates/project/src/git_store.rs
    10145	crates/workspace/src/pane.rs
     7259	crates/sidebar/src/sidebar.rs
-    1940	crates/dev_container/src/devcontainer_manifest.rs
+    1894	crates/dev_container/src/devcontainer_manifest.rs
+     100	crates/dev_container/src/devcontainer_manifest/container_lookup_tests.rs
      286	crates/dev_container/src/devcontainer_manifest/dockerfile_parse_tests.rs
      240	crates/dev_container/src/devcontainer_manifest/plain_image_tests.rs
      151	crates/dev_container/src/devcontainer_manifest/local_feature_tests.rs

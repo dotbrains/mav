@@ -1880,54 +1880,8 @@ mod test {
     #[path = "dockerfile_parse_tests.rs"]
     mod dockerfile_parse_tests;
 
-    #[gpui::test]
-    async fn check_for_existing_container_errors_when_multiple_match(cx: &mut TestAppContext) {
-        cx.executor().allow_parking();
-        let (test_dependencies, devcontainer_manifest) =
-            init_default_devcontainer_manifest(cx, r#"{"image": "image"}"#)
-                .await
-                .unwrap();
-        test_dependencies
-            .docker
-            .set_duplicate_container_ids(vec!["abc123".to_string(), "def456".to_string()]);
-
-        let result = devcontainer_manifest
-            .check_for_existing_devcontainer()
-            .await;
-
-        let Err(DevContainerError::MultipleMatchingContainers(ids)) = result else {
-            panic!("expected MultipleMatchingContainers, got {result:?}");
-        };
-        assert_eq!(ids, vec!["abc123".to_string(), "def456".to_string()]);
-    }
-
-    #[gpui::test]
-    async fn trim_non_alphanumeric_chars_from_image_tag(cx: &mut TestAppContext) {
-        cx.executor().allow_parking();
-        env_logger::try_init().ok();
-        let given_devcontainer_contents = r#"
-            {
-              "name": "abcde test",
-              "image": "test_image:latest",
-            }
-            "#;
-
-        let (_, devcontainer_manifest) =
-            init_default_devcontainer_manifest(cx, given_devcontainer_contents)
-                .await
-                .unwrap();
-
-        let image_tag = devcontainer_manifest.generate_features_image_tag("Dockerfile".to_string());
-
-        assert!(
-            image_tag.starts_with("abcde-"),
-            "expected prefix 'abcde-', got: {image_tag}"
-        );
-        assert!(
-            image_tag.ends_with("-features"),
-            "expected suffix '-features', got: {image_tag}"
-        );
-    }
+    #[path = "container_lookup_tests.rs"]
+    mod container_lookup_tests;
 
     #[test]
     fn test_aliases_dockerfile_with_pre_existing_aliases_for_build() {}
