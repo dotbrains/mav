@@ -357,7 +357,6 @@ impl GitPanel {
         .detach_and_log_err(cx);
     }
 
-
     pub(super) fn askpass_delegate(
         &self,
         operation: impl Into<SharedString>,
@@ -449,5 +448,4 @@ impl GitPanel {
             }))
         }
     }
-
 }
