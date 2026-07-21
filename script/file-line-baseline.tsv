@@ -9,7 +9,7 @@
     464	crates/project_panel/src/project_panel_tests.rs
    10763	crates/agent_ui/src/conversation_view.rs
     8020	crates/settings_ui/src/page_data.rs
-    8028	crates/git_ui/src/git_panel.rs
+    7625	crates/git_ui/src/git_panel.rs
     7680	crates/project/src/git_store.rs
    10145	crates/workspace/src/pane.rs
     7757	crates/sidebar/src/sidebar.rs
