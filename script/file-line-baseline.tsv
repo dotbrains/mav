@@ -187,7 +187,7 @@
     1886	crates/call/src/call_impl/room.rs
     1856	crates/vim/src/surrounds.rs
     1840	crates/editor/src/code_lens.rs
-    1836	crates/zeta_prompt/src/multi_region.rs
+     332	crates/zeta_prompt/src/multi_region.rs
     1831	crates/markdown/src/parser.rs
     1830	crates/project/src/buffer_store.rs
     1826	crates/agent_ui/src/inline_prompt_editor.rs
