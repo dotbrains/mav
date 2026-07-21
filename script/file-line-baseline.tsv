@@ -17,7 +17,8 @@
      447	crates/dev_container/src/devcontainer_manifest/test_support.rs
      851	crates/dev_container/src/devcontainer_manifest/test_http.rs
       48	crates/dev_container/src/devcontainer_manifest/docker_in_docker_http.rs
-    1233	crates/dev_container/src/devcontainer_manifest/docker_in_docker_blob.rs
+     214	crates/dev_container/src/devcontainer_manifest/docker_in_docker_blob.rs
+    1023	crates/dev_container/src/devcontainer_manifest/docker_in_docker_install.rs
     8278	crates/multi_buffer/src/multi_buffer.rs
     7243	crates/outline_panel/src/outline_panel.rs
     7238	crates/acp_thread/src/acp_thread.rs
