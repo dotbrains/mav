@@ -44,6 +44,7 @@ mod request_layout;
 mod row_activity;
 mod row_highlights;
 mod scroll_position_layout;
+mod scrollbar_information;
 mod scrollbar_layouts;
 mod scrollbar_markers;
 mod selection_inputs;
@@ -581,54 +582,19 @@ impl Element for EditorElement {
                         );
                     }
 
-                    let longest_line_blame_width = self
-                        .editor
-                        .update(cx, |editor, cx| {
-                            if !editor.show_git_blame_inline {
-                                return None;
-                            }
-                            let blame = editor.blame.as_ref()?;
-                            let (_, blame_entry) = blame
-                                .update(cx, |blame, cx| {
-                                    let row_infos =
-                                        snapshot.row_infos(snapshot.longest_row()).next()?;
-                                    blame.blame_for_rows(&[row_infos], cx).next()
-                                })
-                                .flatten()?;
-                            let mut element = render_inline_blame_entry(blame_entry, style, cx)?;
-                            let inline_blame_padding =
-                                ProjectSettings::get_global(cx).git.inline_blame.padding as f32
-                                    * em_advance;
-                            Some(
-                                element
-                                    .layout_as_root(AvailableSpace::min_size(), window, cx)
-                                    .width
-                                    + inline_blame_padding,
-                            )
-                        })
-                        .unwrap_or(Pixels::ZERO);
-
-                    let longest_line_width = layout_line(
-                        snapshot.longest_row(),
+                    let scrollbar_layout_information = self.layout_scrollbar_information(
                         &snapshot,
-                        style,
-                        editor_width,
-                        is_row_soft_wrapped,
-                        window,
-                        cx,
-                    )
-                    .width;
-
-                    let scrollbar_layout_information = ScrollbarLayoutInformation::new(
                         text_hitbox.bounds,
                         glyph_grid_cell,
-                        size(
-                            longest_line_width,
-                            Pixels::from(max_row.as_f64() * f64::from(line_height)),
-                        ),
-                        longest_line_blame_width,
-                        EditorSettings::get_global(cx),
+                        max_row,
+                        line_height,
+                        em_advance,
+                        editor_width,
+                        is_row_soft_wrapped,
                         scroll_beyond_last_line,
+                        style,
+                        window,
+                        cx,
                     );
 
                     let mut scroll_width = scrollbar_layout_information.scroll_range.width;
