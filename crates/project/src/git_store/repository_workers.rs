@@ -46,7 +46,12 @@ impl Repository {
                 let RepositoryState::Local(LocalRepositoryState { backend, .. }) = state else {
                     bail!("not a local repository")
                 };
-                let snapshot = compute_snapshot(this.clone(), backend.clone(), &mut cx).await;
+                let snapshot = super::repository_snapshot_compute::compute_snapshot(
+                    this.clone(),
+                    backend.clone(),
+                    &mut cx,
+                )
+                .await;
                 this.update(&mut cx, |this, cx| {
                     this.clear_pending_ops(cx);
                 });
