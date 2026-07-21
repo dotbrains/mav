@@ -3,6 +3,7 @@ mod byte_iterators;
 mod diff_state;
 mod diff_transform;
 mod dimensions;
+mod edit_state;
 mod events;
 mod excerpt_summary;
 mod expansion;
@@ -38,6 +39,7 @@ use clock::ReplicaId;
 use collections::{BTreeMap, Bound, HashMap, HashSet, IndexSet};
 use diff_state::*;
 use diff_transform::*;
+use edit_state::*;
 use futures_lite::future::yield_now;
 use gpui::{App, Context, Entity, EventEmitter};
 use itertools::Itertools;
@@ -236,21 +238,6 @@ struct MultiBufferRegion<'a, MBD, BD> {
     buffer_range: Range<BD>,
     range: Range<MBD>,
     has_trailing_newline: bool,
-}
-
-#[derive(Debug)]
-struct BufferEdit {
-    range: Range<BufferOffset>,
-    new_text: Arc<str>,
-    is_insertion: bool,
-    original_indent_column: Option<u32>,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum DiffChangeKind {
-    BufferEdited,
-    DiffUpdated { base_changed: bool },
-    ExpandOrCollapseHunks { expand: bool },
 }
 
 impl MultiBuffer {
