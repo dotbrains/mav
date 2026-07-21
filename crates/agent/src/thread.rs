@@ -179,9 +179,10 @@ pub use message::*;
 pub(crate) use permission_context::auto_resolve_permission_outcome;
 pub use permission_context::{ToolCallAuthorization, ToolPermissionContext, ToolPermissionScope};
 use running_turn::RunningTurn;
+pub use support_types::MIN_COMPACTION_CONTEXT_WINDOW;
 pub(crate) use support_types::{
     BASE_RETRY_DELAY, COMPACTION_RETAINED_USER_MESSAGES_BYTE_BUDGET, CompletionError,
-    MAX_RETRY_ATTEMPTS, MIN_COMPACTION_CONTEXT_WINDOW, RetryStrategy, ThreadModel,
+    MAX_RETRY_ATTEMPTS, RetryStrategy, ThreadModel,
 };
 pub use support_types::{
     NoModelConfiguredError, PromptId, SandboxStatusKey, SandboxStatusRefresh, SubagentContext,

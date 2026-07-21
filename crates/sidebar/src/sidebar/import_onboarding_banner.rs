@@ -1,6 +1,6 @@
 use super::*;
 
-fn render_import_onboarding_banner(
+pub(crate) fn render_import_onboarding_banner(
     id: impl Into<SharedString>,
     title: impl Into<SharedString>,
     description: impl Into<SharedString>,
