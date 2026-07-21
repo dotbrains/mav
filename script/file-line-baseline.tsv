@@ -56,7 +56,7 @@
 5486	crates/language/src/buffer.rs
 2368	crates/workspace/src/persistence.rs
 2673	crates/search/src/project_search.rs
-5546	crates/vim/src/motion.rs
+5180	crates/vim/src/motion.rs
 5294	crates/agent_ui/src/message_editor.rs
     5473	crates/git/src/repository.rs
     5466	crates/markdown/src/markdown.rs
