@@ -48,7 +48,7 @@
 5451	crates/worktree/src/worktree.rs
     6922	crates/agent/src/agent.rs
     6818	crates/mav/src/mav.rs
-5556	crates/project/src/project.rs
+5288	crates/project/src/project.rs
 5368	crates/settings_ui/src/settings_ui.rs
 5534	crates/gpui/src/window.rs
    5304	crates/editor/src/split.rs
@@ -566,5 +566,5 @@
      526	crates/collab/tests/integration/auto_watch_tests.rs
      520	crates/vim/test_data/test_change_surrounding_character_objects.json
      518	crates/vim/test_data/test_delete_surrounding_character_objects.json
-2863	crates/search/src/project_search/tests.rs
+2862	crates/search/src/project_search/tests.rs
 3169	crates/workspace/src/persistence/tests.rs
