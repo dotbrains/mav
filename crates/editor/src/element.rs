@@ -790,42 +790,24 @@ impl Element for EditorElement {
 
                     let gutter_settings = EditorSettings::get_global(cx).gutter;
 
-                    let context_menu_layout =
-                        if let Some(newest_selection_head) = newest_selection_head {
-                            let newest_selection_point =
-                                newest_selection_head.to_point(&snapshot.display_snapshot);
-                            if (start_row..end_row).contains(&newest_selection_head.row()) {
-                                self.layout_cursor_popovers(
-                                    line_height,
-                                    &text_hitbox,
-                                    content_origin,
-                                    right_margin,
-                                    start_row,
-                                    scroll_pixel_position,
-                                    &line_layouts,
-                                    newest_selection_head,
-                                    newest_selection_point,
-                                    style,
-                                    window,
-                                    cx,
-                                )
-                            } else {
-                                None
-                            }
-                        } else {
-                            None
-                        };
-
-                    self.layout_gutter_menu(
-                        line_height,
-                        &text_hitbox,
-                        content_origin,
-                        right_margin,
-                        scroll_pixel_position,
-                        gutter_dimensions.width - gutter_dimensions.left_padding,
-                        window,
-                        cx,
-                    );
+                    let layout_data::MenuPopoverLayouts { mouse_context_menu } = self
+                        .layout_menus_and_popovers(
+                            &snapshot,
+                            &hitbox,
+                            &text_hitbox,
+                            content_origin,
+                            right_margin,
+                            gutter_dimensions,
+                            scroll_pixel_position,
+                            newest_selection_head,
+                            start_row..end_row,
+                            &line_layouts,
+                            line_height,
+                            em_width,
+                            style,
+                            window,
+                            cx,
+                        );
 
                     let layout_data::GutterIndicatorLayouts {
                         test_indicators,
@@ -843,46 +825,6 @@ impl Element for EditorElement {
                         gutter_dimensions,
                         line_height,
                         em_width,
-                        window,
-                        cx,
-                    );
-
-                    self.layout_signature_help(
-                        &hitbox,
-                        content_origin,
-                        scroll_pixel_position,
-                        newest_selection_head,
-                        start_row,
-                        &line_layouts,
-                        line_height,
-                        em_width,
-                        context_menu_layout,
-                        window,
-                        cx,
-                    );
-
-                    if !cx.has_active_drag() {
-                        self.layout_hover_popovers(
-                            &snapshot,
-                            &hitbox,
-                            start_row..end_row,
-                            content_origin,
-                            scroll_pixel_position,
-                            &line_layouts,
-                            line_height,
-                            em_width,
-                            context_menu_layout,
-                            window,
-                            cx,
-                        );
-
-                        self.layout_blame_popover(&snapshot, &hitbox, line_height, window, cx);
-                    }
-
-                    let mouse_context_menu = self.layout_mouse_context_menu(
-                        &snapshot,
-                        start_row..end_row,
-                        content_origin,
                         window,
                         cx,
                     );

@@ -1,6 +1,97 @@
 use super::*;
 
 impl EditorElement {
+    pub(super) fn layout_menus_and_popovers(
+        &self,
+        snapshot: &EditorSnapshot,
+        hitbox: &Hitbox,
+        text_hitbox: &Hitbox,
+        content_origin: gpui::Point<Pixels>,
+        right_margin: Pixels,
+        gutter_dimensions: GutterDimensions,
+        scroll_pixel_position: gpui::Point<ScrollPixelOffset>,
+        newest_selection_head: Option<DisplayPoint>,
+        rows: Range<DisplayRow>,
+        line_layouts: &[LineWithInvisibles],
+        line_height: Pixels,
+        em_width: Pixels,
+        style: &EditorStyle,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> layout_data::MenuPopoverLayouts {
+        let context_menu_layout = if let Some(newest_selection_head) = newest_selection_head {
+            let newest_selection_point = newest_selection_head.to_point(&snapshot.display_snapshot);
+            if rows.contains(&newest_selection_head.row()) {
+                self.layout_cursor_popovers(
+                    line_height,
+                    text_hitbox,
+                    content_origin,
+                    right_margin,
+                    rows.start,
+                    scroll_pixel_position,
+                    line_layouts,
+                    newest_selection_head,
+                    newest_selection_point,
+                    style,
+                    window,
+                    cx,
+                )
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        self.layout_gutter_menu(
+            line_height,
+            text_hitbox,
+            content_origin,
+            right_margin,
+            scroll_pixel_position,
+            gutter_dimensions.width - gutter_dimensions.left_padding,
+            window,
+            cx,
+        );
+
+        self.layout_signature_help(
+            hitbox,
+            content_origin,
+            scroll_pixel_position,
+            newest_selection_head,
+            rows.start,
+            line_layouts,
+            line_height,
+            em_width,
+            context_menu_layout,
+            window,
+            cx,
+        );
+
+        if !cx.has_active_drag() {
+            self.layout_hover_popovers(
+                snapshot,
+                hitbox,
+                rows.clone(),
+                content_origin,
+                scroll_pixel_position,
+                line_layouts,
+                line_height,
+                em_width,
+                context_menu_layout,
+                window,
+                cx,
+            );
+
+            self.layout_blame_popover(snapshot, hitbox, line_height, window, cx);
+        }
+
+        let mouse_context_menu =
+            self.layout_mouse_context_menu(snapshot, rows, content_origin, window, cx);
+
+        layout_data::MenuPopoverLayouts { mouse_context_menu }
+    }
+
     pub(super) fn layout_gutter_menu(
         &self,
         line_height: Pixels,

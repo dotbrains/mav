@@ -158,6 +158,10 @@ pub(super) struct CursorSurfaceLayouts {
     pub(super) scrollbars_layout: Option<EditorScrollbars>,
 }
 
+pub(super) struct MenuPopoverLayouts {
+    pub(super) mouse_context_menu: Option<AnyElement>,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,
