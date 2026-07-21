@@ -162,6 +162,14 @@ pub(super) struct MenuPopoverLayouts {
     pub(super) mouse_context_menu: Option<AnyElement>,
 }
 
+pub(super) struct FinalVisualLayouts {
+    pub(super) wrap_guides: SmallVec<[(Pixels, bool); 2]>,
+    pub(super) minimap: Option<MinimapLayout>,
+    pub(super) tab_invisible: ShapedLine,
+    pub(super) space_invisible: ShapedLine,
+    pub(super) mode: EditorMode,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,

@@ -847,33 +847,26 @@ impl Element for EditorElement {
                         self.prepaint_expand_toggles(&mut expand_toggles, window, cx)
                     });
 
-                    let wrap_guides = self.layout_wrap_guides(
+                    let layout_data::FinalVisualLayouts {
+                        wrap_guides,
+                        minimap,
+                        tab_invisible,
+                        space_invisible,
+                        mode,
+                    } = self.layout_final_visuals(
+                        &snapshot,
                         em_advance,
                         scroll_position,
                         content_origin,
                         scrollbars_layout.as_ref(),
                         vertical_scrollbar_width,
                         &hitbox,
+                        minimap_width,
+                        &scrollbar_layout_information,
+                        font_size,
                         window,
                         cx,
                     );
-
-                    let minimap = window.with_element_namespace("minimap", |window| {
-                        self.layout_minimap(
-                            &snapshot,
-                            minimap_width,
-                            scroll_position,
-                            &scrollbar_layout_information,
-                            scrollbars_layout.as_ref(),
-                            window,
-                            cx,
-                        )
-                    });
-
-                    let (tab_invisible, space_invisible) =
-                        self.layout_invisible_symbols(font_size, window, cx);
-
-                    let mode = snapshot.mode.clone();
 
                     let layout_data::DiffHunkControlLayouts {
                         diff_hunk_controls,

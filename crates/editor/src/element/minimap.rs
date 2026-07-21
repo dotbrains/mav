@@ -1,6 +1,55 @@
 use super::*;
 
 impl EditorElement {
+    pub(super) fn layout_final_visuals(
+        &self,
+        snapshot: &EditorSnapshot,
+        em_advance: Pixels,
+        scroll_position: gpui::Point<ScrollOffset>,
+        content_origin: gpui::Point<Pixels>,
+        scrollbars_layout: Option<&EditorScrollbars>,
+        vertical_scrollbar_width: Pixels,
+        hitbox: &Hitbox,
+        minimap_width: Pixels,
+        scrollbar_layout_information: &ScrollbarLayoutInformation,
+        font_size: Pixels,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> layout_data::FinalVisualLayouts {
+        let wrap_guides = self.layout_wrap_guides(
+            em_advance,
+            scroll_position,
+            content_origin,
+            scrollbars_layout,
+            vertical_scrollbar_width,
+            hitbox,
+            window,
+            cx,
+        );
+
+        let minimap = window.with_element_namespace("minimap", |window| {
+            self.layout_minimap(
+                snapshot,
+                minimap_width,
+                scroll_position,
+                scrollbar_layout_information,
+                scrollbars_layout,
+                window,
+                cx,
+            )
+        });
+
+        let (tab_invisible, space_invisible) = self.layout_invisible_symbols(font_size, window, cx);
+
+        layout_data::FinalVisualLayouts {
+            wrap_guides,
+            minimap,
+            tab_invisible,
+            space_invisible,
+            mode: snapshot.mode.clone(),
+        }
+    }
+
     pub(super) fn layout_minimap(
         &self,
         snapshot: &EditorSnapshot,
