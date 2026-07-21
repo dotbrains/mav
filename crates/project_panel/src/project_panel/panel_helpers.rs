@@ -1,6 +1,54 @@
 use super::*;
 
 impl ProjectPanel {
+    pub(super) fn panel_scrollbars(
+        &self,
+        horizontal_scroll: bool,
+        cx: &mut Context<Self>,
+    ) -> Scrollbars<UniformListScrollHandle> {
+        let mut scrollbars = Scrollbars::for_settings::<ProjectPanelScrollbarProxy>()
+            .tracked_scroll_handle(&self.scroll_handle);
+        if horizontal_scroll {
+            scrollbars = scrollbars.with_track_along(
+                ScrollAxes::Horizontal,
+                cx.theme().colors().editor_background,
+            );
+        }
+        scrollbars.notify_content()
+    }
+
+    pub(super) fn render_context_menu_layer(
+        menu: Entity<ContextMenu>,
+        position: Point<Pixels>,
+    ) -> AnyElement {
+        deferred(
+            anchored()
+                .position(position)
+                .anchor(gpui::Anchor::TopLeft)
+                .child(menu),
+        )
+        .with_priority(3)
+        .into_any_element()
+    }
+
+    pub(super) fn visible_entry_count(&self) -> usize {
+        self.state
+            .visible_entries
+            .iter()
+            .map(|worktree| worktree.entries.len())
+            .sum()
+    }
+
+    pub(super) fn should_show_sticky_entries(&self, panel_settings: &ProjectPanelSettings) -> bool {
+        if panel_settings.sticky_scroll {
+            let is_scrollable = self.scroll_handle.is_scrollable();
+            let is_scrolled = self.scroll_handle.offset().y < px(0.);
+            is_scrollable && is_scrolled
+        } else {
+            false
+        }
+    }
+
     pub(super) fn dispatch_context(&self, window: &Window, cx: &Context<Self>) -> KeyContext {
         let mut dispatch_context = KeyContext::new_with_defaults();
         dispatch_context.add("ProjectPanel");
