@@ -281,3 +281,188 @@ impl LineWithInvisibles {
         }
     }
 }
+
+impl EditorElement {
+    pub(super) fn paint_text(
+        &mut self,
+        layout: &mut EditorLayout,
+        window: &mut Window,
+        cx: &mut App,
+    ) {
+        window.with_content_mask(
+            Some(ContentMask::new(layout.position_map.text_hitbox.bounds)),
+            |window| {
+                let editor = self.editor.read(cx);
+                if let SelectionDragState::ReadyToDrag {
+                    mouse_down_time, ..
+                } = &editor.selection_drag_state
+                {
+                    let drag_and_drop_delay = Duration::from_millis(
+                        EditorSettings::get_global(cx)
+                            .drag_and_drop_selection
+                            .delay
+                            .0,
+                    );
+                    if mouse_down_time.elapsed() >= drag_and_drop_delay {
+                        window.set_cursor_style(
+                            CursorStyle::DragCopy,
+                            &layout.position_map.text_hitbox,
+                        );
+                    }
+                } else if matches!(
+                    editor.selection_drag_state,
+                    SelectionDragState::Dragging { .. }
+                ) {
+                    window
+                        .set_cursor_style(CursorStyle::DragCopy, &layout.position_map.text_hitbox);
+                } else if editor
+                    .hovered_link_state
+                    .as_ref()
+                    .is_some_and(|hovered_link_state| !hovered_link_state.links.is_empty())
+                {
+                    window.set_cursor_style(
+                        CursorStyle::PointingHand,
+                        &layout.position_map.text_hitbox,
+                    );
+                } else {
+                    window.set_cursor_style(CursorStyle::IBeam, &layout.position_map.text_hitbox);
+                };
+
+                self.paint_lines_background(layout, window, cx);
+                let invisible_display_ranges = self.paint_highlights(layout, window, cx);
+                self.paint_document_colors(layout, window);
+                self.paint_lines(&invisible_display_ranges, layout, window, cx);
+                self.paint_redactions(layout, window);
+                self.paint_navigation_overlays(layout, window, cx);
+                self.paint_cursors(layout, window, cx);
+                self.paint_inline_diagnostics(layout, window, cx);
+                self.paint_inline_blame(layout, window, cx);
+                self.paint_inline_code_actions(layout, window, cx);
+                self.paint_diff_hunk_controls(layout, window, cx);
+                window.with_element_namespace("crease_trailers", |window| {
+                    for trailer in layout.crease_trailers.iter_mut().flatten() {
+                        trailer.element.paint(window, cx);
+                    }
+                });
+            },
+        )
+    }
+
+    pub(super) fn paint_highlights(
+        &mut self,
+        layout: &mut EditorLayout,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> SmallVec<[Range<DisplayPoint>; 32]> {
+        window.paint_layer(layout.position_map.text_hitbox.bounds, |window| {
+            let mut invisible_display_ranges = SmallVec::<[Range<DisplayPoint>; 32]>::new();
+            let line_end_overshoot = 0.15 * layout.position_map.line_height;
+            for (range, color) in &layout.highlighted_ranges {
+                self.paint_highlighted_range(
+                    range.clone(),
+                    true,
+                    *color,
+                    Pixels::ZERO,
+                    line_end_overshoot,
+                    layout,
+                    window,
+                );
+            }
+
+            let corner_radius = if EditorSettings::get_global(cx).rounded_selection {
+                0.15 * layout.position_map.line_height
+            } else {
+                Pixels::ZERO
+            };
+
+            for (player_color, selections) in &layout.selections {
+                for selection in selections.iter() {
+                    self.paint_highlighted_range(
+                        selection.range.clone(),
+                        true,
+                        player_color.selection,
+                        corner_radius,
+                        corner_radius * 2.,
+                        layout,
+                        window,
+                    );
+
+                    if selection.is_local && !selection.range.is_empty() {
+                        invisible_display_ranges.push(selection.range.clone());
+                    }
+                }
+            }
+            invisible_display_ranges
+        })
+    }
+
+    pub(super) fn paint_lines(
+        &mut self,
+        invisible_display_ranges: &[Range<DisplayPoint>],
+        layout: &mut EditorLayout,
+        window: &mut Window,
+        cx: &mut App,
+    ) {
+        let whitespace_setting = self
+            .editor
+            .read(cx)
+            .buffer
+            .read(cx)
+            .language_settings(cx)
+            .show_whitespaces;
+
+        for (ix, line_with_invisibles) in layout.position_map.line_layouts.iter().enumerate() {
+            let row = DisplayRow(layout.visible_display_row_range.start.0 + ix as u32);
+            line_with_invisibles.draw(
+                layout,
+                row,
+                layout.content_origin,
+                whitespace_setting,
+                invisible_display_ranges,
+                window,
+                cx,
+            )
+        }
+
+        for line_element in &mut layout.line_elements {
+            line_element.paint(window, cx);
+        }
+    }
+
+    pub(super) fn paint_lines_background(
+        &mut self,
+        layout: &mut EditorLayout,
+        window: &mut Window,
+        cx: &mut App,
+    ) {
+        for (ix, line_with_invisibles) in layout.position_map.line_layouts.iter().enumerate() {
+            let row = DisplayRow(layout.visible_display_row_range.start.0 + ix as u32);
+            line_with_invisibles.draw_background(layout, row, layout.content_origin, window, cx);
+        }
+    }
+
+    pub(super) fn paint_redactions(&mut self, layout: &EditorLayout, window: &mut Window) {
+        if layout.redacted_ranges.is_empty() {
+            return;
+        }
+
+        let line_end_overshoot = layout.line_end_overshoot();
+
+        // A softer than perfect black
+        let redaction_color = gpui::rgb(0x0e1111);
+
+        window.paint_layer(layout.position_map.text_hitbox.bounds, |window| {
+            for range in layout.redacted_ranges.iter() {
+                self.paint_highlighted_range(
+                    range.clone(),
+                    true,
+                    redaction_color.into(),
+                    Pixels::ZERO,
+                    line_end_overshoot,
+                    layout,
+                    window,
+                );
+            }
+        });
+    }
+}

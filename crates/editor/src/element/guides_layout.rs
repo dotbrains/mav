@@ -184,3 +184,89 @@ impl EditorElement {
         (offset_y, length, row_range)
     }
 }
+
+impl EditorElement {
+    pub(super) fn paint_indent_guides(
+        &mut self,
+        layout: &mut EditorLayout,
+        window: &mut Window,
+        cx: &mut App,
+    ) {
+        let Some(indent_guides) = &layout.indent_guides else {
+            return;
+        };
+
+        let faded_color = |color: Hsla, alpha: f32| {
+            let mut faded = color;
+            faded.a = alpha;
+            faded
+        };
+
+        for indent_guide in indent_guides {
+            let indent_accent_colors = cx.theme().accents().color_for_index(indent_guide.depth);
+            let settings = &indent_guide.settings;
+
+            // TODO fixed for now, expose them through themes later
+            const INDENT_AWARE_ALPHA: f32 = 0.2;
+            const INDENT_AWARE_ACTIVE_ALPHA: f32 = 0.4;
+            const INDENT_AWARE_BACKGROUND_ALPHA: f32 = 0.1;
+            const INDENT_AWARE_BACKGROUND_ACTIVE_ALPHA: f32 = 0.2;
+
+            let line_color = match (settings.coloring, indent_guide.active) {
+                (IndentGuideColoring::Disabled, _) => None,
+                (IndentGuideColoring::Fixed, false) => {
+                    Some(cx.theme().colors().editor_indent_guide)
+                }
+                (IndentGuideColoring::Fixed, true) => {
+                    Some(cx.theme().colors().editor_indent_guide_active)
+                }
+                (IndentGuideColoring::IndentAware, false) => {
+                    Some(faded_color(indent_accent_colors, INDENT_AWARE_ALPHA))
+                }
+                (IndentGuideColoring::IndentAware, true) => {
+                    Some(faded_color(indent_accent_colors, INDENT_AWARE_ACTIVE_ALPHA))
+                }
+            };
+
+            let background_color = match (settings.background_coloring, indent_guide.active) {
+                (IndentGuideBackgroundColoring::Disabled, _) => None,
+                (IndentGuideBackgroundColoring::IndentAware, false) => Some(faded_color(
+                    indent_accent_colors,
+                    INDENT_AWARE_BACKGROUND_ALPHA,
+                )),
+                (IndentGuideBackgroundColoring::IndentAware, true) => Some(faded_color(
+                    indent_accent_colors,
+                    INDENT_AWARE_BACKGROUND_ACTIVE_ALPHA,
+                )),
+            };
+
+            let mut line_indicator_width = 0.;
+            if let Some(requested_line_width) = settings.visible_line_width(indent_guide.active) {
+                if let Some(color) = line_color {
+                    window.paint_quad(fill(
+                        window.pixel_snap_bounds(Bounds {
+                            origin: indent_guide.origin,
+                            size: size(px(requested_line_width as f32), indent_guide.length),
+                        }),
+                        color,
+                    ));
+                    line_indicator_width = requested_line_width as f32;
+                }
+            }
+
+            if let Some(color) = background_color {
+                let width = indent_guide.single_indent_width - px(line_indicator_width);
+                window.paint_quad(fill(
+                    window.pixel_snap_bounds(Bounds {
+                        origin: point(
+                            indent_guide.origin.x + px(line_indicator_width),
+                            indent_guide.origin.y,
+                        ),
+                        size: size(width, indent_guide.length),
+                    }),
+                    color,
+                ));
+            }
+        }
+    }
+}

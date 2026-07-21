@@ -89,3 +89,39 @@ impl Gutter<'_> {
         button
     }
 }
+
+impl EditorElement {
+    pub(super) fn layout_gutter_diff_hunks(
+        &self,
+        line_height: Pixels,
+        gutter_hitbox: &Hitbox,
+        display_rows: Range<DisplayRow>,
+        snapshot: &EditorSnapshot,
+        scroll_position: gpui::Point<ScrollOffset>,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Vec<(DisplayDiffHunk, Option<Hitbox>)> {
+        let folded_buffers = self.editor.read(cx).folded_buffers(cx);
+        let mut display_hunks = snapshot
+            .display_diff_hunks_for_rows(display_rows, folded_buffers)
+            .map(|hunk| (hunk, None))
+            .collect::<Vec<_>>();
+        let git_gutter_setting = ProjectSettings::get_global(cx).git.git_gutter;
+        if let GitGutterSetting::TrackedFiles = git_gutter_setting {
+            for (hunk, hitbox) in &mut display_hunks {
+                if matches!(hunk, DisplayDiffHunk::Unfolded { .. }) {
+                    let hunk_bounds = Self::diff_hunk_bounds(
+                        scroll_position,
+                        line_height,
+                        gutter_hitbox.bounds,
+                        hunk,
+                        snapshot,
+                    );
+                    *hitbox = Some(window.insert_hitbox(hunk_bounds, HitboxBehavior::BlockMouse));
+                }
+            }
+        }
+
+        display_hunks
+    }
+}

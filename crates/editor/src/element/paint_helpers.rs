@@ -181,3 +181,157 @@ impl EditorElement {
         }
     }
 }
+
+impl EditorElement {
+    pub(super) fn bg_segments_per_row(
+        rows: Range<DisplayRow>,
+        selections: &[(PlayerColor, Vec<SelectionLayout>)],
+        highlight_ranges: impl IntoIterator<Item = (Range<DisplayPoint>, Hsla)>,
+        base_background: Hsla,
+    ) -> Vec<Vec<(Range<DisplayPoint>, Hsla)>> {
+        if rows.start >= rows.end {
+            return Vec::new();
+        }
+        if !base_background.is_opaque() {
+            // We don't actually know what color is behind this editor.
+            return Vec::new();
+        }
+        let highlight_iter = highlight_ranges.into_iter();
+        let selection_iter = selections.iter().flat_map(|(player_color, layouts)| {
+            let color = player_color.selection;
+            layouts.iter().filter_map(move |selection_layout| {
+                if selection_layout.range.start != selection_layout.range.end {
+                    Some((selection_layout.range.clone(), color))
+                } else {
+                    None
+                }
+            })
+        });
+        let mut per_row_map = vec![Vec::new(); rows.len()];
+        for (range, color) in highlight_iter.chain(selection_iter) {
+            let covered_rows = if range.end.column() == 0 {
+                cmp::max(range.start.row(), rows.start)..cmp::min(range.end.row(), rows.end)
+            } else {
+                cmp::max(range.start.row(), rows.start)
+                    ..cmp::min(range.end.row().next_row(), rows.end)
+            };
+            for row in covered_rows.iter_rows() {
+                let seg_start = if row == range.start.row() {
+                    range.start
+                } else {
+                    DisplayPoint::new(row, 0)
+                };
+                let seg_end = if row == range.end.row() && range.end.column() != 0 {
+                    range.end
+                } else {
+                    DisplayPoint::new(row, u32::MAX)
+                };
+                let ix = row.minus(rows.start) as usize;
+                debug_assert!(row >= rows.start && row < rows.end);
+                debug_assert!(ix < per_row_map.len());
+                per_row_map[ix].push((seg_start..seg_end, color));
+            }
+        }
+        for row_segments in per_row_map.iter_mut() {
+            if row_segments.is_empty() {
+                continue;
+            }
+            let segments = mem::take(row_segments);
+            let merged = Self::merge_overlapping_ranges(segments, base_background);
+            *row_segments = merged;
+        }
+        per_row_map
+    }
+
+    /// Merge overlapping ranges by splitting at all range boundaries and blending colors where
+    /// multiple ranges overlap. The result contains non-overlapping ranges ordered from left to right.
+    ///
+    /// Expects `start.row() == end.row()` for each range.
+    pub(super) fn merge_overlapping_ranges(
+        ranges: Vec<(Range<DisplayPoint>, Hsla)>,
+        base_background: Hsla,
+    ) -> Vec<(Range<DisplayPoint>, Hsla)> {
+        struct Boundary {
+            pos: DisplayPoint,
+            is_start: bool,
+            index: usize,
+            color: Hsla,
+        }
+
+        let mut boundaries: SmallVec<[Boundary; 16]> = SmallVec::with_capacity(ranges.len() * 2);
+        for (index, (range, color)) in ranges.iter().enumerate() {
+            debug_assert!(
+                range.start.row() == range.end.row(),
+                "expects single-row ranges"
+            );
+            if range.start < range.end {
+                boundaries.push(Boundary {
+                    pos: range.start,
+                    is_start: true,
+                    index,
+                    color: *color,
+                });
+                boundaries.push(Boundary {
+                    pos: range.end,
+                    is_start: false,
+                    index,
+                    color: *color,
+                });
+            }
+        }
+
+        if boundaries.is_empty() {
+            return Vec::new();
+        }
+
+        boundaries
+            .sort_unstable_by(|a, b| a.pos.cmp(&b.pos).then_with(|| a.is_start.cmp(&b.is_start)));
+
+        let mut processed_ranges: Vec<(Range<DisplayPoint>, Hsla)> = Vec::new();
+        let mut active_ranges: SmallVec<[(usize, Hsla); 8]> = SmallVec::new();
+
+        let mut i = 0;
+        let mut start_pos = boundaries[0].pos;
+
+        let boundaries_len = boundaries.len();
+        while i < boundaries_len {
+            let current_boundary_pos = boundaries[i].pos;
+            if start_pos < current_boundary_pos {
+                if !active_ranges.is_empty() {
+                    let mut color = base_background;
+                    for &(_, c) in &active_ranges {
+                        color = Hsla::blend(color, c);
+                    }
+                    if let Some((last_range, last_color)) = processed_ranges.last_mut() {
+                        if *last_color == color && last_range.end == start_pos {
+                            last_range.end = current_boundary_pos;
+                        } else {
+                            processed_ranges.push((start_pos..current_boundary_pos, color));
+                        }
+                    } else {
+                        processed_ranges.push((start_pos..current_boundary_pos, color));
+                    }
+                }
+            }
+            while i < boundaries_len && boundaries[i].pos == current_boundary_pos {
+                let active_range = &boundaries[i];
+                if active_range.is_start {
+                    let idx = active_range.index;
+                    let pos = active_ranges
+                        .binary_search_by_key(&idx, |(i, _)| *i)
+                        .unwrap_or_else(|p| p);
+                    active_ranges.insert(pos, (idx, active_range.color));
+                } else {
+                    let idx = active_range.index;
+                    if let Ok(pos) = active_ranges.binary_search_by_key(&idx, |(i, _)| *i) {
+                        active_ranges.remove(pos);
+                    }
+                }
+                i += 1;
+            }
+            start_pos = current_boundary_pos;
+        }
+
+        processed_ranges
+    }
+}

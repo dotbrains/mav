@@ -344,3 +344,94 @@ impl MinimapLayout {
         }
     }
 }
+
+impl EditorElement {
+    pub(super) fn layout_scrollbars(
+        &self,
+        snapshot: &EditorSnapshot,
+        scrollbar_layout_information: &ScrollbarLayoutInformation,
+        content_offset: gpui::Point<Pixels>,
+        scroll_position: gpui::Point<ScrollOffset>,
+        non_visible_cursors: bool,
+        right_margin: Pixels,
+        editor_width: Pixels,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Option<EditorScrollbars> {
+        let show_scrollbars = self.editor.read(cx).show_scrollbars;
+        if (!show_scrollbars.horizontal && !show_scrollbars.vertical)
+            || self.style.scrollbar_width.is_zero()
+        {
+            return None;
+        }
+
+        // If a drag took place after we started dragging the scrollbar,
+        // cancel the scrollbar drag.
+        if cx.has_active_drag() {
+            self.editor.update(cx, |editor, cx| {
+                editor.scroll_manager.reset_scrollbar_state(cx)
+            });
+        }
+
+        let editor_settings = EditorSettings::get_global(cx);
+        let scrollbar_settings = editor_settings.scrollbar;
+        let show_scrollbars = match scrollbar_settings.show {
+            ShowScrollbar::Auto => {
+                let editor = self.editor.read(cx);
+                let is_singleton = editor.buffer_kind(cx) == ItemBufferKind::Singleton;
+                // Git
+                (is_singleton && scrollbar_settings.git_diff && snapshot.buffer_snapshot().has_diff_hunks())
+                ||
+                // Buffer Search Results
+                (is_singleton && scrollbar_settings.search_results && editor.has_background_highlights(HighlightKey::BufferSearchHighlights))
+                ||
+                // Selected Text Occurrences
+                (is_singleton && scrollbar_settings.selected_text && editor.has_background_highlights(HighlightKey::SelectedTextHighlight))
+                ||
+                // Selected Symbol Occurrences
+                (is_singleton && scrollbar_settings.selected_symbol && (editor.has_background_highlights(HighlightKey::DocumentHighlightRead) || editor.has_background_highlights(HighlightKey::DocumentHighlightWrite)))
+                ||
+                // Diagnostics
+                (is_singleton && scrollbar_settings.diagnostics != ScrollbarDiagnostics::None && snapshot.buffer_snapshot().has_diagnostics())
+                ||
+                // Cursors out of sight
+                non_visible_cursors
+                ||
+                // Scrollmanager
+                editor.scroll_manager.scrollbars_visible()
+            }
+            ShowScrollbar::System => self.editor.read(cx).scroll_manager.scrollbars_visible(),
+            ShowScrollbar::Always => true,
+            ShowScrollbar::Never => return None,
+        };
+
+        // The horizontal scrollbar is usually slightly offset to align nicely with
+        // indent guides. However, this offset is not needed if indent guides are
+        // disabled for the current editor.
+        let content_offset = self
+            .editor
+            .read(cx)
+            .show_indent_guides
+            .is_none_or(|should_show| should_show)
+            .then_some(content_offset)
+            .unwrap_or_default();
+
+        Some(EditorScrollbars::from_scrollbar_axes(
+            ScrollbarAxes {
+                horizontal: scrollbar_settings.axes.horizontal
+                    && self.editor.read(cx).show_scrollbars.horizontal,
+                vertical: scrollbar_settings.axes.vertical
+                    && self.editor.read(cx).show_scrollbars.vertical,
+            },
+            scrollbar_layout_information,
+            content_offset,
+            scroll_position,
+            self.style.scrollbar_width,
+            right_margin,
+            editor_width,
+            show_scrollbars,
+            self.editor.read(cx).scroll_manager.active_scrollbar_state(),
+            window,
+        ))
+    }
+}

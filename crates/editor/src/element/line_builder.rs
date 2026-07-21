@@ -247,3 +247,109 @@ impl LineWithInvisibles {
         layouts
     }
 }
+
+impl EditorElement {
+    pub(super) fn layout_lines(
+        rows: Range<DisplayRow>,
+        snapshot: &EditorSnapshot,
+        style: &EditorStyle,
+        editor_width: Pixels,
+        is_row_soft_wrapped: impl Copy + Fn(usize) -> bool,
+        bg_segments_per_row: &[Vec<(Range<DisplayPoint>, Hsla)>],
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Vec<LineWithInvisibles> {
+        if rows.start >= rows.end {
+            return Vec::new();
+        }
+
+        // Show the placeholder when the editor is empty
+        if snapshot.is_empty() {
+            let font_size = style.text.font_size.to_pixels(window.rem_size());
+            let placeholder_color = cx.theme().colors().text_placeholder;
+            let placeholder_text = snapshot.placeholder_text();
+
+            let placeholder_lines = placeholder_text
+                .as_ref()
+                .map_or(Vec::new(), |text| text.split('\n').collect::<Vec<_>>());
+
+            let placeholder_line_count = placeholder_lines.len();
+
+            placeholder_lines
+                .into_iter()
+                .skip(rows.start.0 as usize)
+                .chain(iter::repeat(""))
+                .take(cmp::max(rows.len(), placeholder_line_count))
+                .map(move |line| {
+                    let run = TextRun {
+                        len: line.len(),
+                        font: style.text.font(),
+                        color: placeholder_color,
+                        ..Default::default()
+                    };
+                    let line = window.text_system().shape_line(
+                        line.to_string().into(),
+                        font_size,
+                        &[run],
+                        None,
+                    );
+                    LineWithInvisibles {
+                        width: line.width,
+                        len: line.len,
+                        fragments: smallvec![LineFragment::Text(line)],
+                        invisibles: Vec::new(),
+                        font_size,
+                    }
+                })
+                .collect()
+        } else {
+            let use_tree_sitter = !snapshot.semantic_tokens_enabled
+                || snapshot.use_tree_sitter_for_syntax(rows.start, cx);
+            let language_aware = LanguageAwareStyling {
+                tree_sitter: use_tree_sitter,
+                diagnostics: true,
+            };
+            let chunks = snapshot.highlighted_chunks(rows.clone(), language_aware, style);
+            LineWithInvisibles::from_chunks(
+                chunks,
+                style,
+                MAX_LINE_LEN,
+                rows.len(),
+                &snapshot.mode,
+                editor_width,
+                is_row_soft_wrapped,
+                bg_segments_per_row,
+                window,
+                cx,
+            )
+        }
+    }
+
+    pub(super) fn prepaint_lines(
+        &self,
+        start_row: DisplayRow,
+        line_layouts: &mut [LineWithInvisibles],
+        line_height: Pixels,
+        scroll_position: gpui::Point<ScrollOffset>,
+        scroll_pixel_position: gpui::Point<ScrollPixelOffset>,
+        content_origin: gpui::Point<Pixels>,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> SmallVec<[AnyElement; 1]> {
+        let mut line_elements = SmallVec::new();
+        for (ix, line) in line_layouts.iter_mut().enumerate() {
+            let row = start_row + DisplayRow(ix as u32);
+            line.prepaint(
+                line_height,
+                scroll_position,
+                scroll_pixel_position,
+                row,
+                content_origin,
+                &mut line_elements,
+                window,
+                cx,
+            );
+        }
+        line_elements
+    }
+}
