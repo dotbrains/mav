@@ -54,6 +54,15 @@ pub struct CreaseTrailerLayout {
     pub(super) bounds: Bounds<Pixels>,
 }
 
+pub(super) struct VisibleRows {
+    pub(super) max_row: DisplayRow,
+    pub(super) start_row: DisplayRow,
+    pub(super) end_row: DisplayRow,
+    pub(super) row_infos: Vec<RowInfo>,
+    pub(super) start_anchor: Anchor,
+    pub(super) end_anchor: Anchor,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,

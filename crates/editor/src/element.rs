@@ -44,6 +44,7 @@ mod scrollbar_layouts;
 mod scrollbar_markers;
 mod selection_inputs;
 mod signature_help_layout;
+mod visible_rows;
 mod word_diff_layout;
 
 pub use action_registration::register_action;
@@ -379,27 +380,20 @@ impl Element for EditorElement {
                     let content_origin = text_hitbox.origin + content_offset;
 
                     let height_in_lines = f64::from(bounds.size.height / line_height);
-                    let max_row = snapshot.max_point().row().as_f64();
-
-                    // Calculate how much of the editor is clipped by parent containers (e.g., List).
-                    // This allows us to only render lines that are actually visible, which is
-                    // critical for performance when large content-sized editors are inside Lists.
-                    let visible_bounds = window.content_mask().bounds;
-                    let visible_top = bounds.top().max(visible_bounds.top());
-                    let visible_bottom = bounds.bottom().min(visible_bounds.bottom());
-                    let clipped_top = (visible_top - bounds.top()).max(px(0.));
-                    let visible_height = (visible_bottom - visible_top).max(px(0.));
-                    let clipped_top_in_lines = f64::from(clipped_top / line_height);
-                    let visible_height_in_lines = f64::from(visible_height / line_height);
+                    let max_scroll_row = snapshot.max_point().row().as_f64();
 
                     // The max scroll position for the top of the window
                     let scroll_beyond_last_line = self.editor.read(cx).scroll_beyond_last_line(cx);
                     let max_scroll_top = match scroll_beyond_last_line {
-                        ScrollBeyondLastLine::OnePage => max_row,
-                        ScrollBeyondLastLine::Off => (max_row - height_in_lines + 1.).max(0.),
+                        ScrollBeyondLastLine::OnePage => max_scroll_row,
+                        ScrollBeyondLastLine::Off => {
+                            (max_scroll_row - height_in_lines + 1.).max(0.)
+                        }
                         ScrollBeyondLastLine::VerticalScrollMargin => {
                             let settings = EditorSettings::get_global(cx);
-                            (max_row - height_in_lines + 1. + settings.vertical_scroll_margin)
+                            (max_scroll_row - height_in_lines
+                                + 1.
+                                + settings.vertical_scroll_margin)
                                 .max(0.)
                         }
                     };
@@ -439,45 +433,18 @@ impl Element for EditorElement {
                             .pixel_snap_f64(scroll_position.y * f64::from(line_height))
                             / f64::from(line_height);
                     }
-                    // The scroll position is a fractional point, the whole number of which represents
-                    // the top of the window in terms of display rows.
-                    // We add clipped_top_in_lines to skip rows that are clipped by parent containers,
-                    // but we don't modify scroll_position itself since the parent handles positioning.
-                    let max_row = snapshot.max_point().row();
-                    let start_row = cmp::min(
-                        DisplayRow((scroll_position.y + clipped_top_in_lines).floor() as u32),
-                        max_row,
-                    );
-                    let end_row = cmp::min(
-                        (scroll_position.y + clipped_top_in_lines + visible_height_in_lines).ceil()
-                            as u32,
-                        max_row.next_row().0,
-                    );
-                    let end_row = DisplayRow(end_row);
-
-                    let row_infos = snapshot // note we only get the visual range
-                        .row_infos(start_row)
-                        .take((start_row..end_row).len())
-                        .collect::<Vec<RowInfo>>();
+                    let visible_rows =
+                        Self::visible_rows(bounds, line_height, scroll_position, &snapshot, window);
+                    let max_row = visible_rows.max_row;
+                    let start_row = visible_rows.start_row;
+                    let end_row = visible_rows.end_row;
+                    let row_infos = visible_rows.row_infos;
+                    let start_anchor = visible_rows.start_anchor;
+                    let end_anchor = visible_rows.end_anchor;
                     let is_row_soft_wrapped = |row: usize| {
                         row_infos
                             .get(row)
                             .is_none_or(|info| info.buffer_row.is_none())
-                    };
-
-                    let start_anchor = if start_row == Default::default() {
-                        Anchor::Min
-                    } else {
-                        snapshot.buffer_snapshot().anchor_before(
-                            DisplayPoint::new(start_row, 0).to_offset(&snapshot, Bias::Left),
-                        )
-                    };
-                    let end_anchor = if end_row > max_row {
-                        Anchor::Max
-                    } else {
-                        snapshot.buffer_snapshot().anchor_before(
-                            DisplayPoint::new(end_row, 0).to_offset(&snapshot, Bias::Right),
-                        )
                     };
 
                     let mut highlighted_rows = self
