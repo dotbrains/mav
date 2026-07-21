@@ -55,7 +55,7 @@
     6276	crates/multi_buffer/src/multi_buffer_tests.rs
 5486	crates/language/src/buffer.rs
 5557	crates/workspace/src/persistence.rs
-5567	crates/search/src/project_search.rs
+2673	crates/search/src/project_search.rs
 5546	crates/vim/src/motion.rs
 5294	crates/agent_ui/src/message_editor.rs
     5473	crates/git/src/repository.rs
@@ -566,3 +566,4 @@
      526	crates/collab/tests/integration/auto_watch_tests.rs
      520	crates/vim/test_data/test_change_surrounding_character_objects.json
      518	crates/vim/test_data/test_delete_surrounding_character_objects.json
+2863	crates/search/src/project_search/tests.rs
