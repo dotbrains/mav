@@ -51,14 +51,15 @@ pub use breadcrumbs::render_breadcrumb_text;
 pub use cursor_layout::{CursorLayout, CursorName};
 pub use editor_layout::layout_line;
 use editor_layout::{CursorPopoverType, EditorLayout, IndentGuideLayout};
-use gutter::Gutter;
+use gutter::{Gutter, gutter_bounds};
 #[cfg(test)]
 pub(crate) use header::StickyHeader;
 pub(crate) use header::{header_jump_data, render_buffer_header};
 pub use highlighted_range::{HighlightedRange, HighlightedRangeLine};
 pub(crate) use layout_data::BlockLayout;
 use layout_data::{
-    ColoredRange, ContextMenuLayout, CreaseTrailerLayout, ScrollbarLayoutInformation,
+    ColoredRange, ContextMenuLayout, CreaseTrailerLayout, RenderBlocksOutput,
+    ScrollbarLayoutInformation,
 };
 use layout_primitives::{InlineBlameLayout, LineHighlightSpec, LineNumberStyle, SelectionLayout};
 pub(crate) use line_layout_model::{Invisible, LineFragment, LineWithInvisibles};
@@ -66,6 +67,7 @@ pub(super) use line_numbers::{LineNumberLayout, LineNumberSegment};
 use navigation_overlay::NavigationOverlayPaintCommand;
 pub use position_map::PointForPosition;
 pub(crate) use position_map::PositionMap;
+use request_layout::EditorRequestLayoutState;
 use scrollbar_layouts::{EditorScrollbars, MinimapLayout, ScrollbarLayout};
 
 use crate::{
@@ -135,7 +137,6 @@ use smallvec::{SmallVec, smallvec};
 use std::{
     any::TypeId,
     borrow::Cow,
-    cell::Cell,
     cmp::{self, Ordering},
     fmt::{self, Write},
     iter, mem,
@@ -156,16 +157,6 @@ use workspace::{
     CollaboratorId, ItemHandle, Workspace,
     item::{Item, ItemBufferKind},
 };
-
-#[derive(Default)]
-struct RenderBlocksOutput {
-    // We store spacer blocks separately because they paint in a different order
-    // (spacers -> indent guides -> non-spacers)
-    non_spacer_blocks: Vec<BlockLayout>,
-    spacer_blocks: Vec<BlockLayout>,
-    row_block_types: HashMap<DisplayRow, bool>,
-    resized_blocks: Option<HashMap<CustomBlockId, u32>>,
-}
 
 pub struct EditorElement {
     editor: Entity<Editor>,
@@ -236,46 +227,6 @@ impl EditorElement {
         } else {
             Some(self.editor.clone())
         }
-    }
-}
-
-#[derive(Default)]
-pub struct EditorRequestLayoutState {
-    // We use prepaint depth to limit the number of times prepaint is
-    // called recursively. We need this so that we can update stale
-    // data for e.g. block heights in block map.
-    prepaint_depth: Rc<Cell<usize>>,
-}
-
-impl EditorRequestLayoutState {
-    // In ideal conditions we only need one more subsequent prepaint call for resize to take effect.
-    // i.e. MAX_PREPAINT_DEPTH = 2, but placing near blocks can expose more lines from below, and
-    // we end up querying blocks for those lines too in subsequent renders.
-    // Setting MAX_PREPAINT_DEPTH = 3, passes all tests. Just to be on the safe side we set it to 5, so
-    // that subsequent shrinking does not lead to incorrect block placing.
-    const MAX_PREPAINT_DEPTH: usize = 5;
-
-    fn increment_prepaint_depth(&self) -> EditorPrepaintGuard {
-        let depth = self.prepaint_depth.get();
-        self.prepaint_depth.set(depth + 1);
-        EditorPrepaintGuard {
-            prepaint_depth: self.prepaint_depth.clone(),
-        }
-    }
-
-    fn has_remaining_prepaint_depth(&self) -> bool {
-        self.prepaint_depth.get() < Self::MAX_PREPAINT_DEPTH
-    }
-}
-
-struct EditorPrepaintGuard {
-    prepaint_depth: Rc<Cell<usize>>,
-}
-
-impl Drop for EditorPrepaintGuard {
-    fn drop(&mut self) {
-        let depth = self.prepaint_depth.get();
-        self.prepaint_depth.set(depth.saturating_sub(1));
     }
 }
 
@@ -1600,42 +1551,8 @@ impl Element for EditorElement {
                         )
                     });
 
-                    let invisible_symbol_font_size = font_size / 2.;
-                    let whitespace_map = &self
-                        .editor
-                        .read(cx)
-                        .buffer
-                        .read(cx)
-                        .language_settings(cx)
-                        .whitespace_map;
-
-                    let tab_char = whitespace_map.tab.clone();
-                    let tab_len = tab_char.len();
-                    let tab_invisible = window.text_system().shape_line(
-                        tab_char,
-                        invisible_symbol_font_size,
-                        &[TextRun {
-                            len: tab_len,
-                            font: self.style.text.font(),
-                            color: cx.theme().colors().editor_invisible,
-                            ..Default::default()
-                        }],
-                        None,
-                    );
-
-                    let space_char = whitespace_map.space.clone();
-                    let space_len = space_char.len();
-                    let space_invisible = window.text_system().shape_line(
-                        space_char,
-                        invisible_symbol_font_size,
-                        &[TextRun {
-                            len: space_len,
-                            font: self.style.text.font(),
-                            color: cx.theme().colors().editor_invisible,
-                            ..Default::default()
-                        }],
-                        None,
-                    );
+                    let (tab_invisible, space_invisible) =
+                        self.layout_invisible_symbols(font_size, window, cx);
 
                     let mode = snapshot.mode.clone();
 
@@ -1789,16 +1706,6 @@ impl Element for EditorElement {
         cx: &mut App,
     ) {
         self.paint_impl(bounds, layout, window, cx);
-    }
-}
-
-pub(super) fn gutter_bounds(
-    editor_bounds: Bounds<Pixels>,
-    gutter_dimensions: GutterDimensions,
-) -> Bounds<Pixels> {
-    Bounds {
-        origin: editor_bounds.origin,
-        size: size(gutter_dimensions.width, editor_bounds.size.height),
     }
 }
 

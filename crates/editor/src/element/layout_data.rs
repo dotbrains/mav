@@ -64,3 +64,13 @@ pub(crate) struct BlockLayout {
     pub(crate) overlaps_gutter: bool,
     pub(crate) is_buffer_header: bool,
 }
+
+#[derive(Default)]
+pub(super) struct RenderBlocksOutput {
+    // We store spacer blocks separately because they paint in a different order
+    // (spacers -> indent guides -> non-spacers)
+    pub(super) non_spacer_blocks: Vec<BlockLayout>,
+    pub(super) spacer_blocks: Vec<BlockLayout>,
+    pub(super) row_block_types: HashMap<DisplayRow, bool>,
+    pub(super) resized_blocks: Option<HashMap<CustomBlockId, u32>>,
+}

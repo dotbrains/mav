@@ -1,4 +1,45 @@
 use super::*;
+use std::cell::Cell;
+
+#[derive(Default)]
+pub struct EditorRequestLayoutState {
+    // We use prepaint depth to limit the number of times prepaint is
+    // called recursively. We need this so that we can update stale
+    // data for e.g. block heights in block map.
+    prepaint_depth: Rc<Cell<usize>>,
+}
+
+impl EditorRequestLayoutState {
+    // In ideal conditions we only need one more subsequent prepaint call for resize to take effect.
+    // i.e. MAX_PREPAINT_DEPTH = 2, but placing near blocks can expose more lines from below, and
+    // we end up querying blocks for those lines too in subsequent renders.
+    // Setting MAX_PREPAINT_DEPTH = 3, passes all tests. Just to be on the safe side we set it to 5, so
+    // that subsequent shrinking does not lead to incorrect block placing.
+    const MAX_PREPAINT_DEPTH: usize = 5;
+
+    pub(super) fn increment_prepaint_depth(&self) -> EditorPrepaintGuard {
+        let depth = self.prepaint_depth.get();
+        self.prepaint_depth.set(depth + 1);
+        EditorPrepaintGuard {
+            prepaint_depth: self.prepaint_depth.clone(),
+        }
+    }
+
+    pub(super) fn has_remaining_prepaint_depth(&self) -> bool {
+        self.prepaint_depth.get() < Self::MAX_PREPAINT_DEPTH
+    }
+}
+
+pub(super) struct EditorPrepaintGuard {
+    prepaint_depth: Rc<Cell<usize>>,
+}
+
+impl Drop for EditorPrepaintGuard {
+    fn drop(&mut self) {
+        let depth = self.prepaint_depth.get();
+        self.prepaint_depth.set(depth.saturating_sub(1));
+    }
+}
 
 impl EditorElement {
     pub(super) fn request_layout_impl(

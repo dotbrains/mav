@@ -1,5 +1,15 @@
 use super::*;
 
+pub(super) fn gutter_bounds(
+    editor_bounds: Bounds<Pixels>,
+    gutter_dimensions: GutterDimensions,
+) -> Bounds<Pixels> {
+    Bounds {
+        origin: editor_bounds.origin,
+        size: size(gutter_dimensions.width, editor_bounds.size.height),
+    }
+}
+
 pub(super) struct Gutter<'a> {
     pub(super) line_height: Pixels,
     pub(super) range: Range<DisplayRow>,
