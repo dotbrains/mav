@@ -2,6 +2,9 @@
 mod agent_message;
 #[path = "thread/compaction.rs"]
 mod compaction;
+#[cfg(test)]
+#[path = "thread/compaction_request_tests.rs"]
+mod compaction_request_tests;
 mod message;
 #[cfg(test)]
 #[path = "thread/sandbox_authorization_tests.rs"]
@@ -6603,46 +6606,5 @@ mod tests {
         assert!(request_texts.iter().all(
             |text| !text.contains("dropped older user") && !text.contains("dropped assistant")
         ));
-    }
-
-    #[test]
-    fn test_truncate_text_utf8_boundary() {
-        let message = LanguageModelRequestMessage {
-            role: Role::User,
-            content: vec![MessageContent::Text("hello 👋 world".to_string())],
-            cache: false,
-            reasoning_details: None,
-        };
-
-        let truncated = truncate_user_message_to_byte_budget(message, 8).unwrap();
-        assert_eq!(
-            truncated.content,
-            vec![MessageContent::Text("hello ".to_string())]
-        );
-    }
-
-    #[test]
-    fn test_truncate_keeps_fitting_images() {
-        let image = LanguageModelImage {
-            source: "image".into(),
-        };
-        let message = LanguageModelRequestMessage {
-            role: Role::User,
-            content: vec![
-                MessageContent::Text("abc".to_string()),
-                MessageContent::Image(image.clone()),
-            ],
-            cache: false,
-            reasoning_details: None,
-        };
-
-        let truncated = truncate_user_message_to_byte_budget(message, 8).unwrap();
-        assert_eq!(
-            truncated.content,
-            vec![
-                MessageContent::Text("abc".to_string()),
-                MessageContent::Image(image),
-            ]
-        );
     }
 }
