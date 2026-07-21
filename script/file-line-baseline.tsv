@@ -45,7 +45,7 @@
     7183	crates/project_panel/src/project_panel.rs
      252	crates/zeta_prompt/src/zeta_prompt.rs
     3730	crates/git_ui/src/git_graph.rs
-5451	crates/worktree/src/worktree.rs
+3663	crates/worktree/src/worktree.rs
     6922	crates/agent/src/agent.rs
     6818	crates/mav/src/mav.rs
 5288	crates/project/src/project.rs
@@ -568,3 +568,4 @@
      518	crates/vim/test_data/test_delete_surrounding_character_objects.json
 2862	crates/search/src/project_search/tests.rs
 3168	crates/workspace/src/persistence/tests.rs
+1794	crates/worktree/src/background_scanner.rs
