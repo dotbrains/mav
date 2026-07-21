@@ -44,6 +44,7 @@ mod scrollbar_layouts;
 mod scrollbar_markers;
 mod selection_inputs;
 mod signature_help_layout;
+mod surface_layout;
 mod visible_rows;
 mod word_diff_layout;
 
@@ -361,23 +362,12 @@ impl Element for EditorElement {
                         }
                     });
 
-                    let hitbox = window.insert_hitbox(bounds, HitboxBehavior::Normal);
-                    let gutter_hitbox = window.insert_hitbox(
-                        gutter_bounds(bounds, gutter_dimensions),
-                        HitboxBehavior::Normal,
-                    );
-                    let text_hitbox = window.insert_hitbox(
-                        Bounds {
-                            origin: gutter_hitbox.top_right(),
-                            size: size(text_width, bounds.size.height),
-                        },
-                        HitboxBehavior::Normal,
-                    );
-
-                    // Offset the content_bounds from the text_bounds by the gutter margin (which
-                    // is roughly half a character wide) to make hit testing work more like how we want.
-                    let content_offset = point(editor_margins.gutter.margin, Pixels::ZERO);
-                    let content_origin = text_hitbox.origin + content_offset;
+                    let surface = Self::layout_surface(bounds, text_width, &editor_margins, window);
+                    let hitbox = surface.hitbox;
+                    let gutter_hitbox = surface.gutter_hitbox;
+                    let text_hitbox = surface.text_hitbox;
+                    let content_offset = surface.content_offset;
+                    let content_origin = surface.content_origin;
 
                     let height_in_lines = f64::from(bounds.size.height / line_height);
                     let max_scroll_row = snapshot.max_point().row().as_f64();

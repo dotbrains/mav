@@ -63,6 +63,14 @@ pub(super) struct VisibleRows {
     pub(super) end_anchor: Anchor,
 }
 
+pub(super) struct EditorSurface {
+    pub(super) hitbox: Hitbox,
+    pub(super) gutter_hitbox: Hitbox,
+    pub(super) text_hitbox: Hitbox,
+    pub(super) content_offset: gpui::Point<Pixels>,
+    pub(super) content_origin: gpui::Point<Pixels>,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,
