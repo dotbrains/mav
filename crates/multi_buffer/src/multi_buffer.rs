@@ -1,4 +1,5 @@
 mod anchor;
+mod byte_iterators;
 mod diff_state;
 mod diff_transform;
 mod dimensions;
@@ -15,6 +16,7 @@ mod transform_dimensions;
 use self::transaction::History;
 
 pub use anchor::{Anchor, AnchorRangeExt};
+pub use byte_iterators::{MultiBufferBytes, ReversedMultiBufferBytes};
 pub use dimensions::{
     BufferOffset, BufferOffsetUtf16, MultiBufferDimension, MultiBufferOffset,
     MultiBufferOffsetUniformSampler, MultiBufferOffsetUtf16, MultiBufferPoint, MultiBufferRow,
@@ -215,20 +217,6 @@ pub struct ReversedMultiBufferChunks<'a> {
     current_chunks: Option<rope::Chunks<'a>>,
     start: MultiBufferOffset,
     offset: MultiBufferOffset,
-}
-
-pub struct MultiBufferBytes<'a> {
-    range: Range<MultiBufferOffset>,
-    cursor: MultiBufferCursor<'a, MultiBufferOffset, BufferOffset>,
-    excerpt_bytes: Option<text::Bytes<'a>>,
-    has_trailing_newline: bool,
-    chunk: &'a [u8],
-}
-
-pub struct ReversedMultiBufferBytes<'a> {
-    range: Range<MultiBufferOffset>,
-    chunks: ReversedMultiBufferChunks<'a>,
-    chunk: &'a [u8],
 }
 
 #[derive(Clone)]
@@ -6604,83 +6592,6 @@ impl<'a> Iterator for MultiBufferChunks<'a> {
                 Some(chunk)
             }
         }
-    }
-}
-
-impl MultiBufferBytes<'_> {
-    fn consume(&mut self, len: usize) {
-        self.range.start += len;
-        self.chunk = &self.chunk[len..];
-
-        if !self.range.is_empty() && self.chunk.is_empty() {
-            if let Some(chunk) = self.excerpt_bytes.as_mut().and_then(|bytes| bytes.next()) {
-                self.chunk = chunk;
-            } else if self.has_trailing_newline {
-                self.has_trailing_newline = false;
-                self.chunk = b"\n";
-            } else {
-                self.cursor.next();
-                if let Some(region) = self.cursor.region() {
-                    let mut excerpt_bytes = region.buffer.bytes_in_range(
-                        region.buffer_range.start
-                            ..(region.buffer_range.start + (self.range.end - region.range.start))
-                                .min(region.buffer_range.end),
-                    );
-                    self.chunk = excerpt_bytes.next().unwrap_or(&[]);
-                    self.excerpt_bytes = Some(excerpt_bytes);
-                    self.has_trailing_newline =
-                        region.has_trailing_newline && self.range.end >= region.range.end;
-                    if self.chunk.is_empty() && self.has_trailing_newline {
-                        self.has_trailing_newline = false;
-                        self.chunk = b"\n";
-                    }
-                }
-            }
-        }
-    }
-}
-
-impl<'a> Iterator for MultiBufferBytes<'a> {
-    type Item = &'a [u8];
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let chunk = self.chunk;
-        if chunk.is_empty() {
-            None
-        } else {
-            self.consume(chunk.len());
-            Some(chunk)
-        }
-    }
-}
-
-impl io::Read for MultiBufferBytes<'_> {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let len = cmp::min(buf.len(), self.chunk.len());
-        buf[..len].copy_from_slice(&self.chunk[..len]);
-        if len > 0 {
-            self.consume(len);
-        }
-        Ok(len)
-    }
-}
-
-impl io::Read for ReversedMultiBufferBytes<'_> {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let len = cmp::min(buf.len(), self.chunk.len());
-        buf[..len].copy_from_slice(&self.chunk[..len]);
-        buf[..len].reverse();
-        if len > 0 {
-            self.range.end -= len;
-            self.chunk = &self.chunk[..self.chunk.len() - len];
-            if !self.range.is_empty()
-                && self.chunk.is_empty()
-                && let Some(chunk) = self.chunks.next()
-            {
-                self.chunk = chunk.as_bytes();
-            }
-        }
-        Ok(len)
     }
 }
 
