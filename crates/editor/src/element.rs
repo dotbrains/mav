@@ -44,6 +44,7 @@ mod paint;
 mod paint_background;
 mod paint_helpers;
 mod position_map;
+mod post_scroll_prepaint;
 mod prepaint_helpers;
 mod register_actions;
 mod request_layout;
@@ -425,8 +426,8 @@ impl Element for EditorElement {
                         cx,
                     );
                     let RenderBlocksOutput {
-                        non_spacer_blocks: mut blocks,
-                        mut spacer_blocks,
+                        non_spacer_blocks: blocks,
+                        spacer_blocks,
                         row_block_types,
                         resized_blocks,
                     } = blocks_output;
@@ -511,117 +512,45 @@ impl Element for EditorElement {
                         cx,
                     );
 
-                    let crease_trailers =
-                        window.with_element_namespace("crease_trailers", |window| {
-                            self.prepaint_crease_trailers(
-                                crease_trailers,
-                                &line_layouts,
-                                line_height,
-                                content_origin,
-                                scroll_pixel_position,
-                                scroll_position,
-                                start_row,
-                                em_width,
-                                window,
-                                cx,
-                            )
-                        });
-
-                    let (edit_prediction_popover, edit_prediction_popover_origin) = self
-                        .editor
-                        .update(cx, |editor, cx| {
-                            editor.render_edit_prediction_popover(
-                                &text_hitbox.bounds,
-                                content_origin,
-                                right_margin,
-                                &snapshot,
-                                start_row..end_row,
-                                scroll_position.y,
-                                scroll_position.y + height_in_lines,
-                                &line_layouts,
-                                line_height,
-                                scroll_position,
-                                scroll_pixel_position,
-                                newest_selection_head,
-                                editor_width,
-                                style,
-                                window,
-                                cx,
-                            )
-                        })
-                        .unzip();
-
-                    let layout_data::InlineDecorationLayouts {
+                    let post_scroll_prepaint::PostScrollPrepaintLayouts {
+                        crease_trailers,
+                        edit_prediction_popover,
                         inline_diagnostics,
                         inline_blame_layout,
                         inline_code_actions,
-                    } = self.layout_inline_decorations(
-                        &line_layouts,
-                        &crease_trailers,
+                        blamed_display_rows,
+                        line_elements,
+                        blocks,
+                        spacer_blocks,
+                        line_layouts,
+                    } = self.layout_post_scroll_prepaint(
+                        crease_trailers,
+                        blocks,
+                        spacer_blocks,
+                        line_layouts,
                         &row_block_types,
                         &row_infos,
                         content_origin,
+                        &text_hitbox,
+                        right_margin,
                         scroll_position,
                         scroll_pixel_position,
-                        edit_prediction_popover_origin,
                         newest_selection_head,
                         start_row,
                         end_row,
+                        height_in_lines,
                         line_height,
                         em_width,
                         style,
                         &snapshot,
-                        window,
-                        cx,
-                    );
-
-                    let blamed_display_rows = self.layout_blame_entries(
-                        &row_infos,
-                        em_width,
-                        scroll_position,
-                        start_row,
-                        line_height,
+                        editor_width,
                         &gutter_hitbox,
                         gutter_dimensions.git_blame_entries_width,
+                        &hitbox,
+                        &editor_margins,
                         window,
                         cx,
                     );
-
-                    let line_elements = self.prepaint_lines(
-                        start_row,
-                        &mut line_layouts,
-                        line_height,
-                        scroll_position,
-                        scroll_pixel_position,
-                        content_origin,
-                        window,
-                        cx,
-                    );
-
-                    window.with_element_namespace("blocks", |window| {
-                        self.layout_blocks(
-                            &mut blocks,
-                            &hitbox,
-                            &gutter_hitbox,
-                            line_height,
-                            scroll_position,
-                            scroll_pixel_position,
-                            &editor_margins,
-                            window,
-                            cx,
-                        );
-                        self.layout_blocks(
-                            &mut spacer_blocks,
-                            &hitbox,
-                            &gutter_hitbox,
-                            line_height,
-                            scroll_position,
-                            scroll_pixel_position,
-                            &editor_margins,
-                            window,
-                            cx,
-                        );
-                    });
 
                     let visible_row_range = start_row..end_row;
                     let layout_data::CursorSurfaceLayouts {
