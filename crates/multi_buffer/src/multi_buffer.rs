@@ -1,5 +1,6 @@
 mod anchor;
 mod diff_state;
+mod diff_transform;
 mod dimensions;
 mod events;
 mod excerpt_summary;
@@ -34,6 +35,7 @@ use buffer_diff::{
 use clock::ReplicaId;
 use collections::{BTreeMap, Bound, HashMap, HashSet, IndexSet};
 use diff_state::*;
+use diff_transform::*;
 use futures_lite::future::yield_now;
 use gpui::{App, Context, Entity, EventEmitter};
 use itertools::Itertools;
@@ -154,45 +156,6 @@ pub struct MultiBufferSnapshot {
     show_deleted_hunks: bool,
     use_extended_diff_range: bool,
     show_headers: bool,
-}
-
-#[derive(Debug, Clone)]
-enum DiffTransform {
-    BufferContent {
-        summary: MBTextSummary,
-        inserted_hunk_info: Option<DiffTransformHunkInfo>,
-    },
-    DeletedHunk {
-        summary: TextSummary,
-        buffer_id: BufferId,
-        hunk_info: DiffTransformHunkInfo,
-        base_text_byte_range: Range<usize>,
-        has_trailing_newline: bool,
-    },
-}
-
-#[derive(Clone, Copy, Debug)]
-struct DiffTransformHunkInfo {
-    buffer_id: BufferId,
-    hunk_start_anchor: text::Anchor,
-    hunk_secondary_status: DiffHunkSecondaryStatus,
-    is_logically_deleted: bool,
-    excerpt_end: ExcerptAnchor,
-}
-
-impl Eq for DiffTransformHunkInfo {}
-
-impl PartialEq for DiffTransformHunkInfo {
-    fn eq(&self, other: &DiffTransformHunkInfo) -> bool {
-        self.buffer_id == other.buffer_id && self.hunk_start_anchor == other.hunk_start_anchor
-    }
-}
-
-impl std::hash::Hash for DiffTransformHunkInfo {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.buffer_id.hash(state);
-        self.hunk_start_anchor.hash(state);
-    }
 }
 
 impl<K, V> MultiBufferDimension for DimensionPair<K, V>
@@ -6435,34 +6398,6 @@ impl sum_tree::Item for Excerpt {
             widest_line_number: self.max_buffer_row,
             text: text.into(),
             count: 1,
-        }
-    }
-}
-
-impl DiffTransform {
-    fn hunk_info(&self) -> Option<DiffTransformHunkInfo> {
-        match self {
-            DiffTransform::DeletedHunk { hunk_info, .. } => Some(*hunk_info),
-            DiffTransform::BufferContent {
-                inserted_hunk_info, ..
-            } => *inserted_hunk_info,
-        }
-    }
-}
-
-impl sum_tree::Item for DiffTransform {
-    type Summary = DiffTransformSummary;
-
-    fn summary(&self, _: <Self::Summary as sum_tree::Summary>::Context<'_>) -> Self::Summary {
-        match self {
-            DiffTransform::BufferContent { summary, .. } => DiffTransformSummary {
-                input: *summary,
-                output: *summary,
-            },
-            &DiffTransform::DeletedHunk { summary, .. } => DiffTransformSummary {
-                input: MBTextSummary::default(),
-                output: summary.into(),
-            },
         }
     }
 }
