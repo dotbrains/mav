@@ -301,7 +301,7 @@
     1272	crates/agent_ui/src/agent_ui.rs
     1268	crates/anthropic/src/anthropic.rs
     1262	crates/project/src/task_inventory.rs
-    1257	crates/zeta_prompt/src/hashed_regions.rs
+     336	crates/zeta_prompt/src/hashed_regions.rs
     1255	crates/gpui_linux/src/linux/x11/clipboard.rs
     1253	crates/agent/src/tools/list_directory_tool.rs
     1251	crates/settings_content/src/language.rs
