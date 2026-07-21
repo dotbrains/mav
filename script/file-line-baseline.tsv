@@ -48,7 +48,7 @@
     6137	crates/worktree/src/worktree.rs
     6922	crates/agent/src/agent.rs
     6818	crates/mav/src/mav.rs
-    6768	crates/project/src/project.rs
+    6514	crates/project/src/project.rs
     6679	crates/settings_ui/src/settings_ui.rs
     6389	crates/gpui/src/window.rs
     6352	crates/editor/src/split.rs
