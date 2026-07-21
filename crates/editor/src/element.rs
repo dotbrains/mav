@@ -555,25 +555,7 @@ impl Element for EditorElement {
                         window,
                         cx,
                     );
-                    let new_renderer_widths = (!is_minimap).then(|| {
-                        line_layouts
-                            .iter()
-                            .flat_map(|layout| &layout.fragments)
-                            .filter_map(|fragment| {
-                                if let LineFragment::Element { id, size, .. } = fragment {
-                                    Some((*id, size.width))
-                                } else {
-                                    None
-                                }
-                            })
-                    });
-                    let renderer_widths_changed = request_layout.has_remaining_prepaint_depth()
-                        && new_renderer_widths.is_some_and(|new_renderer_widths| {
-                            self.editor.update(cx, |editor, cx| {
-                                editor.update_renderer_widths(new_renderer_widths, cx)
-                            })
-                        });
-                    if renderer_widths_changed {
+                    if self.renderer_widths_changed(is_minimap, &line_layouts, request_layout, cx) {
                         return self.prepaint(
                             None,
                             _inspector_id,

@@ -352,4 +352,32 @@ impl EditorElement {
         }
         line_elements
     }
+
+    pub(super) fn renderer_widths_changed(
+        &self,
+        is_minimap: bool,
+        line_layouts: &[LineWithInvisibles],
+        request_layout: &EditorRequestLayoutState,
+        cx: &mut App,
+    ) -> bool {
+        let new_renderer_widths = (!is_minimap).then(|| {
+            line_layouts
+                .iter()
+                .flat_map(|layout| &layout.fragments)
+                .filter_map(|fragment| {
+                    if let LineFragment::Element { id, size, .. } = fragment {
+                        Some((*id, size.width))
+                    } else {
+                        None
+                    }
+                })
+        });
+
+        request_layout.has_remaining_prepaint_depth()
+            && new_renderer_widths.is_some_and(|new_renderer_widths| {
+                self.editor.update(cx, |editor, cx| {
+                    editor.update_renderer_widths(new_renderer_widths, cx)
+                })
+            })
+    }
 }
