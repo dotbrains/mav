@@ -61,7 +61,7 @@
 3761	crates/git/src/repository.rs
 5149	crates/markdown/src/markdown.rs
 4261	crates/worktree/tests/integration/worktree_tests.rs
-    5192	crates/project/src/lsp_command.rs
+4169	crates/project/src/lsp_command.rs
     5085	crates/file_finder/src/file_finder_tests.rs
     5044	crates/editor/src/display_map/block_map.rs
     4918	crates/editor/src/inlays/inlay_hints.rs
