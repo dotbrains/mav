@@ -39,6 +39,7 @@ mod position_map;
 mod prepaint_helpers;
 mod register_actions;
 mod request_layout;
+mod row_highlights;
 mod scrollbar_layouts;
 mod scrollbar_markers;
 mod selection_inputs;
@@ -522,85 +523,13 @@ impl Element for EditorElement {
                         })
                         .unwrap_or_default();
 
-                    struct DiffHunkHighlightColors {
-                        filled_background: Hsla,
-                        hollow_background: Hsla,
-                        hollow_border: Hsla,
-                    }
-
-                    let colors = cx.theme().colors();
-                    let added_diff_hunk_colors = DiffHunkHighlightColors {
-                        filled_background: colors.editor_diff_hunk_added_background,
-                        hollow_background: colors.editor_diff_hunk_added_hollow_background,
-                        hollow_border: colors.editor_diff_hunk_added_hollow_border,
-                    };
-                    let deleted_diff_hunk_colors = DiffHunkHighlightColors {
-                        filled_background: colors.editor_diff_hunk_deleted_background,
-                        hollow_background: colors.editor_diff_hunk_deleted_hollow_background,
-                        hollow_border: colors.editor_diff_hunk_deleted_hollow_border,
-                    };
-                    let drag_highlight_color = colors.editor_active_line_background;
-                    let drag_border_color = colors.border_focused;
-
-                    for (ix, row_info) in row_infos.iter().enumerate() {
-                        let Some(diff_status) = row_info.diff_status else {
-                            continue;
-                        };
-
-                        let diff_hunk_colors = match diff_status.kind {
-                            DiffHunkStatusKind::Added => &added_diff_hunk_colors,
-                            DiffHunkStatusKind::Deleted => &deleted_diff_hunk_colors,
-                            DiffHunkStatusKind::Modified => {
-                                debug_panic!("modified diff status for row info");
-                                continue;
-                            }
-                        };
-
-                        let hollow_highlight = LineHighlight {
-                            background: diff_hunk_colors.hollow_background.into(),
-                            border: Some(diff_hunk_colors.hollow_border),
-                            include_gutter: true,
-                            type_id: None,
-                        };
-
-                        let filled_highlight = LineHighlight {
-                            background: solid_background(diff_hunk_colors.filled_background),
-                            border: None,
-                            include_gutter: true,
-                            type_id: None,
-                        };
-
-                        let background = if self.diff_hunk_hollow(diff_status, cx) {
-                            hollow_highlight
-                        } else {
-                            filled_highlight
-                        };
-
-                        let base_display_point =
-                            DisplayPoint::new(start_row + DisplayRow(ix as u32), 0);
-
-                        highlighted_rows
-                            .entry(base_display_point.row())
-                            .or_insert(background);
-                    }
-
-                    // Add diff review drag selection highlight to text area
-                    if let Some(drag_state) = &self.editor.read(cx).diff_review_drag_state {
-                        let range = drag_state.row_range(&snapshot.display_snapshot);
-                        let start_row = range.start().0;
-                        let end_row = range.end().0;
-                        let drag_highlight = LineHighlight {
-                            background: solid_background(drag_highlight_color),
-                            border: Some(drag_border_color),
-                            include_gutter: true,
-                            type_id: None,
-                        };
-                        for row_num in start_row..=end_row {
-                            highlighted_rows
-                                .entry(DisplayRow(row_num))
-                                .or_insert(drag_highlight);
-                        }
-                    }
+                    self.add_diff_and_drag_highlights(
+                        &mut highlighted_rows,
+                        &row_infos,
+                        start_row,
+                        &snapshot,
+                        cx,
+                    );
 
                     let highlighted_gutter_ranges =
                         self.editor.read(cx).gutter_highlights_in_range(
