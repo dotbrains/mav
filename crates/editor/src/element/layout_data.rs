@@ -106,6 +106,12 @@ pub(super) struct ScrollPositionLayout {
     pub(super) scroll_max: gpui::Point<ScrollPixelOffset>,
 }
 
+pub(super) struct InlineDecorationLayouts {
+    pub(super) inline_diagnostics: HashMap<DisplayRow, AnyElement>,
+    pub(super) inline_blame_layout: Option<InlineBlameLayout>,
+    pub(super) inline_code_actions: Option<AnyElement>,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,

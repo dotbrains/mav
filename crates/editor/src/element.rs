@@ -806,78 +806,29 @@ impl Element for EditorElement {
                         })
                         .unzip();
 
-                    let mut inline_diagnostics = self.layout_inline_diagnostics(
+                    let layout_data::InlineDecorationLayouts {
+                        inline_diagnostics,
+                        inline_blame_layout,
+                        inline_code_actions,
+                    } = self.layout_inline_decorations(
                         &line_layouts,
                         &crease_trailers,
                         &row_block_types,
+                        &row_infos,
                         content_origin,
                         scroll_position,
                         scroll_pixel_position,
                         edit_prediction_popover_origin,
+                        newest_selection_head,
                         start_row,
                         end_row,
                         line_height,
                         em_width,
                         style,
+                        &snapshot,
                         window,
                         cx,
                     );
-
-                    let mut inline_blame_layout = None;
-                    let mut inline_code_actions = None;
-                    if let Some(newest_selection_head) = newest_selection_head {
-                        let display_row = newest_selection_head.row();
-                        if (start_row..end_row).contains(&display_row)
-                            && !row_block_types.contains_key(&display_row)
-                        {
-                            inline_code_actions = self.layout_inline_code_actions(
-                                newest_selection_head,
-                                content_origin,
-                                scroll_position,
-                                scroll_pixel_position,
-                                line_height,
-                                &snapshot,
-                                window,
-                                cx,
-                            );
-
-                            let line_ix = display_row.minus(start_row) as usize;
-                            if let (Some(row_info), Some(line_layout), Some(crease_trailer)) = (
-                                row_infos.get(line_ix),
-                                line_layouts.get(line_ix),
-                                crease_trailers.get(line_ix),
-                            ) {
-                                let crease_trailer_layout = crease_trailer.as_ref();
-                                if let Some(layout) = self.layout_inline_blame(
-                                    display_row,
-                                    row_info,
-                                    line_layout,
-                                    crease_trailer_layout,
-                                    em_width,
-                                    content_origin,
-                                    scroll_position,
-                                    scroll_pixel_position,
-                                    line_height,
-                                    window,
-                                    cx,
-                                ) {
-                                    inline_blame_layout = Some(layout);
-                                    // Blame overrides inline diagnostics
-                                    inline_diagnostics.remove(&display_row);
-                                }
-                            } else {
-                                log::error!(
-                                    "bug: line_ix {} is out of bounds - row_infos.len(): {}, \
-                                    line_layouts.len(): {}, \
-                                    crease_trailers.len(): {}",
-                                    line_ix,
-                                    row_infos.len(),
-                                    line_layouts.len(),
-                                    crease_trailers.len(),
-                                );
-                            }
-                        }
-                    }
 
                     let blamed_display_rows = self.layout_blame_entries(
                         &row_infos,

@@ -1,6 +1,105 @@
 use super::*;
 
 impl EditorElement {
+    pub(super) fn layout_inline_decorations(
+        &self,
+        line_layouts: &[LineWithInvisibles],
+        crease_trailers: &[Option<CreaseTrailerLayout>],
+        row_block_types: &HashMap<DisplayRow, bool>,
+        row_infos: &[RowInfo],
+        content_origin: gpui::Point<Pixels>,
+        scroll_position: gpui::Point<ScrollOffset>,
+        scroll_pixel_position: gpui::Point<ScrollPixelOffset>,
+        edit_prediction_popover_origin: Option<gpui::Point<Pixels>>,
+        newest_selection_head: Option<DisplayPoint>,
+        start_row: DisplayRow,
+        end_row: DisplayRow,
+        line_height: Pixels,
+        em_width: Pixels,
+        style: &EditorStyle,
+        snapshot: &EditorSnapshot,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> layout_data::InlineDecorationLayouts {
+        let mut inline_diagnostics = self.layout_inline_diagnostics(
+            line_layouts,
+            crease_trailers,
+            row_block_types,
+            content_origin,
+            scroll_position,
+            scroll_pixel_position,
+            edit_prediction_popover_origin,
+            start_row,
+            end_row,
+            line_height,
+            em_width,
+            style,
+            window,
+            cx,
+        );
+
+        let mut inline_blame_layout = None;
+        let mut inline_code_actions = None;
+        if let Some(newest_selection_head) = newest_selection_head {
+            let display_row = newest_selection_head.row();
+            if (start_row..end_row).contains(&display_row)
+                && !row_block_types.contains_key(&display_row)
+            {
+                inline_code_actions = self.layout_inline_code_actions(
+                    newest_selection_head,
+                    content_origin,
+                    scroll_position,
+                    scroll_pixel_position,
+                    line_height,
+                    snapshot,
+                    window,
+                    cx,
+                );
+
+                let line_ix = display_row.minus(start_row) as usize;
+                if let (Some(row_info), Some(line_layout), Some(crease_trailer)) = (
+                    row_infos.get(line_ix),
+                    line_layouts.get(line_ix),
+                    crease_trailers.get(line_ix),
+                ) {
+                    let crease_trailer_layout = crease_trailer.as_ref();
+                    if let Some(layout) = self.layout_inline_blame(
+                        display_row,
+                        row_info,
+                        line_layout,
+                        crease_trailer_layout,
+                        em_width,
+                        content_origin,
+                        scroll_position,
+                        scroll_pixel_position,
+                        line_height,
+                        window,
+                        cx,
+                    ) {
+                        inline_blame_layout = Some(layout);
+                        // Blame overrides inline diagnostics.
+                        inline_diagnostics.remove(&display_row);
+                    }
+                } else {
+                    log::error!(
+                        "bug: line_ix {} is out of bounds - row_infos.len(): {}, \
+                        line_layouts.len(): {}, crease_trailers.len(): {}",
+                        line_ix,
+                        row_infos.len(),
+                        line_layouts.len(),
+                        crease_trailers.len(),
+                    );
+                }
+            }
+        }
+
+        layout_data::InlineDecorationLayouts {
+            inline_diagnostics,
+            inline_blame_layout,
+            inline_code_actions,
+        }
+    }
+
     pub(super) fn layout_inline_diagnostics(
         &self,
         line_layouts: &[LineWithInvisibles],
