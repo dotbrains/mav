@@ -150,6 +150,8 @@ mod notification;
 #[cfg(test)]
 mod notification_basic_tests;
 #[cfg(test)]
+mod notification_visibility_tests;
+#[cfg(test)]
 mod permission_action_tests;
 #[cfg(test)]
 mod permission_button_tests;
@@ -726,110 +728,6 @@ pub(crate) mod tests {
     }
 
     #[gpui::test]
-    async fn test_notification_for_tool_authorization(cx: &mut TestAppContext) {
-        init_test(cx);
-
-        let tool_call_id = acp::ToolCallId::new("1");
-        let tool_call = acp::ToolCall::new(tool_call_id.clone(), "Label")
-            .kind(acp::ToolKind::Edit)
-            .content(vec!["hi".into()]);
-        let connection =
-            StubAgentConnection::new().with_permission_requests(HashMap::from_iter([(
-                tool_call_id,
-                PermissionOptions::Flat(vec![acp::PermissionOption::new(
-                    "1",
-                    "Allow",
-                    acp::PermissionOptionKind::AllowOnce,
-                )]),
-            )]));
-
-        connection.set_next_prompt_updates(vec![acp::SessionUpdate::ToolCall(tool_call)]);
-
-        let (conversation_view, cx) =
-            setup_conversation_view(StubAgentServer::new(connection), cx).await;
-
-        let message_editor = message_editor(&conversation_view, cx);
-        message_editor.update_in(cx, |editor, window, cx| {
-            editor.set_text("Hello", window, cx);
-        });
-
-        cx.deactivate_window();
-
-        active_thread(&conversation_view, cx)
-            .update_in(cx, |view, window, cx| view.send(window, cx));
-
-        cx.run_until_parked();
-
-        assert!(
-            cx.windows()
-                .iter()
-                .any(|window| window.downcast::<AgentNotification>().is_some())
-        );
-    }
-
-    #[gpui::test]
-    async fn test_notification_when_panel_hidden(cx: &mut TestAppContext) {
-        init_test(cx);
-
-        let (conversation_view, cx) =
-            setup_conversation_view(StubAgentServer::default_response(), cx).await;
-
-        add_to_workspace(conversation_view.clone(), cx);
-
-        let message_editor = message_editor(&conversation_view, cx);
-
-        message_editor.update_in(cx, |editor, window, cx| {
-            editor.set_text("Hello", window, cx);
-        });
-
-        // Window is active (don't deactivate), but panel will be hidden
-        // Note: In the test environment, the panel is not actually added to the dock,
-        // so is_agent_panel_hidden will return true
-
-        active_thread(&conversation_view, cx)
-            .update_in(cx, |view, window, cx| view.send(window, cx));
-
-        cx.run_until_parked();
-
-        // Should show notification because window is active but panel is hidden
-        assert!(
-            cx.windows()
-                .iter()
-                .any(|window| window.downcast::<AgentNotification>().is_some()),
-            "Expected notification when panel is hidden"
-        );
-    }
-
-    #[gpui::test]
-    async fn test_notification_still_works_when_window_inactive(cx: &mut TestAppContext) {
-        init_test(cx);
-
-        let (conversation_view, cx) =
-            setup_conversation_view(StubAgentServer::default_response(), cx).await;
-
-        let message_editor = message_editor(&conversation_view, cx);
-        message_editor.update_in(cx, |editor, window, cx| {
-            editor.set_text("Hello", window, cx);
-        });
-
-        // Deactivate window - should show notification regardless of setting
-        cx.deactivate_window();
-
-        active_thread(&conversation_view, cx)
-            .update_in(cx, |view, window, cx| view.send(window, cx));
-
-        cx.run_until_parked();
-
-        // Should still show notification when window is inactive (existing behavior)
-        assert!(
-            cx.windows()
-                .iter()
-                .any(|window| window.downcast::<AgentNotification>().is_some()),
-            "Expected notification when window is inactive"
-        );
-    }
-
-    #[gpui::test]
     async fn test_notification_when_different_conversation_is_active_in_visible_panel(
         cx: &mut TestAppContext,
     ) {
@@ -1340,45 +1238,6 @@ pub(crate) mod tests {
                 "Expected accepting the notification to load the notified thread in AgentPanel"
             );
         });
-    }
-
-    #[gpui::test]
-    async fn test_notification_respects_never_setting(cx: &mut TestAppContext) {
-        init_test(cx);
-
-        // Set notify_when_agent_waiting to Never
-        cx.update(|cx| {
-            AgentSettings::override_global(
-                AgentSettings {
-                    notify_when_agent_waiting: NotifyWhenAgentWaiting::Never,
-                    ..AgentSettings::get_global(cx).clone()
-                },
-                cx,
-            );
-        });
-
-        let (conversation_view, cx) =
-            setup_conversation_view(StubAgentServer::default_response(), cx).await;
-
-        let message_editor = message_editor(&conversation_view, cx);
-        message_editor.update_in(cx, |editor, window, cx| {
-            editor.set_text("Hello", window, cx);
-        });
-
-        // Window is active
-
-        active_thread(&conversation_view, cx)
-            .update_in(cx, |view, window, cx| view.send(window, cx));
-
-        cx.run_until_parked();
-
-        // Should NOT show notification because notify_when_agent_waiting is Never
-        assert!(
-            !cx.windows()
-                .iter()
-                .any(|window| window.downcast::<AgentNotification>().is_some()),
-            "Expected no notification when notify_when_agent_waiting is Never"
-        );
     }
 
     #[gpui::test]
