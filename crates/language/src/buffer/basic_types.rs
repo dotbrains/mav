@@ -26,7 +26,6 @@ pub enum ParseStatus {
     Parsing,
 }
 
-
 /// The kind and amount of indentation in a particular line. For now,
 /// assumes that indentation is all the same character.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
@@ -72,7 +71,6 @@ impl From<settings::CursorShape> for CursorShape {
     }
 }
 
-
 /// A class of characters, used for characterizing a run of text.
 #[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord, Debug)]
 pub enum CharKind {
@@ -115,7 +113,6 @@ impl<T> BracketMatch<T> {
         (self.open_range, self.close_range)
     }
 }
-
 
 impl IndentSize {
     /// Returns an [`IndentSize`] representing the given spaces.
