@@ -6,6 +6,8 @@ mod command_catalog;
 mod connection;
 #[path = "agent/connection_traits.rs"]
 mod connection_traits;
+#[path = "agent/core.rs"]
+mod core;
 mod db;
 #[path = "agent/language_model_cache.rs"]
 mod language_model_cache;
@@ -241,176 +243,6 @@ static SKILLS_PREFIX: LazyLock<Option<Arc<RelPath>>> = LazyLock::new(|| {
         .map(|path| path.into_arc())
 });
 
-impl NativeAgent {
-    pub fn new(
-        thread_store: Entity<ThreadStore>,
-        templates: Arc<Templates>,
-        fs: Arc<dyn Fs>,
-        cx: &mut App,
-    ) -> Entity<NativeAgent> {
-        log::debug!("Creating new NativeAgent");
-
-        cx.new(|cx| {
-            let subscriptions = vec![
-                cx.subscribe(
-                    &LanguageModelRegistry::global(cx),
-                    Self::handle_models_updated_event,
-                ),
-                // Flush thread content on quit so an in-flight async save
-                // can't leave a thread orphaned ("no thread found with ID").
-                cx.on_app_quit(Self::flush_threads_on_quit),
-            ];
-
-            if !cx.has_global::<SkillIndex>() {
-                cx.set_global(SkillIndex::default());
-            }
-
-            Self {
-                sessions: HashMap::default(),
-                pending_sessions: HashMap::default(),
-                thread_store,
-                projects: HashMap::default(),
-                templates,
-                models: LanguageModels::new(cx),
-                sibling_thread_host: None,
-                fs,
-                _subscriptions: subscriptions,
-                skills_state: SkillsState::default(),
-            }
-        })
-    }
-
-    pub fn set_sibling_thread_host(&mut self, host: Rc<dyn SiblingThreadHost>) {
-        self.sibling_thread_host = Some(host);
-    }
-
-    pub fn sibling_thread_host(&self) -> Option<Rc<dyn SiblingThreadHost>> {
-        self.sibling_thread_host.clone()
-    }
-
-    fn new_session(
-        &mut self,
-        project: Entity<Project>,
-        cx: &mut Context<Self>,
-    ) -> Entity<AcpThread> {
-        let project_id = self.get_or_create_project_state(&project, cx);
-        let project_state = &self.projects[&project_id];
-
-        let registry = LanguageModelRegistry::read_global(cx);
-        let available_count = registry.available_models(cx).count();
-        log::debug!("Total available models: {}", available_count);
-
-        let default_model = registry.default_model().and_then(|default_model| {
-            self.models
-                .model_from_id(&LanguageModels::model_id(&default_model.model))
-        });
-        let thread = cx.new(|cx| {
-            Thread::new(
-                project,
-                project_state.project_context.clone(),
-                project_state.context_server_registry.clone(),
-                self.templates.clone(),
-                default_model,
-                cx,
-            )
-        });
-
-        self.register_session(thread, project_id, 1, cx)
-    }
-
-    fn register_session(
-        &mut self,
-        thread_handle: Entity<Thread>,
-        project_id: EntityId,
-        ref_count: usize,
-        cx: &mut Context<Self>,
-    ) -> Entity<AcpThread> {
-        let connection = Rc::new(NativeAgentConnection(cx.entity()));
-
-        let thread = thread_handle.read(cx);
-        let session_id = thread.id().clone();
-        let parent_session_id = thread.parent_thread_id();
-        let title = thread.title();
-        let draft_prompt = thread.draft_prompt().map(Vec::from);
-        let scroll_position = thread.ui_scroll_position();
-        let token_usage = thread.latest_token_usage();
-        let project = thread.project.clone();
-        let action_log = thread.action_log.clone();
-        let prompt_capabilities_rx = thread.prompt_capabilities_rx.clone();
-        let acp_thread = cx.new(|cx| {
-            let mut acp_thread = acp_thread::AcpThread::new(
-                parent_session_id,
-                title,
-                None,
-                connection,
-                project.clone(),
-                action_log.clone(),
-                session_id.clone(),
-                prompt_capabilities_rx,
-                cx,
-            );
-            acp_thread.set_draft_prompt(draft_prompt, cx);
-            acp_thread.set_ui_scroll_position(scroll_position);
-            acp_thread.update_token_usage(token_usage, cx);
-            acp_thread
-        });
-
-        let registry = LanguageModelRegistry::read_global(cx);
-        let summarization_model = registry.thread_summary_model(cx).map(|c| c.model);
-
-        let weak = cx.weak_entity();
-        let weak_thread = thread_handle.downgrade();
-        thread_handle.update(cx, |thread, cx| {
-            thread.set_summarization_model(summarization_model, cx);
-            thread.add_default_tools(
-                Rc::new(NativeThreadEnvironment {
-                    acp_thread: acp_thread.downgrade(),
-                    thread: weak_thread,
-                    agent: weak.clone(),
-                }) as _,
-                cx,
-            );
-            // The resolver closure reads `state.skills` at invocation
-            // time, so skills added or removed by the SKILL.md watcher
-            // after the thread is constructed are still visible to the
-            // model — without this, the catalog and tool would drift out
-            // of sync until the session was reopened.
-            thread.add_tool(SkillTool::with_body_resolver(
-                skills_resolver_for_project(weak.clone(), project_id),
-                skill_body_resolver_for_project(project.clone(), self.fs.clone()),
-            ));
-        });
-
-        let subscriptions = vec![
-            cx.subscribe(&thread_handle, Self::handle_thread_title_updated),
-            cx.subscribe(&thread_handle, Self::handle_thread_token_usage_updated),
-            cx.observe(&thread_handle, move |this, thread, cx| {
-                this.save_thread(thread, cx)
-            }),
-        ];
-
-        self.sessions.insert(
-            session_id,
-            Session {
-                thread: thread_handle,
-                acp_thread: acp_thread.clone(),
-                project_id,
-                _subscriptions: subscriptions,
-                pending_save: Task::ready(Ok(())),
-                ref_count,
-            },
-        );
-
-        self.update_available_commands_for_project(project_id, cx);
-
-        acp_thread
-    }
-
-    pub fn models(&self) -> &LanguageModels {
-        &self.models
-    }
-}
-
 #[cfg(test)]
 mod internal_tests {
     use std::path::Path;
@@ -511,92 +343,10 @@ mod internal_tests {
         include!("agent_tests/skill_catalog.rs");
     }
 
-    #[gpui::test]
-    async fn test_maintaining_project_context(cx: &mut TestAppContext) {
-        init_test(cx);
-        let fs = FakeFs::new(cx.executor());
-        fs.insert_tree(
-            "/",
-            json!({
-                "a": {}
-            }),
-        )
-        .await;
-        let project = Project::test(fs.clone(), [], cx).await;
-        let thread_store = cx.new(|cx| ThreadStore::new(cx));
-        let agent =
-            cx.update(|cx| NativeAgent::new(thread_store, Templates::new(), fs.clone(), cx));
+    mod project_context_tests {
+        use super::*;
 
-        // Creating a session registers the project and triggers context building.
-        let connection = NativeAgentConnection(agent.clone());
-        let _acp_thread = cx
-            .update(|cx| {
-                Rc::new(connection).new_session(
-                    project.clone(),
-                    PathList::new(&[Path::new("/")]),
-                    cx,
-                )
-            })
-            .await
-            .unwrap();
-        cx.run_until_parked();
-
-        let thread = agent.read_with(cx, |agent, _cx| {
-            agent.sessions.values().next().unwrap().thread.clone()
-        });
-
-        agent.read_with(cx, |agent, cx| {
-            let project_id = project.entity_id();
-            let state = agent.projects.get(&project_id).unwrap();
-            assert_eq!(state.project_context.read(cx).worktrees, vec![]);
-            assert_eq!(thread.read(cx).project_context().read(cx).worktrees, vec![]);
-        });
-
-        let worktree = project
-            .update(cx, |project, cx| project.create_worktree("/a", true, cx))
-            .await
-            .unwrap();
-        cx.run_until_parked();
-        agent.read_with(cx, |agent, cx| {
-            let project_id = project.entity_id();
-            let state = agent.projects.get(&project_id).unwrap();
-            let expected_worktrees = vec![WorktreeContext {
-                root_name: "a".into(),
-                abs_path: Path::new("/a").into(),
-                rules_file: None,
-            }];
-            assert_eq!(state.project_context.read(cx).worktrees, expected_worktrees);
-            assert_eq!(
-                thread.read(cx).project_context().read(cx).worktrees,
-                expected_worktrees
-            );
-        });
-
-        // Creating `/a/.rules` updates the project context.
-        fs.insert_file("/a/.rules", Vec::new()).await;
-        cx.run_until_parked();
-        agent.read_with(cx, |agent, cx| {
-            let project_id = project.entity_id();
-            let state = agent.projects.get(&project_id).unwrap();
-            let rules_entry = worktree
-                .read(cx)
-                .entry_for_path(rel_path(".rules"))
-                .unwrap();
-            let expected_worktrees = vec![WorktreeContext {
-                root_name: "a".into(),
-                abs_path: Path::new("/a").into(),
-                rules_file: Some(RulesFileContext {
-                    path_in_worktree: rel_path(".rules").into(),
-                    text: "".into(),
-                    project_entry_id: rules_entry.id.to_usize(),
-                }),
-            }];
-            assert_eq!(state.project_context.read(cx).worktrees, expected_worktrees);
-            assert_eq!(
-                thread.read(cx).project_context().read(cx).worktrees,
-                expected_worktrees
-            );
-        });
+        include!("agent_tests/project_context.rs");
     }
 
     mod global_skill_tests {
@@ -641,67 +391,10 @@ mod internal_tests {
         include!("agent_tests/session_lifecycle.rs");
     }
 
-    #[gpui::test]
-    async fn test_rapid_title_changes_do_not_loop(cx: &mut TestAppContext) {
-        // Regression test: rapid title changes must not cause a propagation loop
-        // between Thread and AcpThread via handle_thread_title_updated.
-        init_test(cx);
-        let fs = FakeFs::new(cx.executor());
-        fs.insert_tree("/", json!({ "a": {} })).await;
-        let project = Project::test(fs.clone(), [], cx).await;
-        let thread_store = cx.new(|cx| ThreadStore::new(cx));
-        let agent = cx
-            .update(|cx| NativeAgent::new(thread_store.clone(), Templates::new(), fs.clone(), cx));
-        let connection = Rc::new(NativeAgentConnection(agent.clone()));
+    mod title_update_tests {
+        use super::*;
 
-        let acp_thread = cx
-            .update(|cx| {
-                connection
-                    .clone()
-                    .new_session(project.clone(), PathList::new(&[Path::new("")]), cx)
-            })
-            .await
-            .unwrap();
-
-        let session_id = acp_thread.read_with(cx, |thread, _| thread.session_id().clone());
-        let thread = agent.read_with(cx, |agent, _| {
-            agent.sessions.get(&session_id).unwrap().thread.clone()
-        });
-
-        let title_updated_count = Rc::new(std::cell::RefCell::new(0usize));
-        cx.update(|cx| {
-            let count = title_updated_count.clone();
-            cx.subscribe(
-                &thread,
-                move |_entity: Entity<Thread>, _event: &TitleUpdated, _cx: &mut App| {
-                    let new_count = {
-                        let mut count = count.borrow_mut();
-                        *count += 1;
-                        *count
-                    };
-                    assert!(
-                        new_count <= 2,
-                        "TitleUpdated fired {new_count} times; \
-                         title updates are looping"
-                    );
-                },
-            )
-            .detach();
-        });
-
-        thread.update(cx, |thread, cx| thread.set_title("first".into(), cx));
-        thread.update(cx, |thread, cx| thread.set_title("second".into(), cx));
-
-        cx.run_until_parked();
-
-        thread.read_with(cx, |thread, _| {
-            assert_eq!(thread.title(), Some("second".into()));
-        });
-        acp_thread.read_with(cx, |acp_thread, _| {
-            assert_eq!(acp_thread.title(), Some("second".into()));
-        });
-
-        assert_eq!(*title_updated_count.borrow(), 2);
+        include!("agent_tests/title_updates.rs");
     }
 
     fn thread_entries(
@@ -726,45 +419,10 @@ mod internal_tests {
         });
     }
 
-    #[test]
-    fn test_strip_slash_command_prefix_keeps_inline_args() {
-        // The bug being guarded against: skill slash invocation used to
-        // discard the entire first text block, which threw away anything
-        // the user typed on the same line as the command.
-        assert_eq!(
-            strip_slash_command_prefix("/fix-review #1, #2, #3"),
-            "#1, #2, #3",
-        );
-    }
+    mod slash_prefix_tests {
+        use super::*;
 
-    #[test]
-    fn test_strip_slash_command_prefix_preserves_newlines() {
-        // Continuations across newlines are common when users compose
-        // structured prompts; the first newline is the command terminator,
-        // but everything after it must reach the model verbatim.
-        assert_eq!(
-            strip_slash_command_prefix("/fix-review\nline 1\nline 2"),
-            "line 1\nline 2",
-        );
-    }
-
-    #[test]
-    fn test_strip_slash_command_prefix_command_only_is_empty() {
-        assert_eq!(strip_slash_command_prefix("/fix-review"), "");
-        assert_eq!(strip_slash_command_prefix("/fix-review "), "");
-    }
-
-    #[test]
-    fn test_strip_slash_command_prefix_ignores_leading_whitespace() {
-        assert_eq!(strip_slash_command_prefix("   /fix-review hello"), "hello",);
-    }
-
-    #[test]
-    fn test_strip_slash_command_prefix_passes_through_non_command_text() {
-        // Defense in depth: if somehow we're called with a non-slash-prefixed
-        // block, the safe behavior is to return it unchanged rather than
-        // silently mangling unrelated user text.
-        assert_eq!(strip_slash_command_prefix("hello world"), "hello world",);
+        include!("agent_tests/slash_prefix.rs");
     }
 }
 
