@@ -57,7 +57,7 @@
 5557	crates/workspace/src/persistence.rs
 5567	crates/search/src/project_search.rs
 5546	crates/vim/src/motion.rs
-    5627	crates/agent_ui/src/message_editor.rs
+5294	crates/agent_ui/src/message_editor.rs
     5473	crates/git/src/repository.rs
     5466	crates/markdown/src/markdown.rs
     5427	crates/worktree/tests/integration/worktree_tests.rs
