@@ -50,7 +50,7 @@
     6818	crates/mav/src/mav.rs
 5288	crates/project/src/project.rs
 5368	crates/settings_ui/src/settings_ui.rs
-5534	crates/gpui/src/window.rs
+5349	crates/gpui/src/window.rs
    5304	crates/editor/src/split.rs
     6276	crates/multi_buffer/src/multi_buffer_tests.rs
 5486	crates/language/src/buffer.rs
