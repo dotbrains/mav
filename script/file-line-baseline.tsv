@@ -53,7 +53,7 @@
     5894	crates/gpui/src/window.rs
     5762	crates/editor/src/split.rs
     6276	crates/multi_buffer/src/multi_buffer_tests.rs
-    5962	crates/language/src/buffer.rs
+   5611	crates/language/src/buffer.rs
     5752	crates/workspace/src/persistence.rs
     5696	crates/search/src/project_search.rs
     5694	crates/vim/src/motion.rs
