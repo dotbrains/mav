@@ -61,7 +61,6 @@
 5343	crates/git/src/repository.rs
 5149	crates/markdown/src/markdown.rs
 4261	crates/worktree/tests/integration/worktree_tests.rs
-    5425	crates/migrator/src/migrator.rs
     5192	crates/project/src/lsp_command.rs
     5085	crates/file_finder/src/file_finder_tests.rs
     5044	crates/editor/src/display_map/block_map.rs
@@ -570,3 +569,4 @@
 3168	crates/workspace/src/persistence/tests.rs
 1794	crates/worktree/src/background_scanner.rs
 1170	crates/worktree/tests/integration/traversal_symlink_tests.rs
+5007	crates/migrator/src/tests.rs
