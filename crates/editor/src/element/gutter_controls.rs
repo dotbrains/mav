@@ -447,5 +447,4 @@ impl EditorElement {
             })
             .collect()
     }
-
 }
