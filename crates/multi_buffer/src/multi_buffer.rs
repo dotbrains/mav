@@ -37,6 +37,7 @@ mod snapshot_ranges;
 mod snapshot_syntax_ranges;
 mod snapshot_text;
 mod snapshot_text_ranges;
+mod snapshot_words;
 #[cfg(any(test, feature = "test-support"))]
 mod test_support;
 mod transaction;
@@ -225,185 +226,11 @@ where
     }
 }
 
-impl MultiBuffer {
-    pub fn toggle_single_diff_hunk(&mut self, range: Range<Anchor>, cx: &mut Context<Self>) {
-        let snapshot = self.snapshot(cx);
-        let excerpt_end = snapshot
-            .excerpt_containing(range.end..range.end)
-            .and_then(|(_, excerpt_range)| snapshot.anchor_in_excerpt(excerpt_range.context.end));
-        let point_range = range.to_point(&snapshot);
-        let expand = !self.single_hunk_is_expanded(range, cx);
-        let edits =
-            self.expand_or_collapse_diff_hunks_inner([(point_range, excerpt_end)], expand, cx);
-        if !edits.is_empty() {
-            self.subscriptions.publish(edits);
-        }
-        cx.emit(Event::DiffHunksToggled);
-        cx.emit(Event::Edited {
-            edited_buffer: None,
-            source: BufferEditSource::User,
-        });
-    }
-}
+impl MultiBuffer {}
 
 impl EventEmitter<Event> for MultiBuffer {}
 
 impl MultiBufferSnapshot {
-    pub fn diff_hunk_before<T: ToOffset>(&self, position: T) -> Option<MultiBufferRow> {
-        let offset = position.to_offset(self);
-
-        let mut cursor = self
-            .cursor::<DimensionPair<MultiBufferOffset, Point>, DimensionPair<BufferOffset, Point>>(
-            );
-        cursor.seek(&DimensionPair {
-            key: offset,
-            value: None,
-        });
-        cursor.seek_to_start_of_current_excerpt();
-        let excerpt = cursor.excerpt()?;
-
-        let buffer = excerpt.buffer_snapshot(self);
-        let excerpt_start = excerpt.range.context.start.to_offset(buffer);
-        let excerpt_end = excerpt.range.context.end.to_offset(buffer);
-        let current_position = match self.anchor_before(offset) {
-            Anchor::Min => 0,
-            Anchor::Excerpt(excerpt_anchor) => excerpt_anchor.text_anchor().to_offset(buffer),
-            Anchor::Max => unreachable!(),
-        };
-
-        if let Some(diff) = self.diff_state(excerpt.buffer_id) {
-            if let Some(main_buffer) = &diff.main_buffer {
-                for hunk in diff
-                    .hunks_intersecting_base_text_range_rev(excerpt_start..excerpt_end, main_buffer)
-                {
-                    if hunk.diff_base_byte_range.end >= current_position {
-                        continue;
-                    }
-                    let hunk_start = buffer.anchor_after(hunk.diff_base_byte_range.start);
-                    let start =
-                        Anchor::in_buffer(excerpt.path_key_index, hunk_start).to_point(self);
-                    return Some(MultiBufferRow(start.row));
-                }
-            } else {
-                let excerpt_end = buffer.anchor_before(excerpt_end.min(current_position));
-                for hunk in diff
-                    .hunks_intersecting_range_rev(excerpt.range.context.start..excerpt_end, buffer)
-                {
-                    let hunk_end = hunk.buffer_range.end.to_offset(buffer);
-                    if hunk_end >= current_position {
-                        continue;
-                    }
-                    let start = Anchor::in_buffer(excerpt.path_key_index, hunk.buffer_range.start)
-                        .to_point(self);
-                    return Some(MultiBufferRow(start.row));
-                }
-            }
-        }
-
-        loop {
-            cursor.prev_excerpt();
-            let excerpt = cursor.excerpt()?;
-            let buffer = excerpt.buffer_snapshot(self);
-
-            let Some(diff) = self.diff_state(excerpt.buffer_id) else {
-                continue;
-            };
-            if let Some(main_buffer) = &diff.main_buffer {
-                let Some(hunk) = diff
-                    .hunks_intersecting_base_text_range_rev(
-                        excerpt.range.context.to_offset(buffer),
-                        main_buffer,
-                    )
-                    .next()
-                else {
-                    continue;
-                };
-                let hunk_start = buffer.anchor_after(hunk.diff_base_byte_range.start);
-                let start = Anchor::in_buffer(excerpt.path_key_index, hunk_start).to_point(self);
-                return Some(MultiBufferRow(start.row));
-            } else {
-                let Some(hunk) = diff
-                    .hunks_intersecting_range_rev(excerpt.range.context.clone(), buffer)
-                    .next()
-                else {
-                    continue;
-                };
-                let start = Anchor::in_buffer(excerpt.path_key_index, hunk.buffer_range.start)
-                    .to_point(self);
-                return Some(MultiBufferRow(start.row));
-            }
-        }
-    }
-
-    pub fn has_diff_hunks(&self) -> bool {
-        self.diffs.iter().any(|diff| !diff.is_empty())
-    }
-
-    pub fn is_inside_word<T: ToOffset>(
-        &self,
-        position: T,
-        scope_context: Option<CharScopeContext>,
-    ) -> bool {
-        let position = position.to_offset(self);
-        let classifier = self
-            .char_classifier_at(position)
-            .scope_context(scope_context);
-        let next_char_kind = self.chars_at(position).next().map(|c| classifier.kind(c));
-        let prev_char_kind = self
-            .reversed_chars_at(position)
-            .next()
-            .map(|c| classifier.kind(c));
-        prev_char_kind.zip(next_char_kind) == Some((CharKind::Word, CharKind::Word))
-    }
-
-    pub fn surrounding_word<T: ToOffset>(
-        &self,
-        start: T,
-        scope_context: Option<CharScopeContext>,
-    ) -> (Range<MultiBufferOffset>, Option<CharKind>) {
-        let mut start = start.to_offset(self);
-        let mut end = start;
-        let mut next_chars = self.chars_at(start).peekable();
-        let mut prev_chars = self.reversed_chars_at(start).peekable();
-
-        let classifier = self.char_classifier_at(start).scope_context(scope_context);
-
-        let word_kind = cmp::max(
-            prev_chars.peek().copied().map(|c| classifier.kind(c)),
-            next_chars.peek().copied().map(|c| classifier.kind(c)),
-        );
-
-        for ch in prev_chars {
-            if Some(classifier.kind(ch)) == word_kind && ch != '\n' {
-                start -= ch.len_utf8();
-            } else {
-                break;
-            }
-        }
-
-        for ch in next_chars {
-            if Some(classifier.kind(ch)) == word_kind && ch != '\n' {
-                end += ch.len_utf8();
-            } else {
-                break;
-            }
-        }
-
-        (start..end, word_kind)
-    }
-
-    pub fn char_kind_before<T: ToOffset>(
-        &self,
-        start: T,
-        scope_context: Option<CharScopeContext>,
-    ) -> Option<CharKind> {
-        let start = start.to_offset(self);
-        let classifier = self.char_classifier_at(start).scope_context(scope_context);
-        self.reversed_chars_at(start)
-            .next()
-            .map(|ch| classifier.kind(ch))
-    }
-
     pub fn all_buffer_ids(&self) -> impl Iterator<Item = BufferId> + '_ {
         self.buffers.iter().map(|(id, _)| *id)
     }

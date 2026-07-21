@@ -226,3 +226,24 @@ impl MultiBuffer {
         });
     }
 }
+
+impl MultiBuffer {
+    pub fn toggle_single_diff_hunk(&mut self, range: Range<Anchor>, cx: &mut Context<Self>) {
+        let snapshot = self.snapshot(cx);
+        let excerpt_end = snapshot
+            .excerpt_containing(range.end..range.end)
+            .and_then(|(_, excerpt_range)| snapshot.anchor_in_excerpt(excerpt_range.context.end));
+        let point_range = range.to_point(&snapshot);
+        let expand = !self.single_hunk_is_expanded(range, cx);
+        let edits =
+            self.expand_or_collapse_diff_hunks_inner([(point_range, excerpt_end)], expand, cx);
+        if !edits.is_empty() {
+            self.subscriptions.publish(edits);
+        }
+        cx.emit(Event::DiffHunksToggled);
+        cx.emit(Event::Edited {
+            edited_buffer: None,
+            source: BufferEditSource::User,
+        });
+    }
+}

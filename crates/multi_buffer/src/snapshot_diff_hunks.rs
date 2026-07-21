@@ -115,3 +115,95 @@ impl MultiBufferSnapshot {
         })
     }
 }
+
+impl MultiBufferSnapshot {
+    pub fn diff_hunk_before<T: ToOffset>(&self, position: T) -> Option<MultiBufferRow> {
+        let offset = position.to_offset(self);
+
+        let mut cursor = self
+            .cursor::<DimensionPair<MultiBufferOffset, Point>, DimensionPair<BufferOffset, Point>>(
+            );
+        cursor.seek(&DimensionPair {
+            key: offset,
+            value: None,
+        });
+        cursor.seek_to_start_of_current_excerpt();
+        let excerpt = cursor.excerpt()?;
+
+        let buffer = excerpt.buffer_snapshot(self);
+        let excerpt_start = excerpt.range.context.start.to_offset(buffer);
+        let excerpt_end = excerpt.range.context.end.to_offset(buffer);
+        let current_position = match self.anchor_before(offset) {
+            Anchor::Min => 0,
+            Anchor::Excerpt(excerpt_anchor) => excerpt_anchor.text_anchor().to_offset(buffer),
+            Anchor::Max => unreachable!(),
+        };
+
+        if let Some(diff) = self.diff_state(excerpt.buffer_id) {
+            if let Some(main_buffer) = &diff.main_buffer {
+                for hunk in diff
+                    .hunks_intersecting_base_text_range_rev(excerpt_start..excerpt_end, main_buffer)
+                {
+                    if hunk.diff_base_byte_range.end >= current_position {
+                        continue;
+                    }
+                    let hunk_start = buffer.anchor_after(hunk.diff_base_byte_range.start);
+                    let start =
+                        Anchor::in_buffer(excerpt.path_key_index, hunk_start).to_point(self);
+                    return Some(MultiBufferRow(start.row));
+                }
+            } else {
+                let excerpt_end = buffer.anchor_before(excerpt_end.min(current_position));
+                for hunk in diff
+                    .hunks_intersecting_range_rev(excerpt.range.context.start..excerpt_end, buffer)
+                {
+                    let hunk_end = hunk.buffer_range.end.to_offset(buffer);
+                    if hunk_end >= current_position {
+                        continue;
+                    }
+                    let start = Anchor::in_buffer(excerpt.path_key_index, hunk.buffer_range.start)
+                        .to_point(self);
+                    return Some(MultiBufferRow(start.row));
+                }
+            }
+        }
+
+        loop {
+            cursor.prev_excerpt();
+            let excerpt = cursor.excerpt()?;
+            let buffer = excerpt.buffer_snapshot(self);
+
+            let Some(diff) = self.diff_state(excerpt.buffer_id) else {
+                continue;
+            };
+            if let Some(main_buffer) = &diff.main_buffer {
+                let Some(hunk) = diff
+                    .hunks_intersecting_base_text_range_rev(
+                        excerpt.range.context.to_offset(buffer),
+                        main_buffer,
+                    )
+                    .next()
+                else {
+                    continue;
+                };
+                let hunk_start = buffer.anchor_after(hunk.diff_base_byte_range.start);
+                let start = Anchor::in_buffer(excerpt.path_key_index, hunk_start).to_point(self);
+                return Some(MultiBufferRow(start.row));
+            } else {
+                let Some(hunk) = diff
+                    .hunks_intersecting_range_rev(excerpt.range.context.clone(), buffer)
+                    .next()
+                else {
+                    continue;
+                };
+                let start = Anchor::in_buffer(excerpt.path_key_index, hunk.buffer_range.start)
+                    .to_point(self);
+                return Some(MultiBufferRow(start.row));
+            }
+        }
+    }
+
+    pub fn has_diff_hunks(&self) -> bool {
+        self.diffs.iter().any(|diff| !diff.is_empty())
+    }
+}
