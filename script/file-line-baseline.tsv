@@ -43,7 +43,7 @@
     7238	crates/acp_thread/src/acp_thread.rs
     7323	crates/agent/src/thread.rs
     7183	crates/project_panel/src/project_panel.rs
-    2310	crates/zeta_prompt/src/zeta_prompt.rs
+    2044	crates/zeta_prompt/src/zeta_prompt.rs
     7035	crates/git_ui/src/git_graph.rs
     6930	crates/worktree/src/worktree.rs
     6922	crates/agent/src/agent.rs
