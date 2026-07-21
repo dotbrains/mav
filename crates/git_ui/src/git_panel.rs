@@ -2,6 +2,8 @@ use crate::askpass_modal::AskPassModal;
 use crate::commit_modal::CommitModal;
 use crate::commit_tooltip::{CommitAvatar, CommitTooltip};
 use crate::commit_view::CommitView;
+mod editor_style;
+mod message_tooltip;
 mod output;
 mod panel_footer;
 
@@ -10,6 +12,9 @@ use crate::project_diff::{BranchDiff, Diff, ProjectDiff};
 use crate::remote_output::{self, RemoteAction, SuccessMessage};
 use crate::solo_diff_view::SoloDiffView;
 use crate::{branch_picker, picker_prompt, render_remote_button};
+pub(crate) use editor_style::git_commit_editor_style;
+use editor_style::panel_editor_container;
+use message_tooltip::GitPanelMessageTooltip;
 pub(crate) use output::{open_output, show_error_toast};
 use panel_footer::PanelRepoFooter;
 
@@ -7430,100 +7435,6 @@ impl Panel for GitPanel {
 }
 
 impl PanelHeader for GitPanel {}
-
-pub fn panel_editor_container(_window: &mut Window, cx: &mut App) -> Div {
-    v_flex()
-        .size_full()
-        .gap(px(8.))
-        .p_2()
-        .bg(cx.theme().colors().editor_background)
-}
-
-pub(crate) fn git_commit_editor_style(font_size: gpui::Pixels, cx: &App) -> EditorStyle {
-    let settings = ThemeSettings::get_global(cx);
-
-    EditorStyle {
-        background: cx.theme().colors().editor_background,
-        local_player: cx.theme().players().local(),
-        text: TextStyle {
-            color: cx.theme().colors().text,
-            font_family: settings.buffer_font.family.clone(),
-            font_fallbacks: settings.buffer_font.fallbacks.clone(),
-            font_features: settings.buffer_font.features.clone(),
-            font_size: AbsoluteLength::from(font_size),
-            font_weight: settings.buffer_font.weight,
-            line_height: (font_size * settings.buffer_line_height.value()).into(),
-            ..Default::default()
-        },
-        syntax: cx.theme().syntax().clone(),
-        ..Default::default()
-    }
-}
-
-struct GitPanelMessageTooltip {
-    commit_tooltip: Option<Entity<CommitTooltip>>,
-}
-
-impl GitPanelMessageTooltip {
-    fn new(
-        git_panel: Entity<GitPanel>,
-        sha: SharedString,
-        repository: Entity<Repository>,
-        window: &mut Window,
-        cx: &mut App,
-    ) -> Entity<Self> {
-        let remote_url = repository.read(cx).default_remote_url();
-        cx.new(|cx| {
-            cx.spawn_in(window, async move |this, cx| {
-                let (details, workspace) = git_panel.update(cx, |git_panel, cx| {
-                    (
-                        git_panel.load_commit_details(sha.to_string(), cx),
-                        git_panel.workspace.clone(),
-                    )
-                });
-                let details = details.await?;
-                let provider_registry = cx
-                    .update(|_, app| GitHostingProviderRegistry::default_global(app))
-                    .ok();
-
-                let commit_details = crate::commit_tooltip::CommitDetails {
-                    sha: details.sha.clone(),
-                    author_name: details.author_name.clone(),
-                    author_email: details.author_email.clone(),
-                    commit_time: OffsetDateTime::from_unix_timestamp(details.commit_timestamp)?,
-                    message: Some(ParsedCommitMessage::parse(
-                        details.sha.to_string(),
-                        details.message.to_string(),
-                        remote_url.as_deref(),
-                        provider_registry,
-                    )),
-                };
-
-                this.update(cx, |this: &mut GitPanelMessageTooltip, cx| {
-                    this.commit_tooltip = Some(cx.new(move |cx| {
-                        CommitTooltip::new(commit_details, repository, workspace, cx)
-                    }));
-                    cx.notify();
-                })
-            })
-            .detach();
-
-            Self {
-                commit_tooltip: None,
-            }
-        })
-    }
-}
-
-impl Render for GitPanelMessageTooltip {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        if let Some(commit_tooltip) = &self.commit_tooltip {
-            commit_tooltip.clone().into_any_element()
-        } else {
-            gpui::Empty.into_any_element()
-        }
-    }
-}
 
 pub(crate) fn commit_title_exceeds_limit(title: &str, max_length: usize) -> bool {
     max_length > 0 && title.chars().count() > max_length
