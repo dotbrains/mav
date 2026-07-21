@@ -55,7 +55,7 @@
     6276	crates/multi_buffer/src/multi_buffer_tests.rs
    5611	crates/language/src/buffer.rs
    5627	crates/workspace/src/persistence.rs
-    5696	crates/search/src/project_search.rs
+5567	crates/search/src/project_search.rs
     5694	crates/vim/src/motion.rs
     5627	crates/agent_ui/src/message_editor.rs
     5473	crates/git/src/repository.rs

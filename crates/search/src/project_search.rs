@@ -59,6 +59,13 @@ use workspace::{
     searchable::{Direction, SearchEvent, SearchToken, SearchableItem, SearchableItemHandle},
 };
 
+mod glob;
+mod state;
+
+use glob::split_glob_patterns;
+use state::{InputPanel, ProjectSearchSettings, SearchActivity, SearchCompletion, SearchState};
+pub use state::{ProjectSearch, ProjectSearchBar, ProjectSearchView};
+
 actions!(
     project_search,
     [
@@ -76,32 +83,6 @@ actions!(
         OpenTextFinder
     ]
 );
-
-fn split_glob_patterns(text: &str) -> Vec<&str> {
-    let mut patterns = Vec::new();
-    let mut pattern_start = 0;
-    let mut brace_depth: usize = 0;
-    let mut escaped = false;
-
-    for (index, character) in text.char_indices() {
-        if escaped {
-            escaped = false;
-            continue;
-        }
-        match character {
-            '\\' => escaped = true,
-            '{' => brace_depth += 1,
-            '}' => brace_depth = brace_depth.saturating_sub(1),
-            ',' if brace_depth == 0 => {
-                patterns.push(&text[pattern_start..index]);
-                pattern_start = index + 1;
-            }
-            _ => {}
-        }
-    }
-    patterns.push(&text[pattern_start..]);
-    patterns
-}
 
 #[derive(Default)]
 pub(crate) struct ActiveSettings(pub(crate) HashMap<WeakEntity<Project>, ProjectSearchSettings>);
@@ -233,93 +214,6 @@ pub fn init(cx: &mut App) {
 
 fn contains_uppercase(str: &str) -> bool {
     str.chars().any(|c| c.is_uppercase())
-}
-
-pub struct ProjectSearch {
-    pub(crate) project: Entity<Project>,
-    pub excerpts: Entity<MultiBuffer>,
-    pub pending_search: Option<Task<Option<SearchResults<SearchResult>>>>,
-    pub match_ranges: Vec<Range<Anchor>>,
-    pub(crate) active_query: Option<SearchQuery>,
-    last_search_query_text: Option<String>,
-    pub search_id: usize,
-    search_state: SearchState,
-    search_history_cursor: SearchHistoryCursor,
-    search_included_history_cursor: SearchHistoryCursor,
-    search_excluded_history_cursor: SearchHistoryCursor,
-    pub project_search_turning_into_text_finder: Arc<AtomicBool>,
-    _excerpts_subscription: Subscription,
-}
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-enum SearchState {
-    #[default]
-    Idle,
-    Running(SearchActivity),
-    Completed(SearchCompletion),
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum SearchActivity {
-    Searching,
-    WaitingForScan,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum SearchCompletion {
-    NoResults,
-    Results { limit_reached: bool },
-}
-
-impl SearchState {
-    fn limit_reached(self) -> bool {
-        matches!(
-            self,
-            SearchState::Completed(SearchCompletion::Results {
-                limit_reached: true
-            })
-        )
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum InputPanel {
-    Query,
-    Replacement,
-    Exclude,
-    Include,
-}
-
-pub struct ProjectSearchView {
-    pub(crate) workspace: WeakEntity<Workspace>,
-    focus_handle: FocusHandle,
-    pub(crate) entity: Entity<ProjectSearch>,
-    query_editor: Entity<Editor>,
-    replacement_editor: Entity<Editor>,
-    results_editor: Entity<Editor>,
-    pub(crate) search_options: SearchOptions,
-    panels_with_errors: HashMap<InputPanel, String>,
-    active_match_index: Option<usize>,
-    search_id: usize,
-    included_files_editor: Entity<Editor>,
-    excluded_files_editor: Entity<Editor>,
-    filters_enabled: bool,
-    replace_enabled: bool,
-    pending_replace_all: bool,
-    included_opened_only: bool,
-    regex_language: Option<Arc<Language>>,
-    _subscriptions: Vec<Subscription>,
-}
-
-#[derive(Debug, Clone)]
-pub struct ProjectSearchSettings {
-    search_options: SearchOptions,
-    filters_enabled: bool,
-}
-
-pub struct ProjectSearchBar {
-    active_project_search: Option<Entity<ProjectSearchView>>,
-    subscription: Option<Subscription>,
 }
 
 impl ProjectSearch {
@@ -2799,29 +2693,6 @@ pub mod tests {
     use util::{path, paths::PathStyle, rel_path::rel_path};
     use util_macros::perf;
     use workspace::{DeploySearch, MultiWorkspace};
-
-    #[test]
-    fn test_split_glob_patterns() {
-        assert_eq!(split_glob_patterns("a,b,c"), vec!["a", "b", "c"]);
-        assert_eq!(split_glob_patterns("a, b, c"), vec!["a", " b", " c"]);
-        assert_eq!(
-            split_glob_patterns("src/{a,b}/**/*.rs"),
-            vec!["src/{a,b}/**/*.rs"]
-        );
-        assert_eq!(
-            split_glob_patterns("src/{a,b}/*.rs, tests/**/*.rs"),
-            vec!["src/{a,b}/*.rs", " tests/**/*.rs"]
-        );
-        assert_eq!(split_glob_patterns("{a,b},{c,d}"), vec!["{a,b}", "{c,d}"]);
-        assert_eq!(split_glob_patterns("{{a,b},{c,d}}"), vec!["{{a,b},{c,d}}"]);
-        assert_eq!(split_glob_patterns(""), vec![""]);
-        assert_eq!(split_glob_patterns("a"), vec!["a"]);
-        // Escaped characters should not be treated as special
-        assert_eq!(split_glob_patterns(r"a\,b,c"), vec![r"a\,b", "c"]);
-        assert_eq!(split_glob_patterns(r"\{a,b\}"), vec![r"\{a", r"b\}"]);
-        assert_eq!(split_glob_patterns(r"a\\,b"), vec![r"a\\", "b"]);
-        assert_eq!(split_glob_patterns(r"a\\\,b"), vec![r"a\\\,b"]);
-    }
 
     #[perf]
     #[gpui::test]
