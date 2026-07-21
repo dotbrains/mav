@@ -24,9 +24,11 @@ mod gutter_paint;
 mod header;
 mod highlighted_range;
 mod hover_popovers;
+mod initial_prepaint_layout;
 mod inline_decorations;
 mod layout_data;
 mod layout_primitives;
+mod lifecycle;
 mod line_builder;
 mod line_layout_model;
 mod line_metrics;
@@ -76,6 +78,7 @@ use layout_data::{
     ScrollbarLayoutInformation,
 };
 use layout_primitives::{InlineBlameLayout, LineHighlightSpec, LineNumberStyle, SelectionLayout};
+pub use lifecycle::{EditorElement, SplitSide};
 pub(crate) use line_layout_model::{Invisible, LineFragment, LineWithInvisibles};
 pub(super) use line_numbers::{LineNumberLayout, LineNumberSegment};
 use navigation_overlay::NavigationOverlayPaintCommand;
@@ -172,78 +175,6 @@ use workspace::{
     item::{Item, ItemBufferKind},
 };
 
-pub struct EditorElement {
-    editor: Entity<Editor>,
-    style: EditorStyle,
-    split_side: Option<SplitSide>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SplitSide {
-    Left,
-    Right,
-}
-
-impl EditorElement {
-    pub fn new(editor: &Entity<Editor>, style: EditorStyle) -> Self {
-        Self {
-            editor: editor.clone(),
-            style,
-            split_side: None,
-        }
-    }
-
-    pub fn set_split_side(&mut self, side: SplitSide) {
-        self.split_side = Some(side);
-    }
-
-    fn register_key_listeners(&self, window: &mut Window, _: &mut App, layout: &EditorLayout) {
-        let position_map = layout.position_map.clone();
-        window.on_key_event({
-            let editor = self.editor.clone();
-            move |event: &ModifiersChangedEvent, phase, window, cx| {
-                if phase != DispatchPhase::Bubble {
-                    return;
-                }
-                editor.update(cx, |editor, cx| {
-                    let inlay_hint_settings = inlay_hint_settings(
-                        editor.selections.newest_anchor().head(),
-                        &editor.buffer.read(cx).snapshot(cx),
-                        cx,
-                    );
-
-                    if let Some(inlay_modifiers) = inlay_hint_settings
-                        .toggle_on_modifiers_press
-                        .as_ref()
-                        .filter(|modifiers| modifiers.modified())
-                    {
-                        editor.refresh_inlay_hints(
-                            InlayHintRefreshReason::ModifiersChanged(
-                                inlay_modifiers == &event.modifiers,
-                            ),
-                            cx,
-                        );
-                    }
-
-                    if editor.hover_state.focused(window, cx) {
-                        return;
-                    }
-
-                    editor.handle_modifiers_changed(event.modifiers, &position_map, window, cx);
-                })
-            }
-        });
-    }
-
-    fn editor_with_selections(&self, cx: &App) -> Option<Entity<Editor>> {
-        if let EditorMode::Minimap { parent } = self.editor.read(cx).mode() {
-            parent.upgrade()
-        } else {
-            Some(self.editor.clone())
-        }
-    }
-}
-
 impl Element for EditorElement {
     type RequestLayoutState = EditorRequestLayoutState;
     type PrepaintState = EditorLayout;
@@ -295,12 +226,22 @@ impl Element for EditorElement {
         window.with_rem_size(rem_size, |window| {
             window.with_text_style(Some(text_style), |window| {
                 window.with_content_mask(Some(ContentMask::new(bounds)), |window| {
-                    let (mut snapshot, is_read_only) = self.editor.update(cx, |editor, cx| {
+                    let (snapshot, is_read_only) = self.editor.update(cx, |editor, cx| {
                         (editor.snapshot(window, cx), editor.read_only(cx))
                     });
                     let style = &self.style;
 
-                    let layout_data::EditorMetrics {
+                    let initial_layout = self.layout_initial_prepaint(
+                        bounds,
+                        snapshot,
+                        style,
+                        window.rem_size(),
+                        window,
+                        cx,
+                    );
+
+                    let initial_prepaint_layout::InitialPrepaintLayout {
+                        snapshot,
                         font_size,
                         line_height,
                         em_width,
@@ -308,80 +249,26 @@ impl Element for EditorElement {
                         em_layout_width,
                         glyph_grid_cell,
                         gutter_dimensions,
-                        text_width,
                         vertical_scrollbar_width,
                         minimap_width,
                         right_margin,
                         editor_width,
                         editor_margins,
-                    } = self.layout_metrics(
-                        bounds,
-                        &snapshot,
-                        style,
-                        window.rem_size(),
-                        window,
-                        cx,
-                    );
-
-                    snapshot = self.update_snapshot_layout(
-                        bounds,
-                        snapshot,
-                        gutter_dimensions,
-                        line_height,
-                        editor_width,
-                        em_advance,
-                        em_layout_width,
-                        window,
-                        cx,
-                    );
-
-                    let surface = Self::layout_surface(bounds, text_width, &editor_margins, window);
-                    let hitbox = surface.hitbox;
-                    let gutter_hitbox = surface.gutter_hitbox;
-                    let text_hitbox = surface.text_hitbox;
-                    let content_offset = surface.content_offset;
-                    let content_origin = surface.content_origin;
-
-                    let height_in_lines = f64::from(bounds.size.height / line_height);
-                    let max_scroll_row = snapshot.max_point().row().as_f64();
-
-                    // The max scroll position for the top of the window
-                    let scroll_beyond_last_line = self.editor.read(cx).scroll_beyond_last_line(cx);
-                    let max_scroll_top = match scroll_beyond_last_line {
-                        ScrollBeyondLastLine::OnePage => max_scroll_row,
-                        ScrollBeyondLastLine::Off => {
-                            (max_scroll_row - height_in_lines + 1.).max(0.)
-                        }
-                        ScrollBeyondLastLine::VerticalScrollMargin => {
-                            let settings = EditorSettings::get_global(cx);
-                            (max_scroll_row - height_in_lines
-                                + 1.
-                                + settings.vertical_scroll_margin)
-                                .max(0.)
-                        }
-                    };
-
-                    let layout_data::VerticalAutoscroll {
+                        hitbox,
+                        gutter_hitbox,
+                        text_hitbox,
+                        content_offset,
+                        content_origin,
+                        height_in_lines,
+                        max_scroll_top,
+                        scroll_beyond_last_line,
                         autoscroll_request,
                         autoscroll_containing_element,
                         needs_horizontal_autoscroll,
-                    } = self.layout_vertical_autoscroll(
-                        bounds,
-                        line_height,
-                        max_scroll_top,
-                        &mut snapshot,
-                        window,
-                        cx,
-                    );
+                        scroll_position,
+                        visible_rows,
+                    } = initial_layout;
 
-                    let mut scroll_position = snapshot.scroll_position();
-                    if !line_height.is_zero() {
-                        scroll_position.y = window
-                            .pixel_snap_f64(scroll_position.y * f64::from(line_height))
-                            / f64::from(line_height);
-                    }
-                    let visible_rows =
-                        Self::visible_rows(bounds, line_height, scroll_position, &snapshot, window);
                     let max_row = visible_rows.max_row;
                     let start_row = visible_rows.start_row;
                     let end_row = visible_rows.end_row;
