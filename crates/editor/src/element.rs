@@ -11,6 +11,7 @@ mod cursor_layout;
 mod cursor_popovers;
 mod cursor_scrollbar_paint;
 mod cursor_selections;
+mod cursor_surface;
 mod diff_hunk_controls;
 mod document_colors;
 mod editor_layout;
@@ -758,17 +759,17 @@ impl Element for EditorElement {
                         );
                     });
 
-                    let cursors = self.collect_cursors(&snapshot, cx);
                     let visible_row_range = start_row..end_row;
-                    let non_visible_cursors = cursors
-                        .iter()
-                        .any(|c| !visible_row_range.contains(&c.0.row()));
-
-                    let visible_cursors = self.layout_visible_cursors(
+                    let layout_data::CursorSurfaceLayouts {
+                        cursors,
+                        visible_cursors,
+                        navigation_overlay_paint_commands,
+                        scrollbars_layout,
+                    } = self.layout_cursor_surface(
                         &snapshot,
                         &selections,
                         &row_block_types,
-                        start_row..end_row,
+                        visible_row_range.clone(),
                         &line_layouts,
                         &text_hitbox,
                         content_origin,
@@ -779,28 +780,8 @@ impl Element for EditorElement {
                         em_advance,
                         autoscroll_containing_element,
                         &redacted_ranges,
-                        window,
-                        cx,
-                    );
-                    let navigation_overlay_paint_commands = self.layout_navigation_overlays(
-                        &snapshot,
-                        start_row..end_row,
-                        &line_layouts,
-                        &text_hitbox,
-                        content_origin,
-                        scroll_position,
-                        scroll_pixel_position,
-                        line_height,
-                        window,
-                        cx,
-                    );
-
-                    let scrollbars_layout = self.layout_scrollbars(
-                        &snapshot,
                         &scrollbar_layout_information,
                         content_offset,
-                        scroll_position,
-                        non_visible_cursors,
                         right_margin,
                         editor_width,
                         window,

@@ -151,6 +151,13 @@ pub(super) struct LineSetupLayouts {
     pub(super) line_layouts: Vec<LineWithInvisibles>,
 }
 
+pub(super) struct CursorSurfaceLayouts {
+    pub(super) cursors: Vec<(DisplayPoint, Hsla)>,
+    pub(super) visible_cursors: Vec<CursorLayout>,
+    pub(super) navigation_overlay_paint_commands: Vec<NavigationOverlayPaintCommand>,
+    pub(super) scrollbars_layout: Option<EditorScrollbars>,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,
