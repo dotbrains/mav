@@ -64,7 +64,7 @@
 4169	crates/project/src/lsp_command.rs
 261	crates/file_finder/src/file_finder_tests.rs
 3618	crates/editor/src/display_map/block_map.rs
-    4918	crates/editor/src/inlays/inlay_hints.rs
+1166	crates/editor/src/inlays/inlay_hints.rs
     4741	crates/terminal/src/terminal.rs
     4555	crates/gpui/src/elements/div.rs
     4553	crates/agent_servers/src/acp.rs
