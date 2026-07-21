@@ -316,3 +316,61 @@ impl LocalLspStore {
         }
     }
 }
+
+impl LspStore {
+    pub(super) async fn handle_register_buffer_with_language_servers(
+        this: Entity<Self>,
+        envelope: TypedEnvelope<proto::RegisterBufferWithLanguageServers>,
+        mut cx: AsyncApp,
+    ) -> Result<proto::Ack> {
+        let buffer_id = BufferId::new(envelope.payload.buffer_id)?;
+        let peer_id = envelope.original_sender_id.unwrap_or(envelope.sender_id);
+        this.update(&mut cx, |this, cx| {
+            if let Some((upstream_client, upstream_project_id)) = this.upstream_client() {
+                return upstream_client.send(proto::RegisterBufferWithLanguageServers {
+                    project_id: upstream_project_id,
+                    buffer_id: buffer_id.to_proto(),
+                    only_servers: envelope.payload.only_servers,
+                });
+            }
+
+            let Some(buffer) = this.buffer_store().read(cx).get(buffer_id) else {
+                anyhow::bail!("buffer is not open");
+            };
+
+            let handle = this.register_buffer_with_language_servers(
+                &buffer,
+                envelope
+                    .payload
+                    .only_servers
+                    .into_iter()
+                    .filter_map(|selector| {
+                        Some(match selector.selector? {
+                            proto::language_server_selector::Selector::ServerId(server_id) => {
+                                LanguageServerSelector::Id(LanguageServerId::from_proto(server_id))
+                            }
+                            proto::language_server_selector::Selector::Name(name) => {
+                                LanguageServerSelector::Name(LanguageServerName(
+                                    SharedString::from(name),
+                                ))
+                            }
+                        })
+                    })
+                    .collect(),
+                false,
+                cx,
+            );
+            // Pull diagnostics for the buffer even if it was already registered.
+            // This is needed to make test_streamed_lsp_pull_diagnostics pass,
+            // but it's unclear if we need it.
+            this.pull_diagnostics_for_buffer(buffer.clone(), cx)
+                .detach();
+            this.buffer_store().update(cx, |buffer_store, _| {
+                buffer_store.register_shared_lsp_handle(peer_id, buffer_id, handle);
+            });
+
+            Ok(())
+        })?;
+        Ok(proto::Ack {})
+    }
+}

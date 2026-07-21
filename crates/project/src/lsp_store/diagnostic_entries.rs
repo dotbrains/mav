@@ -308,4 +308,94 @@ impl LspStore {
             Ok(ControlFlow::Break(()))
         }
     }
+    pub(super) async fn handle_update_diagnostic_summary(
+        this: Entity<Self>,
+        envelope: TypedEnvelope<proto::UpdateDiagnosticSummary>,
+        mut cx: AsyncApp,
+    ) -> Result<()> {
+        this.update(&mut cx, |lsp_store, cx| {
+            let worktree_id = WorktreeId::from_proto(envelope.payload.worktree_id);
+            let mut updated_diagnostics_paths = HashMap::default();
+            let mut diagnostics_summary = None::<proto::UpdateDiagnosticSummary>;
+            for message_summary in envelope
+                .payload
+                .summary
+                .into_iter()
+                .chain(envelope.payload.more_summaries)
+            {
+                let project_path = ProjectPath {
+                    worktree_id,
+                    path: RelPath::from_proto(&message_summary.path).context("invalid path")?,
+                };
+                let path = project_path.path.clone();
+                let server_id = LanguageServerId(message_summary.language_server_id as usize);
+                let summary = DiagnosticSummary {
+                    error_count: message_summary.error_count as usize,
+                    warning_count: message_summary.warning_count as usize,
+                };
+
+                if summary.is_empty() {
+                    if let Some(worktree_summaries) =
+                        lsp_store.diagnostic_summaries.get_mut(&worktree_id)
+                        && let Some(summaries) = worktree_summaries.get_mut(&path)
+                    {
+                        summaries.remove(&server_id);
+                        if summaries.is_empty() {
+                            worktree_summaries.remove(&path);
+                        }
+                    }
+                } else {
+                    lsp_store
+                        .diagnostic_summaries
+                        .entry(worktree_id)
+                        .or_default()
+                        .entry(path)
+                        .or_default()
+                        .insert(server_id, summary);
+                }
+
+                if let Some((_, project_id)) = &lsp_store.downstream_client {
+                    match &mut diagnostics_summary {
+                        Some(diagnostics_summary) => {
+                            diagnostics_summary
+                                .more_summaries
+                                .push(proto::DiagnosticSummary {
+                                    path: project_path.path.as_ref().to_proto(),
+                                    language_server_id: server_id.0 as u64,
+                                    error_count: summary.error_count as u32,
+                                    warning_count: summary.warning_count as u32,
+                                })
+                        }
+                        None => {
+                            diagnostics_summary = Some(proto::UpdateDiagnosticSummary {
+                                project_id: *project_id,
+                                worktree_id: worktree_id.to_proto(),
+                                summary: Some(proto::DiagnosticSummary {
+                                    path: project_path.path.as_ref().to_proto(),
+                                    language_server_id: server_id.0 as u64,
+                                    error_count: summary.error_count as u32,
+                                    warning_count: summary.warning_count as u32,
+                                }),
+                                more_summaries: Vec::new(),
+                            })
+                        }
+                    }
+                }
+                updated_diagnostics_paths
+                    .entry(server_id)
+                    .or_insert_with(Vec::new)
+                    .push(project_path);
+            }
+
+            if let Some((diagnostics_summary, (downstream_client, _))) =
+                diagnostics_summary.zip(lsp_store.downstream_client.as_ref())
+            {
+                downstream_client.send(diagnostics_summary).log_err();
+            }
+            for (server_id, paths) in updated_diagnostics_paths {
+                cx.emit(LspStoreEvent::DiagnosticsUpdated { server_id, paths });
+            }
+            Ok(())
+        })
+    }
 }

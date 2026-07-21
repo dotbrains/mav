@@ -277,4 +277,32 @@ impl LspStore {
             Task::ready(Ok(ProjectTransaction::default()))
         }
     }
+    pub(super) async fn handle_apply_code_action(
+        this: Entity<Self>,
+        envelope: TypedEnvelope<proto::ApplyCodeAction>,
+        mut cx: AsyncApp,
+    ) -> Result<proto::ApplyCodeActionResponse> {
+        let sender_id = envelope.original_sender_id().unwrap_or_default();
+        let action =
+            Self::deserialize_code_action(envelope.payload.action.context("invalid action")?)?;
+        let apply_code_action = this.update(&mut cx, |this, cx| {
+            let buffer_id = BufferId::new(envelope.payload.buffer_id)?;
+            let buffer = this.buffer_store.read(cx).get_existing(buffer_id)?;
+            anyhow::Ok(this.apply_code_action(buffer, action, false, cx))
+        })?;
+
+        let project_transaction = apply_code_action.await?;
+        let project_transaction = this.update(&mut cx, |this, cx| {
+            this.buffer_store.update(cx, |buffer_store, cx| {
+                buffer_store.serialize_project_transaction_for_peer(
+                    project_transaction,
+                    sender_id,
+                    cx,
+                )
+            })
+        });
+        Ok(proto::ApplyCodeActionResponse {
+            transaction: Some(project_transaction),
+        })
+    }
 }
