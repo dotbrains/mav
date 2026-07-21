@@ -45,7 +45,7 @@
     7183	crates/project_panel/src/project_panel.rs
      252	crates/zeta_prompt/src/zeta_prompt.rs
     3730	crates/git_ui/src/git_graph.rs
-    6137	crates/worktree/src/worktree.rs
+    5772	crates/worktree/src/worktree.rs
     6922	crates/agent/src/agent.rs
     6818	crates/mav/src/mav.rs
     6081	crates/project/src/project.rs
