@@ -283,270 +283,33 @@ impl Sidebar {
 
             let is_collapsed = self.is_group_collapsed(group_key, cx);
             let should_load_threads = !is_collapsed || !query.is_empty();
+            let group_host = group_key.host();
 
             let is_active = active_workspace
                 .as_ref()
                 .is_some_and(|active| group_workspaces.contains(active));
 
-            // Collect live thread infos from all workspaces in this group.
-            let live_infos = group_workspaces
-                .iter()
-                .flat_map(|ws| all_thread_infos_for_workspace(ws, cx));
-
-            let mut threads: Vec<Arc<ThreadEntry>> = Vec::new();
-            let mut has_running_threads = false;
-            let mut waiting_thread_count: usize = 0;
-            let group_host = group_key.host();
-
-            if should_load_threads {
-                let thread_store = ThreadMetadataStore::global(cx);
-
-                let make_thread_entry =
-                    |row: ThreadMetadata, workspace: ThreadEntryWorkspace| -> Arc<ThreadEntry> {
-                        let (icon, icon_from_external_svg) =
-                            sidebar_rebuild_helpers::resolve_agent_icon(
-                                agent_server_store.as_ref(),
-                                &row.agent_id,
-                                cx,
-                            );
-                        let worktrees =
-                            worktree_info_from_thread_paths(&row.worktree_paths, &branch_by_path);
-                        Arc::new(ThreadEntry {
-                            metadata: row,
-                            icon,
-                            icon_from_external_svg,
-                            status: AgentThreadStatus::default(),
-                            workspace,
-                            is_live: false,
-                            is_background: false,
-                            is_title_generating: false,
-                            draft: None,
-                            highlight_positions: Vec::new(),
-                            worktrees,
-                            diff_stats: DiffStats::default(),
-                        })
-                    };
-
-                // Main code path: one query per group via main_worktree_paths.
-                // The main_worktree_paths column is set on all new threads and
-                // points to the group's canonical paths regardless of which
-                // linked worktree the thread was opened in.
-                for row in thread_store
-                    .read(cx)
-                    .entries_for_main_worktree_path(group_key.path_list(), group_host.as_ref())
-                    .cloned()
-                {
-                    if row.is_draft() {
-                        continue;
-                    }
-                    if !seen_thread_ids.insert(row.thread_id) {
-                        continue;
-                    }
-                    let workspace = resolve_workspace(row.folder_paths());
-                    threads.push(make_thread_entry(row, workspace));
-                }
-
-                // Legacy threads did not have `main_worktree_paths` populated, so they
-                // must be queried by their `folder_paths`.
-
-                // Load any legacy threads for the main worktrees of this project group.
-                for row in thread_store
-                    .read(cx)
-                    .entries_for_path(group_key.path_list(), group_host.as_ref())
-                    .cloned()
-                {
-                    if row.is_draft() {
-                        continue;
-                    }
-                    if !seen_thread_ids.insert(row.thread_id) {
-                        continue;
-                    }
-                    let workspace = resolve_workspace(row.folder_paths());
-                    threads.push(make_thread_entry(row, workspace));
-                }
-
-                // Also surface any thread whose `folder_paths` equals
-                // one of this group's open workspaces' root paths.
-                // The three lookups above can all miss when the
-                // thread's stored `main_worktree_paths` disagree with
-                // the group key (for example, a stale row whose main
-                // paths equal its folder paths for a linked-worktree
-                // workspace). The thread will be rewritten into the
-                // correct shape the next time `handle_conversation_event`
-                // fires, but until then the sidebar should still show
-                // it under the group whose workspace it actually
-                // belongs to.
-                for ws in group_workspaces {
-                    let ws_paths = workspace_path_list(ws, cx);
-                    if ws_paths.paths().is_empty() {
-                        continue;
-                    }
-                    for row in thread_store
-                        .read(cx)
-                        .entries_for_path(&ws_paths, group_host.as_ref())
-                        .cloned()
-                    {
-                        if row.is_draft() {
-                            continue;
-                        }
-                        if !seen_thread_ids.insert(row.thread_id) {
-                            continue;
-                        }
-                        threads.push(make_thread_entry(
-                            row,
-                            ThreadEntryWorkspace::Open(ws.clone()),
-                        ));
-                    }
-                }
-
-                // Load any legacy threads for any single linked worktree of this project group.
-                for worktree_path_list in &linked_worktree_path_lists {
-                    for row in thread_store
-                        .read(cx)
-                        .entries_for_path(worktree_path_list, group_host.as_ref())
-                        .cloned()
-                    {
-                        if row.is_draft() {
-                            continue;
-                        }
-                        if !seen_thread_ids.insert(row.thread_id) {
-                            continue;
-                        }
-                        threads.push(make_thread_entry(
-                            row,
-                            ThreadEntryWorkspace::Closed {
-                                folder_paths: worktree_path_list.clone(),
-                                project_group_key: group_key.clone(),
-                            },
-                        ));
-                    }
-                }
-
-                for thread in &mut threads {
-                    if thread.draft.is_none() {
-                        continue;
-                    }
-                    if let Some((label, kind)) = draft_display_label_for_thread_metadata(
-                        &thread.metadata,
-                        &thread.workspace,
-                        cx,
-                    ) {
-                        let thread = Arc::make_mut(thread);
-                        thread.metadata.title = Some(label);
-                        thread.draft = Some(kind);
-                    }
-                }
-                threads.retain(|thread| thread.draft.is_none() || thread.metadata.title.is_some());
-
-                // Keep empty drafts only while their thread is active; preserve
-                // drafts with content because they hold user-typed state.
-                let pending_activation = self.pending_thread_activation;
-                let active_panel_thread_id = active_workspace
-                    .as_ref()
-                    .and_then(|ws| ws.read(cx).panel::<AgentPanel>(cx))
-                    .and_then(|panel| panel.read(cx).active_thread_id(cx));
-                threads.retain(|thread| {
-                    if thread.draft != Some(DraftKind::Empty) {
-                        return true;
-                    }
-                    if pending_activation.is_some() {
-                        return false;
-                    }
-                    Some(thread.metadata.thread_id) == active_panel_thread_id
-                });
-
-                // Build a lookup from live_infos and compute running/waiting
-                // counts in a single pass.
-                let mut live_info_by_session: HashMap<acp::SessionId, ActiveThreadInfo> =
-                    HashMap::new();
-                for info in live_infos {
-                    if info.status == AgentThreadStatus::Running {
-                        has_running_threads = true;
-                    }
-                    if info.status == AgentThreadStatus::WaitingForConfirmation {
-                        waiting_thread_count += 1;
-                    }
-                    live_info_by_session.insert(info.session_id.clone(), info);
-                }
-
-                // Merge live info into threads and update notification state
-                // in a single pass.
-                for thread in &mut threads {
-                    if let Some(session_id) = thread.metadata.session_id.clone() {
-                        if let Some(info) = live_info_by_session.get(&session_id) {
-                            let status = info.status;
-                            let thread_id = thread.metadata.thread_id;
-                            Arc::make_mut(thread).apply_active_info(info);
-                            new_live_statuses.insert(session_id, (status, thread_id));
-                        }
-                    }
-
-                    let session_id = &thread.metadata.session_id;
-                    let is_active_thread = self.active_entry.as_ref().is_some_and(|entry| {
-                        entry.is_active_thread(&thread.metadata.thread_id)
-                            && active_workspace
-                                .as_ref()
-                                .is_some_and(|active| active == entry.workspace())
-                    });
-
-                    if thread.status == AgentThreadStatus::Completed
-                        && !is_active_thread
-                        && session_id
-                            .as_ref()
-                            .and_then(|sid| old_statuses.get(sid))
-                            .is_some_and(|(s, _)| *s == AgentThreadStatus::Running)
-                    {
-                        notified_threads.insert(thread.metadata.thread_id);
-                    }
-
-                    if is_active_thread && !thread.is_background {
-                        notified_threads.remove(&thread.metadata.thread_id);
-                    }
-                }
-
-                threads.sort_by(|a, b| {
-                    let a_time = Self::thread_display_time(&a.metadata);
-                    let b_time = Self::thread_display_time(&b.metadata);
-                    b_time.cmp(&a_time)
-                });
-            } else {
-                for info in live_infos {
-                    if info.status == AgentThreadStatus::Running {
-                        has_running_threads = true;
-                    }
-                    if info.status == AgentThreadStatus::WaitingForConfirmation {
-                        waiting_thread_count += 1;
-                    }
-                    // Resolve the thread_id for this session so we can
-                    // track its status and detect transitions even while
-                    // the group is collapsed.
-                    let thread_id = old_statuses
-                        .get(&info.session_id)
-                        .map(|(_, tid)| *tid)
-                        .or_else(|| {
-                            ThreadMetadataStore::global(cx)
-                                .read(cx)
-                                .entry_by_session(&info.session_id)
-                                .map(|m| m.thread_id)
-                        });
-
-                    if let Some(thread_id) = thread_id {
-                        let old_status = old_statuses.get(&info.session_id).map(|(s, _)| *s);
-                        new_live_statuses.insert(info.session_id.clone(), (info.status, thread_id));
-                        if info.status == AgentThreadStatus::Completed
-                            && old_status == Some(AgentThreadStatus::Running)
-                        {
-                            notified_threads.insert(thread_id);
-                        }
-                    }
-                }
-
-                if is_active
-                    && let Some(ActiveEntry::Thread { thread_id, .. }) = self.active_entry.as_ref()
-                {
-                    notified_threads.remove(thread_id);
-                }
-            }
+            let sidebar_rebuild_helpers::GroupThreadEntries {
+                threads,
+                has_running_threads,
+                waiting_thread_count,
+            } = sidebar_rebuild_helpers::thread_entries_for_group(
+                group_key,
+                group_workspaces,
+                &linked_worktree_path_lists,
+                should_load_threads,
+                is_active,
+                active_workspace.as_ref(),
+                self.active_entry.as_ref(),
+                self.pending_thread_activation,
+                old_statuses,
+                &mut new_live_statuses,
+                &mut notified_threads,
+                &mut seen_thread_ids,
+                &branch_by_path,
+                agent_server_store.as_ref(),
+                cx,
+            );
 
             let has_visible_rows = !threads.is_empty() || !terminals.is_empty();
             let has_stored_thread_rows = !should_load_threads && !has_visible_rows && {
