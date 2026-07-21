@@ -338,3 +338,34 @@ impl sum_tree::Item for Excerpt {
         }
     }
 }
+
+pub(super) struct ExcerptChunks<'a> {
+    pub(super) content_chunks: BufferChunks<'a>,
+    pub(super) end: ExcerptAnchor,
+    pub(super) has_footer: bool,
+}
+
+impl<'a> Iterator for ExcerptChunks<'a> {
+    type Item = Chunk<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(chunk) = self.content_chunks.next() {
+            return Some(chunk);
+        }
+
+        if self.has_footer {
+            let text = "\n";
+            let chars = 0b1;
+            let newlines = 0b1;
+            self.has_footer = false;
+            return Some(Chunk {
+                text,
+                chars,
+                newlines,
+                ..Default::default()
+            });
+        }
+
+        None
+    }
+}

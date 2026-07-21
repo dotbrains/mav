@@ -21,8 +21,8 @@ pub use dimensions::{
     ToOffset, ToPoint,
 };
 pub use events::{Event, MultiBufferDiffHunk};
-pub(crate) use excerpt_summary::Excerpt;
 pub use excerpt_summary::{DiffTransformSummary, ExcerptRange, ExcerptSummary, MBTextSummary};
+pub(crate) use excerpt_summary::{Excerpt, ExcerptChunks};
 pub use expansion::{ExpandExcerptDirection, IndentGuide};
 pub use row_info::{ExcerptBoundary, ExcerptBoundaryInfo, ExpandInfo, RowInfo};
 
@@ -248,12 +248,6 @@ struct MultiBufferRegion<'a, MBD, BD> {
     buffer_range: Range<BD>,
     range: Range<MBD>,
     has_trailing_newline: bool,
-}
-
-struct ExcerptChunks<'a> {
-    content_chunks: BufferChunks<'a>,
-    end: ExcerptAnchor,
-    has_footer: bool,
 }
 
 #[derive(Debug)]
@@ -6687,31 +6681,6 @@ impl io::Read for ReversedMultiBufferBytes<'_> {
             }
         }
         Ok(len)
-    }
-}
-
-impl<'a> Iterator for ExcerptChunks<'a> {
-    type Item = Chunk<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(chunk) = self.content_chunks.next() {
-            return Some(chunk);
-        }
-
-        if self.has_footer {
-            let text = "\n";
-            let chars = 0b1;
-            let newlines = 0b1;
-            self.has_footer = false;
-            return Some(Chunk {
-                text,
-                chars,
-                newlines,
-                ..Default::default()
-            });
-        }
-
-        None
     }
 }
 
