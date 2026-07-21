@@ -570,4 +570,3 @@
 1794	crates/worktree/src/background_scanner.rs
 1170	crates/worktree/tests/integration/traversal_symlink_tests.rs
 5002	crates/migrator/src/tests.rs
-546	crates/agent_ui/src/message_editor/tests/completion_tests/context_completion_tests.rs
