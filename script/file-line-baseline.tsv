@@ -569,4 +569,4 @@
 3168	crates/workspace/src/persistence/tests.rs
 1794	crates/worktree/src/background_scanner.rs
 1170	crates/worktree/tests/integration/traversal_symlink_tests.rs
-5002	crates/migrator/src/tests.rs
+3659	crates/migrator/src/tests.rs
