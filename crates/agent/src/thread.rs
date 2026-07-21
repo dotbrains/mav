@@ -32,6 +32,9 @@ mod sandbox_authorization_tests;
 #[cfg(test)]
 #[path = "thread/subagent_settings_tests.rs"]
 mod subagent_settings_tests;
+#[cfg(any(test, feature = "test-support"))]
+#[path = "thread/tool_call_event_receiver.rs"]
+mod tool_call_event_receiver;
 #[path = "thread/tool_input.rs"]
 mod tool_input;
 #[cfg(test)]
@@ -116,6 +119,8 @@ use event_stream::ThreadEventStream;
 pub(crate) use markdown::messages_to_markdown;
 pub use message::*;
 use running_turn::RunningTurn;
+#[cfg(any(test, feature = "test-support"))]
+pub use tool_call_event_receiver::ToolCallEventStreamReceiver;
 pub use tool_input::{ToolInput, ToolInputPayload, ToolInputSender};
 
 const TOOL_CANCELED_MESSAGE: &str = "Tool canceled by user";
@@ -4792,88 +4797,6 @@ impl ToolCallEventStream {
                 });
             }
         }
-    }
-}
-
-#[cfg(any(test, feature = "test-support"))]
-pub struct ToolCallEventStreamReceiver(mpsc::UnboundedReceiver<Result<ThreadEvent>>);
-
-#[cfg(any(test, feature = "test-support"))]
-impl ToolCallEventStreamReceiver {
-    pub async fn expect_authorization(&mut self) -> ToolCallAuthorization {
-        let event = self.0.next().await;
-        if let Some(Ok(ThreadEvent::ToolCallAuthorization(auth))) = event {
-            auth
-        } else {
-            panic!("Expected ToolCallAuthorization but got: {:?}", event);
-        }
-    }
-
-    pub async fn expect_update_fields(&mut self) -> acp::ToolCallUpdateFields {
-        let event = self.0.next().await;
-        if let Some(Ok(ThreadEvent::ToolCallUpdate(acp_thread::ToolCallUpdate::UpdateFields(
-            update,
-        )))) = event
-        {
-            update.fields
-        } else {
-            panic!("Expected update fields but got: {:?}", event);
-        }
-    }
-
-    pub async fn expect_authorization_resolved(
-        &mut self,
-    ) -> (acp::ToolCallId, acp_thread::SelectedPermissionOutcome) {
-        let event = self.0.next().await;
-        if let Some(Ok(ThreadEvent::ToolCallAuthorizationResolved {
-            tool_call_id,
-            outcome,
-        })) = event
-        {
-            (tool_call_id, outcome)
-        } else {
-            panic!("Expected authorization resolved but got: {:?}", event);
-        }
-    }
-
-    pub async fn expect_diff(&mut self) -> Entity<acp_thread::Diff> {
-        let event = self.0.next().await;
-        if let Some(Ok(ThreadEvent::ToolCallUpdate(acp_thread::ToolCallUpdate::UpdateDiff(
-            update,
-        )))) = event
-        {
-            update.diff
-        } else {
-            panic!("Expected diff but got: {:?}", event);
-        }
-    }
-
-    pub async fn expect_terminal(&mut self) -> Entity<acp_thread::Terminal> {
-        let event = self.0.next().await;
-        if let Some(Ok(ThreadEvent::ToolCallUpdate(acp_thread::ToolCallUpdate::UpdateTerminal(
-            update,
-        )))) = event
-        {
-            update.terminal
-        } else {
-            panic!("Expected terminal but got: {:?}", event);
-        }
-    }
-}
-
-#[cfg(any(test, feature = "test-support"))]
-impl std::ops::Deref for ToolCallEventStreamReceiver {
-    type Target = mpsc::UnboundedReceiver<Result<ThreadEvent>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-#[cfg(any(test, feature = "test-support"))]
-impl std::ops::DerefMut for ToolCallEventStreamReceiver {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
     }
 }
 
