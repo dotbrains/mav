@@ -49,7 +49,7 @@
     6922	crates/agent/src/agent.rs
     6818	crates/mav/src/mav.rs
 5288	crates/project/src/project.rs
-5368	crates/settings_ui/src/settings_ui.rs
+4197	crates/settings_ui/src/settings_ui.rs
 5349	crates/gpui/src/window.rs
    5304	crates/editor/src/split.rs
     6276	crates/multi_buffer/src/multi_buffer_tests.rs
@@ -570,3 +570,4 @@
 1794	crates/worktree/src/background_scanner.rs
 1170	crates/worktree/tests/integration/traversal_symlink_tests.rs
 5002	crates/migrator/src/tests.rs
+1159	crates/settings_ui/src/settings_ui/test.rs
