@@ -17,7 +17,7 @@
     8278	crates/multi_buffer/src/multi_buffer.rs
     7243	crates/outline_panel/src/outline_panel.rs
     7449	crates/acp_thread/src/acp_thread.rs
-    7455	crates/agent/src/thread.rs
+    7323	crates/agent/src/thread.rs
     7183	crates/project_panel/src/project_panel.rs
     7141	crates/zeta_prompt/src/zeta_prompt.rs
     7035	crates/git_ui/src/git_graph.rs
