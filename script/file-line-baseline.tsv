@@ -10,7 +10,7 @@
    10763	crates/agent_ui/src/conversation_view.rs
     8714	crates/settings_ui/src/page_data.rs
     9097	crates/git_ui/src/git_panel.rs
-    9199	crates/project/src/git_store.rs
+    9049	crates/project/src/git_store.rs
    10145	crates/workspace/src/pane.rs
     8614	crates/sidebar/src/sidebar.rs
     8558	crates/dev_container/src/devcontainer_manifest.rs
