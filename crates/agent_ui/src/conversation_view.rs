@@ -122,6 +122,7 @@ use conversation_state::{Conversation, affects_thread_metadata};
 #[cfg(test)]
 use conversation_state::{permission_option_for_action, resolve_outcome_from_selection};
 mod draft_state;
+mod editor_insertion;
 mod markdown_resolution;
 use markdown_resolution::{AgentCodeSpanResolver, render_agent_markdown};
 mod load_error_rendering;
@@ -486,49 +487,6 @@ impl ConversationView {
                     thread.invalidate_mermaid_caches(cx);
                 });
             }
-        }
-    }
-
-    pub(crate) fn insert_dragged_files(
-        &self,
-        paths: Vec<project::ProjectPath>,
-        added_worktrees: Vec<Entity<project::Worktree>>,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        if let Some(message_editor) = self.loading_draft_editor() {
-            message_editor.update(cx, |editor, cx| {
-                editor.insert_dragged_files(paths, added_worktrees, window, cx);
-                editor.focus_handle(cx).focus(window, cx);
-            });
-        } else if let Some(active_thread) = self.active_thread() {
-            active_thread.update(cx, |thread, cx| {
-                thread.message_editor.update(cx, |editor, cx| {
-                    editor.insert_dragged_files(paths, added_worktrees, window, cx);
-                    editor.focus_handle(cx).focus(window, cx);
-                })
-            });
-        }
-    }
-
-    /// Inserts the selected text into the message editor or the message being
-    /// edited, if any.
-    pub(crate) fn insert_selection(
-        &self,
-        selection: AgentContextSelection,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        if let Some(message_editor) = self.loading_draft_editor() {
-            message_editor.update(cx, |editor, cx| {
-                editor.insert_selections(selection, window, cx);
-            });
-        } else if let Some(active_thread) = self.active_thread() {
-            active_thread.update(cx, |thread, cx| {
-                thread.active_editor(cx).update(cx, |editor, cx| {
-                    editor.insert_selections(selection, window, cx);
-                })
-            });
         }
     }
 
