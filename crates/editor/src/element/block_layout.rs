@@ -1,6 +1,138 @@
 use super::*;
 
 impl EditorElement {
+    pub(super) fn layout_block_render_phase(
+        &self,
+        is_minimap: bool,
+        rows: Range<DisplayRow>,
+        start_anchor: Anchor,
+        end_anchor: Anchor,
+        scroll_position: gpui::Point<ScrollOffset>,
+        em_layout_width: Pixels,
+        line_height: Pixels,
+        content_origin: gpui::Point<Pixels>,
+        text_hitbox: &Hitbox,
+        snapshot: &EditorSnapshot,
+        hitbox: &Hitbox,
+        editor_width: Pixels,
+        scroll_width: &mut Pixels,
+        editor_margins: &EditorMargins,
+        em_width: Pixels,
+        gutter_full_width: Pixels,
+        line_layouts: &mut [LineWithInvisibles],
+        local_selections: &[Selection<Point>],
+        selected_buffer_ids: &Vec<BufferId>,
+        latest_selection_anchors: &HashMap<BufferId, Anchor>,
+        is_row_soft_wrapped: impl Copy + Fn(usize) -> bool,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> layout_data::BlockRenderPhase {
+        let sticky_header_excerpt_id = if snapshot.buffer_snapshot().show_headers() {
+            snapshot
+                .sticky_header_excerpt(scroll_position.y)
+                .as_ref()
+                .map(|top| top.excerpt.buffer_id())
+        } else {
+            None
+        };
+
+        let buffer = snapshot.buffer_snapshot();
+        let start_buffer_row = MultiBufferRow(start_anchor.to_point(&buffer).row);
+        let end_buffer_row = MultiBufferRow(end_anchor.to_point(&buffer).row);
+
+        let preliminary_scroll_pixel_position = point(
+            scroll_position.x * f64::from(em_layout_width),
+            scroll_position.y * f64::from(line_height),
+        );
+        let indent_guides = self.layout_indent_guides(
+            content_origin,
+            text_hitbox.origin,
+            start_buffer_row..end_buffer_row,
+            preliminary_scroll_pixel_position,
+            line_height,
+            snapshot,
+            window,
+            cx,
+        );
+        let indent_guides_for_spacers = indent_guides.clone();
+
+        let blocks_output = (!is_minimap)
+            .then(|| {
+                window.with_element_namespace("blocks", |window| {
+                    self.render_blocks(
+                        rows,
+                        snapshot,
+                        hitbox,
+                        text_hitbox,
+                        editor_width,
+                        scroll_width,
+                        editor_margins,
+                        em_width,
+                        gutter_full_width,
+                        line_height,
+                        line_layouts,
+                        local_selections,
+                        selected_buffer_ids,
+                        latest_selection_anchors,
+                        is_row_soft_wrapped,
+                        sticky_header_excerpt_id,
+                        &indent_guides_for_spacers,
+                        window,
+                        cx,
+                    )
+                })
+            })
+            .unwrap_or_default();
+
+        layout_data::BlockRenderPhase {
+            blocks_output,
+            sticky_header_excerpt_id,
+            start_buffer_row,
+            end_buffer_row,
+            preliminary_scroll_pixel_position,
+            indent_guides,
+        }
+    }
+
+    pub(super) fn layout_sticky_buffer_header_phase(
+        &self,
+        sticky_header_excerpt_id: Option<BufferId>,
+        scroll_position: gpui::Point<ScrollOffset>,
+        line_height: Pixels,
+        right_margin: Pixels,
+        snapshot: &EditorSnapshot,
+        hitbox: &Hitbox,
+        selected_buffer_ids: &Vec<BufferId>,
+        blocks: &[BlockLayout],
+        latest_selection_anchors: &HashMap<BufferId, Anchor>,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Option<AnyElement> {
+        if !self.should_show_buffer_headers() || sticky_header_excerpt_id.is_none() {
+            return None;
+        }
+
+        snapshot
+            .sticky_header_excerpt(scroll_position.y)
+            .map(|sticky_header_excerpt| {
+                window.with_element_namespace("blocks", |window| {
+                    self.layout_sticky_buffer_header(
+                        sticky_header_excerpt,
+                        scroll_position,
+                        line_height,
+                        right_margin,
+                        snapshot,
+                        hitbox,
+                        selected_buffer_ids,
+                        blocks,
+                        latest_selection_anchors,
+                        window,
+                        cx,
+                    )
+                })
+            })
+    }
+
     pub(super) fn spacer_pattern_period(line_height: f32, target_height: f32) -> f32 {
         let k_approx = line_height / (2.0 * target_height);
         let k_floor = (k_approx.floor() as u32).max(1);

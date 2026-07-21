@@ -133,6 +133,15 @@ pub(super) struct PositionMapLayout {
     pub(super) position_map: Rc<PositionMap>,
 }
 
+pub(super) struct BlockRenderPhase {
+    pub(super) blocks_output: RenderBlocksOutput,
+    pub(super) sticky_header_excerpt_id: Option<BufferId>,
+    pub(super) start_buffer_row: MultiBufferRow,
+    pub(super) end_buffer_row: MultiBufferRow,
+    pub(super) preliminary_scroll_pixel_position: gpui::Point<ScrollPixelOffset>,
+    pub(super) indent_guides: Option<Vec<IndentGuideLayout>>,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,

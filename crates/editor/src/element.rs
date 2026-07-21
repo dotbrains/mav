@@ -583,68 +583,44 @@ impl Element for EditorElement {
 
                     let mut scroll_width = scrollbar_layout_information.scroll_range.width;
 
-                    let sticky_header_excerpt = if snapshot.buffer_snapshot().show_headers() {
-                        snapshot.sticky_header_excerpt(scroll_position.y)
-                    } else {
-                        None
-                    };
-                    let sticky_header_excerpt_id = sticky_header_excerpt
-                        .as_ref()
-                        .map(|top| top.excerpt.buffer_id());
-
-                    let buffer = snapshot.buffer_snapshot();
-                    let start_buffer_row = MultiBufferRow(start_anchor.to_point(&buffer).row);
-                    let end_buffer_row = MultiBufferRow(end_anchor.to_point(&buffer).row);
-
-                    let preliminary_scroll_pixel_position = point(
-                        scroll_position.x * f64::from(em_layout_width),
-                        scroll_position.y * f64::from(line_height),
-                    );
-                    let indent_guides = self.layout_indent_guides(
-                        content_origin,
-                        text_hitbox.origin,
-                        start_buffer_row..end_buffer_row,
+                    let layout_data::BlockRenderPhase {
+                        blocks_output,
+                        sticky_header_excerpt_id,
+                        start_buffer_row,
+                        end_buffer_row,
                         preliminary_scroll_pixel_position,
+                        indent_guides,
+                    } = self.layout_block_render_phase(
+                        is_minimap,
+                        start_row..end_row,
+                        start_anchor,
+                        end_anchor,
+                        scroll_position,
+                        em_layout_width,
                         line_height,
+                        content_origin,
+                        &text_hitbox,
                         &snapshot,
+                        &hitbox,
+                        editor_width,
+                        &mut scroll_width,
+                        &editor_margins,
+                        em_width,
+                        gutter_dimensions.full_width(),
+                        &mut line_layouts,
+                        &local_selections,
+                        &selected_buffer_ids,
+                        &latest_selection_anchors,
+                        is_row_soft_wrapped,
                         window,
                         cx,
                     );
-                    let indent_guides_for_spacers = indent_guides.clone();
-
-                    let blocks = (!is_minimap)
-                        .then(|| {
-                            window.with_element_namespace("blocks", |window| {
-                                self.render_blocks(
-                                    start_row..end_row,
-                                    &snapshot,
-                                    &hitbox,
-                                    &text_hitbox,
-                                    editor_width,
-                                    &mut scroll_width,
-                                    &editor_margins,
-                                    em_width,
-                                    gutter_dimensions.full_width(),
-                                    line_height,
-                                    &mut line_layouts,
-                                    &local_selections,
-                                    &selected_buffer_ids,
-                                    &latest_selection_anchors,
-                                    is_row_soft_wrapped,
-                                    sticky_header_excerpt_id,
-                                    &indent_guides_for_spacers,
-                                    window,
-                                    cx,
-                                )
-                            })
-                        })
-                        .unwrap_or_default();
                     let RenderBlocksOutput {
                         non_spacer_blocks: mut blocks,
                         mut spacer_blocks,
                         row_block_types,
                         resized_blocks,
-                    } = blocks;
+                    } = blocks_output;
                     if let Some(resized_blocks) = resized_blocks {
                         if request_layout.has_remaining_prepaint_depth() {
                             self.editor.update(cx, |editor, cx| {
@@ -670,27 +646,19 @@ impl Element for EditorElement {
                         }
                     }
 
-                    let sticky_buffer_header = if self.should_show_buffer_headers() {
-                        sticky_header_excerpt.map(|sticky_header_excerpt| {
-                            window.with_element_namespace("blocks", |window| {
-                                self.layout_sticky_buffer_header(
-                                    sticky_header_excerpt,
-                                    scroll_position,
-                                    line_height,
-                                    right_margin,
-                                    &snapshot,
-                                    &hitbox,
-                                    &selected_buffer_ids,
-                                    &blocks,
-                                    &latest_selection_anchors,
-                                    window,
-                                    cx,
-                                )
-                            })
-                        })
-                    } else {
-                        None
-                    };
+                    let sticky_buffer_header = self.layout_sticky_buffer_header_phase(
+                        sticky_header_excerpt_id,
+                        scroll_position,
+                        line_height,
+                        right_margin,
+                        &snapshot,
+                        &hitbox,
+                        &selected_buffer_ids,
+                        &blocks,
+                        &latest_selection_anchors,
+                        window,
+                        cx,
+                    );
 
                     let layout_data::ScrollPositionLayout {
                         scroll_position,
