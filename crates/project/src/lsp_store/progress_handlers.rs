@@ -223,4 +223,102 @@ impl LspStore {
             }),
         })
     }
+    pub fn disk_based_diagnostics_started(
+        &mut self,
+        language_server_id: LanguageServerId,
+        cx: &mut Context<Self>,
+    ) {
+        if let Some(language_server_status) =
+            self.language_server_statuses.get_mut(&language_server_id)
+        {
+            language_server_status.has_pending_diagnostic_updates = true;
+        }
+
+        cx.emit(LspStoreEvent::DiskBasedDiagnosticsStarted { language_server_id });
+        cx.emit(LspStoreEvent::LanguageServerUpdate {
+            language_server_id,
+            name: self
+                .language_server_adapter_for_id(language_server_id)
+                .map(|adapter| adapter.name()),
+            message: proto::update_language_server::Variant::DiskBasedDiagnosticsUpdating(
+                Default::default(),
+            ),
+        })
+    }
+
+    pub fn disk_based_diagnostics_finished(
+        &mut self,
+        language_server_id: LanguageServerId,
+        cx: &mut Context<Self>,
+    ) {
+        if let Some(language_server_status) =
+            self.language_server_statuses.get_mut(&language_server_id)
+        {
+            language_server_status.has_pending_diagnostic_updates = false;
+        }
+
+        cx.emit(LspStoreEvent::DiskBasedDiagnosticsFinished { language_server_id });
+        cx.emit(LspStoreEvent::LanguageServerUpdate {
+            language_server_id,
+            name: self
+                .language_server_adapter_for_id(language_server_id)
+                .map(|adapter| adapter.name()),
+            message: proto::update_language_server::Variant::DiskBasedDiagnosticsUpdated(
+                Default::default(),
+            ),
+        })
+    }
+
+    // After saving a buffer using a language server that doesn't provide a disk-based progress token,
+    // kick off a timer that will reset every time the buffer is saved. If the timer eventually fires,
+    // simulate disk-based diagnostics being finished so that other pieces of UI (e.g., project
+    // diagnostics view, diagnostic status bar) can update. We don't emit an event right away because
+    // the language server might take some time to publish diagnostics.
+    pub(super) fn simulate_disk_based_diagnostics_events_if_needed(
+        &mut self,
+        language_server_id: LanguageServerId,
+        cx: &mut Context<Self>,
+    ) {
+        const DISK_BASED_DIAGNOSTICS_DEBOUNCE: Duration = Duration::from_secs(1);
+
+        let Some(LanguageServerState::Running {
+            simulate_disk_based_diagnostics_completion,
+            adapter,
+            ..
+        }) = self
+            .as_local_mut()
+            .and_then(|local_store| local_store.language_servers.get_mut(&language_server_id))
+        else {
+            return;
+        };
+
+        if adapter.disk_based_diagnostics_progress_token.is_some() {
+            return;
+        }
+
+        let prev_task =
+            simulate_disk_based_diagnostics_completion.replace(cx.spawn(async move |this, cx| {
+                cx.background_executor()
+                    .timer(DISK_BASED_DIAGNOSTICS_DEBOUNCE)
+                    .await;
+
+                this.update(cx, |this, cx| {
+                    this.disk_based_diagnostics_finished(language_server_id, cx);
+
+                    if let Some(LanguageServerState::Running {
+                        simulate_disk_based_diagnostics_completion,
+                        ..
+                    }) = this.as_local_mut().and_then(|local_store| {
+                        local_store.language_servers.get_mut(&language_server_id)
+                    }) {
+                        *simulate_disk_based_diagnostics_completion = None;
+                    }
+                })
+                .ok();
+            }));
+
+        if prev_task.is_none() {
+            self.disk_based_diagnostics_started(language_server_id, cx);
+        }
+    }
 }

@@ -1,4 +1,4 @@
-use super::LspStore;
+use super::*;
 use collections::HashMap;
 use fs::Fs;
 use futures::StreamExt;
@@ -186,5 +186,225 @@ impl LanguageServerWatchedPaths {
                 .await;
             }
         })
+    }
+}
+
+impl LspStore {
+    pub(super) async fn handle_rename_project_entry(
+        this: Entity<Self>,
+        envelope: TypedEnvelope<proto::RenameProjectEntry>,
+        mut cx: AsyncApp,
+    ) -> Result<proto::ProjectEntryResponse> {
+        let entry_id = ProjectEntryId::from_proto(envelope.payload.entry_id);
+        let new_worktree_id = WorktreeId::from_proto(envelope.payload.new_worktree_id);
+        let new_path =
+            RelPath::from_proto(&envelope.payload.new_path).context("invalid relative path")?;
+
+        let (worktree_store, old_worktree, new_worktree, old_entry) = this
+            .update(&mut cx, |this, cx| {
+                let (worktree, entry) = this
+                    .worktree_store
+                    .read(cx)
+                    .worktree_and_entry_for_id(entry_id, cx)?;
+                let new_worktree = this
+                    .worktree_store
+                    .read(cx)
+                    .worktree_for_id(new_worktree_id, cx)?;
+                Some((
+                    this.worktree_store.clone(),
+                    worktree,
+                    new_worktree,
+                    entry.clone(),
+                ))
+            })
+            .context("worktree not found")?;
+        let (old_abs_path, old_worktree_id) = old_worktree.read_with(&cx, |worktree, _| {
+            (worktree.absolutize(&old_entry.path), worktree.id())
+        });
+        let new_abs_path =
+            new_worktree.read_with(&cx, |worktree, _| worktree.absolutize(&new_path));
+
+        let _transaction = Self::will_rename_entry(
+            this.downgrade(),
+            old_worktree_id,
+            &old_abs_path,
+            &new_abs_path,
+            old_entry.is_dir(),
+            cx.clone(),
+        )
+        .await;
+        let response = WorktreeStore::handle_rename_project_entry(
+            worktree_store,
+            envelope.payload,
+            cx.clone(),
+        )
+        .await;
+        this.read_with(&cx, |this, _| {
+            this.did_rename_entry(
+                old_worktree_id,
+                &old_abs_path,
+                &new_abs_path,
+                old_entry.is_dir(),
+            );
+        });
+        response
+    }
+
+    pub(crate) fn did_rename_entry(
+        &self,
+        worktree_id: WorktreeId,
+        old_path: &Path,
+        new_path: &Path,
+        is_dir: bool,
+    ) {
+        maybe!({
+            let local_store = self.as_local()?;
+
+            let old_uri = lsp::Uri::from_file_path(old_path)
+                .ok()
+                .map(|uri| uri.to_string())?;
+            let new_uri = lsp::Uri::from_file_path(new_path)
+                .ok()
+                .map(|uri| uri.to_string())?;
+
+            for language_server in local_store.language_servers_for_worktree(worktree_id) {
+                let Some(filter) = local_store
+                    .language_server_paths_watched_for_rename
+                    .get(&language_server.server_id())
+                else {
+                    continue;
+                };
+
+                if filter.should_send_did_rename(&old_uri, is_dir) {
+                    language_server
+                        .notify::<DidRenameFiles>(RenameFilesParams {
+                            files: vec![FileRename {
+                                old_uri: old_uri.clone(),
+                                new_uri: new_uri.clone(),
+                            }],
+                        })
+                        .ok();
+                }
+            }
+            Some(())
+        });
+    }
+
+    pub(crate) fn will_rename_entry(
+        this: WeakEntity<Self>,
+        worktree_id: WorktreeId,
+        old_path: &Path,
+        new_path: &Path,
+        is_dir: bool,
+        cx: AsyncApp,
+    ) -> Task<ProjectTransaction> {
+        let old_uri = lsp::Uri::from_file_path(old_path)
+            .ok()
+            .map(|uri| uri.to_string());
+        let new_uri = lsp::Uri::from_file_path(new_path)
+            .ok()
+            .map(|uri| uri.to_string());
+        cx.spawn(async move |cx| {
+            let mut tasks = vec![];
+            this.update(cx, |this, cx| {
+                let local_store = this.as_local()?;
+                let old_uri = old_uri?;
+                let new_uri = new_uri?;
+                for language_server in local_store.language_servers_for_worktree(worktree_id) {
+                    let Some(filter) = local_store
+                        .language_server_paths_watched_for_rename
+                        .get(&language_server.server_id())
+                    else {
+                        continue;
+                    };
+
+                    if !filter.should_send_will_rename(&old_uri, is_dir) {
+                        continue;
+                    }
+                    let request_timeout = ProjectSettings::get_global(cx)
+                        .global_lsp_settings
+                        .get_request_timeout();
+
+                    let apply_edit = cx.spawn({
+                        let old_uri = old_uri.clone();
+                        let new_uri = new_uri.clone();
+                        let language_server = language_server.clone();
+                        async move |this, cx| {
+                            let edit = language_server
+                                .request::<WillRenameFiles>(
+                                    RenameFilesParams {
+                                        files: vec![FileRename { old_uri, new_uri }],
+                                    },
+                                    request_timeout,
+                                )
+                                .await
+                                .into_response()
+                                .context("will rename files")
+                                .log_err()
+                                .flatten()?;
+
+                            LocalLspStore::deserialize_workspace_edit(
+                                this.upgrade()?,
+                                edit,
+                                false,
+                                language_server.clone(),
+                                cx,
+                            )
+                            .await
+                            .ok()
+                        }
+                    });
+                    tasks.push(apply_edit);
+                }
+                Some(())
+            })
+            .ok()
+            .flatten();
+            let mut merged_transaction = ProjectTransaction::default();
+            for task in tasks {
+                // Await on tasks sequentially so that the order of application of edits is deterministic
+                // (at least with regards to the order of registration of language servers)
+                if let Some(transaction) = task.await {
+                    for (buffer, buffer_transaction) in transaction.0 {
+                        merged_transaction.0.insert(buffer, buffer_transaction);
+                    }
+                }
+            }
+            merged_transaction
+        })
+    }
+
+    pub(super) fn lsp_notify_abs_paths_changed(
+        &mut self,
+        server_id: LanguageServerId,
+        changes: Vec<PathEvent>,
+    ) {
+        maybe!({
+            let server = self.language_server_for_id(server_id)?;
+            let changes = changes
+                .into_iter()
+                .filter_map(|event| {
+                    let typ = match event.kind? {
+                        PathEventKind::Created => lsp::FileChangeType::CREATED,
+                        PathEventKind::Removed => lsp::FileChangeType::DELETED,
+                        PathEventKind::Changed | PathEventKind::Rescan => {
+                            lsp::FileChangeType::CHANGED
+                        }
+                    };
+                    Some(lsp::FileEvent {
+                        uri: file_path_to_lsp_url(&event.path).log_err()?,
+                        typ,
+                    })
+                })
+                .collect::<Vec<_>>();
+            if !changes.is_empty() {
+                server
+                    .notify::<lsp::notification::DidChangeWatchedFiles>(
+                        lsp::DidChangeWatchedFilesParams { changes },
+                    )
+                    .ok();
+            }
+            Some(())
+        });
     }
 }
