@@ -69,7 +69,7 @@ impl RepositorySnapshot {
                 .stash_entries
                 .entries
                 .iter()
-                .map(stash_to_proto)
+                .map(super::repository_misc::stash_to_proto)
                 .collect(),
             remote_upstream_url: self.remote_upstream_url.clone(),
             remote_origin_url: self.remote_origin_url.clone(),
@@ -156,7 +156,7 @@ impl RepositorySnapshot {
                 .stash_entries
                 .entries
                 .iter()
-                .map(stash_to_proto)
+                .map(super::repository_misc::stash_to_proto)
                 .collect(),
             remote_upstream_url: self.remote_upstream_url.clone(),
             remote_origin_url: self.remote_origin_url.clone(),

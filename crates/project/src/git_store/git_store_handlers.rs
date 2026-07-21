@@ -123,7 +123,7 @@ impl GitStore {
         let fetch_options = FetchOptions::from_proto(envelope.payload.remote);
         let askpass_id = envelope.payload.askpass_id;
 
-        let askpass = make_remote_delegate(
+        let askpass = super::remote_delegate::make_remote_delegate(
             this,
             envelope.payload.project_id,
             repository_id,
@@ -152,7 +152,7 @@ impl GitStore {
         let repository_handle = Self::repository_for_request(&this, repository_id, &mut cx)?;
 
         let askpass_id = envelope.payload.askpass_id;
-        let askpass = make_remote_delegate(
+        let askpass = super::remote_delegate::make_remote_delegate(
             this,
             envelope.payload.project_id,
             repository_id,
@@ -199,7 +199,7 @@ impl GitStore {
         let repository_id = RepositoryId::from_proto(envelope.payload.repository_id);
         let repository_handle = Self::repository_for_request(&this, repository_id, &mut cx)?;
         let askpass_id = envelope.payload.askpass_id;
-        let askpass = make_remote_delegate(
+        let askpass = super::remote_delegate::make_remote_delegate(
             this,
             envelope.payload.project_id,
             repository_id,

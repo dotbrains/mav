@@ -54,7 +54,7 @@ impl Repository {
             entries: update
                 .stash_entries
                 .iter()
-                .filter_map(|entry| proto_to_stash(entry).ok())
+                .filter_map(|entry| super::repository_misc::proto_to_stash(entry).ok())
                 .collect(),
         };
         if self.snapshot.stash_entries != new_stash_entries {

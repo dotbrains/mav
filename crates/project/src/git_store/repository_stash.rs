@@ -131,7 +131,7 @@ impl Repository {
             move |git_repo, _cx| async move {
                 match git_repo {
                     RepositoryState::Local(LocalRepositoryState { fs, .. }) => {
-                        append_pattern_to_ignore_file(
+                        super::repository_helpers::append_pattern_to_ignore_file(
                             fs,
                             work_dir.join(".gitignore"),
                             file_path_str,
@@ -165,7 +165,7 @@ impl Repository {
             move |git_repo, _cx| async move {
                 match git_repo {
                     RepositoryState::Local(LocalRepositoryState { fs, .. }) => {
-                        append_pattern_to_ignore_file(
+                        super::repository_helpers::append_pattern_to_ignore_file(
                             fs,
                             repository_dir.join(git::REPO_EXCLUDE),
                             file_path_str,

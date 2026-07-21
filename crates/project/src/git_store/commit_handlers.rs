@@ -48,7 +48,7 @@ impl GitStore {
         let repository_handle = Self::repository_for_request(&this, repository_id, &mut cx)?;
         let askpass_id = envelope.payload.askpass_id;
 
-        let askpass = make_remote_delegate(
+        let askpass = super::remote_delegate::make_remote_delegate(
             this,
             envelope.payload.project_id,
             repository_id,

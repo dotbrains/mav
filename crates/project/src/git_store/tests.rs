@@ -99,21 +99,33 @@ async fn test_append_pattern_to_ignore_file_creates_and_deduplicates(cx: &mut Te
     let path = PathBuf::from("/root/.gitignore");
 
     // Appending to a non-existent file creates it with a trailing newline.
-    super::append_pattern_to_ignore_file(fs.clone(), path.clone(), "build/".to_string())
-        .await
-        .unwrap();
+    super::super::repository_helpers::append_pattern_to_ignore_file(
+        fs.clone(),
+        path.clone(),
+        "build/".to_string(),
+    )
+    .await
+    .unwrap();
     assert_eq!(fs.load(&path).await.unwrap(), "build/\n");
 
     // Appending the same pattern again is a no-op (deduplication).
-    super::append_pattern_to_ignore_file(fs.clone(), path.clone(), "build/".to_string())
-        .await
-        .unwrap();
+    super::super::repository_helpers::append_pattern_to_ignore_file(
+        fs.clone(),
+        path.clone(),
+        "build/".to_string(),
+    )
+    .await
+    .unwrap();
     assert_eq!(fs.load(&path).await.unwrap(), "build/\n");
 
     // Appending a distinct pattern adds it with a trailing newline.
-    super::append_pattern_to_ignore_file(fs.clone(), path.clone(), "target/".to_string())
-        .await
-        .unwrap();
+    super::super::repository_helpers::append_pattern_to_ignore_file(
+        fs.clone(),
+        path.clone(),
+        "target/".to_string(),
+    )
+    .await
+    .unwrap();
     assert_eq!(fs.load(&path).await.unwrap(), "build/\ntarget/\n");
 }
 
@@ -128,9 +140,13 @@ async fn test_append_pattern_adds_newline_before_pattern_when_missing(cx: &mut T
         .unwrap();
 
     // The new pattern must be written on its own line.
-    super::append_pattern_to_ignore_file(fs.clone(), path.clone(), "build/".to_string())
-        .await
-        .unwrap();
+    super::super::repository_helpers::append_pattern_to_ignore_file(
+        fs.clone(),
+        path.clone(),
+        "build/".to_string(),
+    )
+    .await
+    .unwrap();
     assert_eq!(fs.load(&path).await.unwrap(), "*.log\nbuild/\n");
 }
 

@@ -31,7 +31,7 @@ impl Repository {
         let job_id = post_inc(&mut self.job_id);
         let this = self.this.clone();
 
-        let key_label = key.as_ref().map(format_job_key);
+        let key_label = key.as_ref().map(super::repository_helpers::format_job_key);
         self.job_debug_queue.add(job_id, description, key_label);
 
         self.job_sender
