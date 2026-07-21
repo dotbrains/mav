@@ -9,6 +9,9 @@ mod sandbox_authorization_tests;
 #[cfg(test)]
 #[path = "thread/subagent_settings_tests.rs"]
 mod subagent_settings_tests;
+#[cfg(test)]
+#[path = "thread/tool_replay_tests.rs"]
+mod tool_replay_tests;
 
 use crate::{
     ApplyCodeActionTool, CodeActionStore, ContextServerRegistry, CopyPathTool, CreateDirectoryTool,
@@ -6641,131 +6644,6 @@ mod tests {
                 MessageContent::Image(image),
             ]
         );
-    }
-
-    struct ReplayImageTool;
-
-    impl AgentTool for ReplayImageTool {
-        type Input = ();
-        type Output = String;
-
-        const NAME: &'static str = "registered_image_tool";
-
-        fn kind() -> acp::ToolKind {
-            acp::ToolKind::Other
-        }
-
-        fn initial_title(
-            &self,
-            _input: Result<Self::Input, serde_json::Value>,
-            _cx: &mut App,
-        ) -> SharedString {
-            "Registered Image Tool".into()
-        }
-
-        fn run(
-            self: Arc<Self>,
-            _input: ToolInput<Self::Input>,
-            _event_stream: ToolCallEventStream,
-            _cx: &mut App,
-        ) -> Task<Result<Self::Output, Self::Output>> {
-            Task::ready(Ok(String::new()))
-        }
-    }
-
-    #[gpui::test]
-    async fn test_replay_tool_call_replays_image_content(cx: &mut TestAppContext) {
-        let (thread, _event_stream) = setup_thread_for_test(cx).await;
-
-        let registered_tool_use_id = LanguageModelToolUseId::from("registered_tool_id");
-        let missing_tool_use_id = LanguageModelToolUseId::from("missing_tool_id");
-        let image_data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==";
-        let image = LanguageModelImage {
-            source: image_data.into(),
-        };
-
-        let mut replay_events = cx.update(|cx| {
-            thread.update(cx, |thread, cx| {
-                thread.add_tool(ReplayImageTool);
-
-                let registered_tool_use = LanguageModelToolUse {
-                    id: registered_tool_use_id.clone(),
-                    name: ReplayImageTool::NAME.into(),
-                    raw_input: "null".to_string(),
-                    input: json!(null),
-                    is_input_complete: true,
-                    thought_signature: None,
-                };
-                let missing_tool_use = LanguageModelToolUse {
-                    id: missing_tool_use_id.clone(),
-                    name: "missing_image_tool".into(),
-                    raw_input: "{}".to_string(),
-                    input: json!({}),
-                    is_input_complete: true,
-                    thought_signature: None,
-                };
-
-                let mut tool_results = IndexMap::default();
-                tool_results.insert(
-                    registered_tool_use_id.clone(),
-                    LanguageModelToolResult {
-                        tool_use_id: registered_tool_use_id.clone(),
-                        tool_name: ReplayImageTool::NAME.into(),
-                        is_error: false,
-                        content: vec![
-                            LanguageModelToolResultContent::Text("before".into()),
-                            LanguageModelToolResultContent::Image(image.clone()),
-                            LanguageModelToolResultContent::Text("after".into()),
-                        ],
-                        output: Some(json!("raw output")),
-                    },
-                );
-                tool_results.insert(
-                    missing_tool_use_id.clone(),
-                    LanguageModelToolResult {
-                        tool_use_id: missing_tool_use_id.clone(),
-                        tool_name: "missing_image_tool".into(),
-                        is_error: false,
-                        content: vec![LanguageModelToolResultContent::Image(image.clone())],
-                        output: Some(json!("raw output")),
-                    },
-                );
-
-                thread.messages.push(Arc::new(Message::Agent(AgentMessage {
-                    content: vec![
-                        AgentMessageContent::ToolUse(registered_tool_use),
-                        AgentMessageContent::ToolUse(missing_tool_use),
-                    ],
-                    tool_results,
-                    reasoning_details: None,
-                })));
-
-                thread.replay(cx)
-            })
-        });
-
-        let mut tool_use_ids_with_image_content = HashSet::default();
-        while let Some(event) = replay_events.next().await {
-            let event = event.unwrap();
-            if let ThreadEvent::ToolCallUpdate(acp_thread::ToolCallUpdate::UpdateFields(update)) =
-                event
-                && let Some(content) = &update.fields.content
-                && content.iter().any(|content| {
-                    matches!(
-                        content,
-                        acp::ToolCallContent::Content(acp::Content {
-                            content: acp::ContentBlock::Image(_),
-                            ..
-                        })
-                    )
-                })
-            {
-                tool_use_ids_with_image_content.insert(update.tool_call_id.to_string());
-            }
-        }
-
-        assert!(tool_use_ids_with_image_content.contains(&registered_tool_use_id.to_string()));
-        assert!(tool_use_ids_with_image_content.contains(&missing_tool_use_id.to_string()));
     }
 
     #[gpui::test]
