@@ -12,6 +12,8 @@ mod archive_worktree_tasks;
 mod entry_updates;
 #[path = "sidebar/focus_and_filter.rs"]
 mod focus_and_filter;
+#[path = "sidebar/group_state.rs"]
+mod group_state;
 #[path = "sidebar/import_onboarding_banner.rs"]
 mod import_onboarding_banner;
 #[path = "sidebar/selection_actions.rs"]
@@ -427,32 +429,6 @@ impl Sidebar {
             update_task: None,
             import_banners_use_verbose_labels: None,
             cross_channel_import_channels: Vec::new(),
-        }
-    }
-
-    fn serialize(&mut self, cx: &mut Context<Self>) {
-        cx.emit(workspace::SidebarEvent::SerializeNeeded);
-    }
-
-    fn is_group_collapsed(&self, key: &ProjectGroupKey, cx: &App) -> bool {
-        self.multi_workspace
-            .upgrade()
-            .and_then(|mw| {
-                mw.read(cx)
-                    .group_state_by_key(key)
-                    .map(|state| !state.expanded)
-            })
-            .unwrap_or(false)
-    }
-
-    fn set_group_expanded(&self, key: &ProjectGroupKey, expanded: bool, cx: &mut Context<Self>) {
-        if let Some(mw) = self.multi_workspace.upgrade() {
-            mw.update(cx, |mw, cx| {
-                if let Some(state) = mw.group_state_by_key_mut(key) {
-                    state.expanded = expanded;
-                }
-                mw.serialize(cx);
-            });
         }
     }
 
