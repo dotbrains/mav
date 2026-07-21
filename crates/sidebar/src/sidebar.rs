@@ -6,6 +6,8 @@ mod archive_view;
 mod archive_worktree_planning;
 #[path = "sidebar/archive_worktree_tasks.rs"]
 mod archive_worktree_tasks;
+#[path = "sidebar/focus_and_filter.rs"]
+mod focus_and_filter;
 #[path = "sidebar/import_onboarding_banner.rs"]
 mod import_onboarding_banner;
 #[path = "sidebar/sidebar_chrome_rendering.rs"]
@@ -1709,98 +1711,6 @@ impl Sidebar {
                     Some(0)
                 }
             });
-    }
-
-    fn dispatch_context(&self, window: &Window, cx: &Context<Self>) -> KeyContext {
-        let mut dispatch_context = KeyContext::new_with_defaults();
-        dispatch_context.add("Sidebar");
-        dispatch_context.add("menu");
-
-        let is_renaming_thread = self
-            .thread_rename_editor
-            .focus_handle(cx)
-            .is_focused(window);
-
-        let identifier = if is_renaming_thread {
-            "editing"
-        } else {
-            "not_searching"
-        };
-
-        dispatch_context.add(identifier);
-        dispatch_context
-    }
-
-    fn focus_in(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if !self.focus_handle.is_focused(window) {
-            return;
-        }
-
-        cx.notify();
-    }
-
-    fn cancel(&mut self, _: &Cancel, window: &mut Window, cx: &mut Context<Self>) {
-        if self.renaming_thread_id.is_some() {
-            self.finish_thread_rename(window, cx);
-            return;
-        }
-
-        if self.filter_editor.read(cx).is_focused(window) {
-            if self.reset_filter_editor_text(window, cx) {
-                self.selection = None;
-                self.update_entries(cx);
-                return;
-            }
-
-            if self.selection.is_none() {
-                self.select_first_entry();
-            }
-            if self.selection.is_some() {
-                self.focus_handle.focus(window, cx);
-                cx.notify();
-            }
-            return;
-        }
-
-        if self.reset_filter_editor_text(window, cx) {
-            self.update_entries(cx);
-        } else {
-            self.selection = None;
-            self.focus_handle.focus(window, cx);
-            cx.notify();
-        }
-    }
-
-    fn focus_sidebar_filter(
-        &mut self,
-        _: &FocusSidebarFilter,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.selection = None;
-        if let SidebarView::Archive(archive) = &self.view {
-            archive.update(cx, |view, _cx| {
-                view.clear_selection();
-            });
-        }
-        self.focus_handle.focus(window, cx);
-
-        cx.notify();
-    }
-
-    fn reset_filter_editor_text(&mut self, window: &mut Window, cx: &mut Context<Self>) -> bool {
-        self.filter_editor.update(cx, |editor, cx| {
-            if editor.buffer().read(cx).len(cx).0 > 0 {
-                editor.set_text("", window, cx);
-                true
-            } else {
-                false
-            }
-        })
-    }
-
-    fn has_filter_query(&self, _cx: &App) -> bool {
-        false
     }
 
     fn is_thread_active_in_workspace(
