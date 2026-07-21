@@ -3,6 +3,7 @@ mod auto_height;
 mod blame_entries;
 mod breadcrumbs;
 mod cursor_layout;
+mod editor_layout;
 mod gutter;
 mod header;
 mod highlighted_range;
@@ -18,6 +19,8 @@ use auto_height::{calculate_wrap_width, compute_auto_height_layout};
 use blame_entries::{render_blame_entry, render_blame_entry_popover, render_inline_blame_entry};
 pub use breadcrumbs::render_breadcrumb_text;
 pub use cursor_layout::{CursorLayout, CursorName};
+pub use editor_layout::layout_line;
+use editor_layout::{CursorPopoverType, EditorLayout, IndentGuideLayout};
 use gutter::Gutter;
 #[cfg(test)]
 pub(crate) use header::StickyHeader;
@@ -9175,132 +9178,6 @@ impl IntoElement for EditorElement {
     fn into_element(self) -> Self::Element {
         self
     }
-}
-
-pub struct EditorLayout {
-    position_map: Rc<PositionMap>,
-    hitbox: Hitbox,
-    gutter_hitbox: Hitbox,
-    content_origin: gpui::Point<Pixels>,
-    scrollbars_layout: Option<EditorScrollbars>,
-    minimap: Option<MinimapLayout>,
-    mode: EditorMode,
-    wrap_guides: SmallVec<[(Pixels, bool); 2]>,
-    indent_guides: Option<Vec<IndentGuideLayout>>,
-    visible_display_row_range: Range<DisplayRow>,
-    active_rows: BTreeMap<DisplayRow, LineHighlightSpec>,
-    highlighted_rows: BTreeMap<DisplayRow, LineHighlight>,
-    line_elements: SmallVec<[AnyElement; 1]>,
-    line_numbers: Arc<HashMap<MultiBufferRow, LineNumberLayout>>,
-    display_hunks: Vec<(DisplayDiffHunk, Option<Hitbox>)>,
-    blamed_display_rows: Option<Vec<AnyElement>>,
-    inline_diagnostics: HashMap<DisplayRow, AnyElement>,
-    inline_blame_layout: Option<InlineBlameLayout>,
-    inline_code_actions: Option<AnyElement>,
-    blocks: Vec<BlockLayout>,
-    spacer_blocks: Vec<BlockLayout>,
-    highlighted_ranges: Vec<(Range<DisplayPoint>, Hsla)>,
-    highlighted_gutter_ranges: Vec<(Range<DisplayPoint>, Hsla)>,
-    redacted_ranges: Vec<Range<DisplayPoint>>,
-    cursors: Vec<(DisplayPoint, Hsla)>,
-    visible_cursors: Vec<CursorLayout>,
-    navigation_overlay_paint_commands: Vec<NavigationOverlayPaintCommand>,
-    selections: Vec<(PlayerColor, Vec<SelectionLayout>)>,
-    test_indicators: Vec<AnyElement>,
-    bookmarks: Vec<AnyElement>,
-    breakpoints: Vec<AnyElement>,
-    diff_review_button: Option<AnyElement>,
-    crease_toggles: Vec<Option<AnyElement>>,
-    expand_toggles: Vec<Option<(AnyElement, gpui::Point<Pixels>)>>,
-    diff_hunk_controls: Vec<AnyElement>,
-    crease_trailers: Vec<Option<CreaseTrailerLayout>>,
-    edit_prediction_popover: Option<AnyElement>,
-    mouse_context_menu: Option<AnyElement>,
-    tab_invisible: ShapedLine,
-    space_invisible: ShapedLine,
-    sticky_buffer_header: Option<AnyElement>,
-    sticky_headers: Option<header::StickyHeaders>,
-    document_colors: Option<(DocumentColorsRenderMode, Vec<(Range<DisplayPoint>, Hsla)>)>,
-    text_align: TextAlign,
-    content_width: Pixels,
-}
-
-impl EditorLayout {
-    fn line_end_overshoot(&self) -> Pixels {
-        0.15 * self.position_map.line_height
-    }
-}
-
-impl Along for ScrollbarAxes {
-    type Unit = bool;
-
-    fn along(&self, axis: ScrollbarAxis) -> Self::Unit {
-        match axis {
-            ScrollbarAxis::Horizontal => self.horizontal,
-            ScrollbarAxis::Vertical => self.vertical,
-        }
-    }
-
-    fn apply_along(&self, axis: ScrollbarAxis, f: impl FnOnce(Self::Unit) -> Self::Unit) -> Self {
-        match axis {
-            ScrollbarAxis::Horizontal => ScrollbarAxes {
-                horizontal: f(self.horizontal),
-                vertical: self.vertical,
-            },
-            ScrollbarAxis::Vertical => ScrollbarAxes {
-                horizontal: self.horizontal,
-                vertical: f(self.vertical),
-            },
-        }
-    }
-}
-
-pub fn layout_line(
-    row: DisplayRow,
-    snapshot: &EditorSnapshot,
-    style: &EditorStyle,
-    text_width: Pixels,
-    is_row_soft_wrapped: impl Copy + Fn(usize) -> bool,
-    window: &mut Window,
-    cx: &mut App,
-) -> LineWithInvisibles {
-    let use_tree_sitter =
-        !snapshot.semantic_tokens_enabled || snapshot.use_tree_sitter_for_syntax(row, cx);
-    let language_aware = LanguageAwareStyling {
-        tree_sitter: use_tree_sitter,
-        diagnostics: true,
-    };
-    let chunks = snapshot.highlighted_chunks(row..row + DisplayRow(1), language_aware, style);
-    LineWithInvisibles::from_chunks(
-        chunks,
-        style,
-        MAX_LINE_LEN,
-        1,
-        &snapshot.mode,
-        text_width,
-        is_row_soft_wrapped,
-        &[],
-        window,
-        cx,
-    )
-    .pop()
-    .unwrap()
-}
-
-#[derive(Debug, Clone)]
-pub struct IndentGuideLayout {
-    origin: gpui::Point<Pixels>,
-    length: Pixels,
-    single_indent_width: Pixels,
-    display_row_range: Range<DisplayRow>,
-    depth: u32,
-    active: bool,
-    settings: IndentGuideSettings,
-}
-
-enum CursorPopoverType {
-    CodeContextMenu,
-    EditPrediction,
 }
 
 #[cfg(test)]
