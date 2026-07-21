@@ -18,6 +18,8 @@ mod compaction_threshold_tests;
 #[path = "thread/manual_compaction_tests.rs"]
 mod manual_compaction_tests;
 mod message;
+#[path = "thread/running_turn.rs"]
+mod running_turn;
 #[cfg(test)]
 #[path = "thread/sandbox_authorization_tests.rs"]
 mod sandbox_authorization_tests;
@@ -100,6 +102,7 @@ use uuid::Uuid;
 
 use compaction::{CompactionTelemetry, extend_request_history_until, total_input_tokens};
 pub use message::*;
+use running_turn::RunningTurn;
 
 const TOOL_CANCELED_MESSAGE: &str = "Tool canceled by user";
 pub const MAX_TOOL_NAME_LENGTH: usize = 64;
@@ -3700,49 +3703,6 @@ enum CompactionInsertion {
     Auto { insertion_ix: usize },
     /// Manual `/compact` appends a zero-content user message followed by the summary.
     Manual { marker_id: ClientUserMessageId },
-}
-
-struct RunningTurn {
-    /// Holds the task that handles agent interaction until the end of the turn.
-    /// Survives across multiple requests as the model performs tool calls and
-    /// we run tools, report their results.
-    _task: Task<()>,
-    /// The current event stream for the running turn. Used to report a final
-    /// cancellation event if we cancel the turn.
-    event_stream: ThreadEventStream,
-    /// The tools that are enabled for the current iteration of the turn.
-    /// Refreshed at the start of each iteration via `refresh_turn_tools`.
-    tools: BTreeMap<SharedString, Arc<dyn AnyAgentTool>>,
-    /// Sender to signal tool cancellation. When cancel is called, this is
-    /// set to true so all tools can detect user-initiated cancellation.
-    cancellation_tx: watch::Sender<bool>,
-    /// Senders for tools that support input streaming and have already been
-    /// started but are still receiving input from the LLM.
-    streaming_tool_inputs: HashMap<LanguageModelToolUseId, ToolInputSender>,
-}
-
-impl RunningTurn {
-    fn new(
-        event_stream: ThreadEventStream,
-        tools: BTreeMap<SharedString, Arc<dyn AnyAgentTool>>,
-        cancellation_tx: watch::Sender<bool>,
-        task: Task<()>,
-    ) -> Self {
-        Self {
-            _task: task,
-            event_stream,
-            tools,
-            cancellation_tx,
-            streaming_tool_inputs: HashMap::default(),
-        }
-    }
-
-    fn cancel(mut self) -> Task<()> {
-        log::debug!("Cancelling in progress turn");
-        self.cancellation_tx.send(true).ok();
-        self.event_stream.send_canceled();
-        self._task
-    }
 }
 
 pub(crate) fn messages_to_markdown(messages: &[Arc<Message>]) -> String {
