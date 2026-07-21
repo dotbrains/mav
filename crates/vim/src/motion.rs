@@ -23,7 +23,6 @@ use crate::{
 mod action_types;
 mod matching;
 pub use action_types::StartOfLine;
-use matching::matching;
 use action_types::{
     Down, NextSubwordEnd, NextSubwordStart, PreviousSubwordEnd, PreviousSubwordStart, Up,
 };
@@ -31,6 +30,7 @@ use action_types::{
     EndOfLine, FirstNonWhitespace, Matching, MiddleOfLine, NextWordEnd, NextWordStart,
     PreviousWordEnd, PreviousWordStart, UnmatchedBackward, UnmatchedForward,
 };
+use matching::matching;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum MotionKind {

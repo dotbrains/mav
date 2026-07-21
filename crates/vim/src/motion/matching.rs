@@ -367,4 +367,3 @@ pub(super) fn matching(
             .unwrap_or(display_point)
     }
 }
-
