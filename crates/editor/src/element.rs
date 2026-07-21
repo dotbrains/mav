@@ -51,6 +51,7 @@ mod scrollbar_markers;
 mod selection_inputs;
 mod signature_help_layout;
 mod snapshot_layout;
+mod sticky_header_layout;
 mod surface_layout;
 mod visible_rows;
 mod word_diff_layout;
@@ -728,44 +729,28 @@ impl Element for EditorElement {
                         window,
                         cx,
                     );
-                    let sticky_headers = if !is_minimap
-                        && is_singleton
-                        && EditorSettings::get_global(cx).sticky_scroll.enabled
-                    {
-                        let relative = self.editor.read(cx).relative_line_numbers(cx);
-                        self.layout_sticky_headers(
-                            &snapshot,
-                            editor_width,
-                            is_row_soft_wrapped,
-                            line_height,
-                            scroll_pixel_position,
-                            content_origin,
-                            &gutter_dimensions,
-                            &gutter_hitbox,
-                            &text_hitbox,
-                            relative,
-                            current_selection_head,
-                            window,
-                            cx,
-                        )
-                    } else {
-                        None
-                    };
-                    let indent_guides =
-                        if scroll_pixel_position != preliminary_scroll_pixel_position {
-                            self.layout_indent_guides(
-                                content_origin,
-                                text_hitbox.origin,
-                                start_buffer_row..end_buffer_row,
-                                scroll_pixel_position,
-                                line_height,
-                                &snapshot,
-                                window,
-                                cx,
-                            )
-                        } else {
-                            indent_guides
-                        };
+                    let layout_data::StickyHeaderLayouts {
+                        sticky_headers,
+                        indent_guides,
+                    } = self.layout_sticky_headers_and_guides(
+                        is_minimap,
+                        is_singleton,
+                        &snapshot,
+                        editor_width,
+                        is_row_soft_wrapped,
+                        line_height,
+                        scroll_pixel_position,
+                        preliminary_scroll_pixel_position,
+                        content_origin,
+                        &gutter_dimensions,
+                        &gutter_hitbox,
+                        &text_hitbox,
+                        current_selection_head,
+                        start_buffer_row..end_buffer_row,
+                        indent_guides,
+                        window,
+                        cx,
+                    );
 
                     let crease_trailers =
                         window.with_element_namespace("crease_trailers", |window| {

@@ -119,6 +119,11 @@ pub(super) struct GutterIndicatorLayouts {
     pub(super) diff_review_button: Option<AnyElement>,
 }
 
+pub(super) struct StickyHeaderLayouts {
+    pub(super) sticky_headers: Option<header::StickyHeaders>,
+    pub(super) indent_guides: Option<Vec<IndentGuideLayout>>,
+}
+
 pub(crate) struct BlockLayout {
     pub(crate) id: BlockId,
     pub(crate) x_offset: Pixels,
