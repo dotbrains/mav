@@ -13,7 +13,8 @@
     7339	crates/project/src/git_store.rs
    10145	crates/workspace/src/pane.rs
     7259	crates/sidebar/src/sidebar.rs
-    2804	crates/dev_container/src/devcontainer_manifest.rs
+    2522	crates/dev_container/src/devcontainer_manifest.rs
+     285	crates/dev_container/src/devcontainer_manifest/dockerfile_no_uid_tests.rs
      443	crates/dev_container/src/devcontainer_manifest/compose_podman_tests.rs
      106	crates/dev_container/src/devcontainer_manifest/compose_services_tests.rs
      175	crates/dev_container/src/devcontainer_manifest/compose_no_uid_tests.rs
