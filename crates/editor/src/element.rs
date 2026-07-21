@@ -47,6 +47,7 @@ mod scrollbar_layouts;
 mod scrollbar_markers;
 mod selection_inputs;
 mod signature_help_layout;
+mod snapshot_layout;
 mod surface_layout;
 mod visible_rows;
 mod word_diff_layout;
@@ -316,35 +317,17 @@ impl Element for EditorElement {
                         cx,
                     );
 
-                    snapshot = self.editor.update(cx, |editor, cx| {
-                        editor.last_bounds = Some(bounds);
-                        editor.gutter_dimensions = gutter_dimensions;
-                        editor.set_visible_line_count(
-                            (bounds.size.height / line_height) as f64,
-                            window,
-                            cx,
-                        );
-                        editor.set_visible_column_count(f64::from(editor_width / em_advance));
-
-                        if matches!(
-                            editor.mode,
-                            EditorMode::AutoHeight { .. } | EditorMode::Minimap { .. }
-                        ) {
-                            snapshot
-                        } else {
-                            let wrap_width = calculate_wrap_width(
-                                editor.soft_wrap_mode(cx),
-                                editor_width,
-                                em_layout_width,
-                            );
-
-                            if editor.set_wrap_width(wrap_width, cx) {
-                                editor.snapshot(window, cx)
-                            } else {
-                                snapshot
-                            }
-                        }
-                    });
+                    snapshot = self.update_snapshot_layout(
+                        bounds,
+                        snapshot,
+                        gutter_dimensions,
+                        line_height,
+                        editor_width,
+                        em_advance,
+                        em_layout_width,
+                        window,
+                        cx,
+                    );
 
                     let surface = Self::layout_surface(bounds, text_width, &editor_margins, window);
                     let hitbox = surface.hitbox;
