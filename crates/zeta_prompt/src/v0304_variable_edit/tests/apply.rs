@@ -1,5 +1,6 @@
 use super::*;
 
+#[test]
 fn test_apply_variable_edit() {
     struct Case {
         name: &'static str,
