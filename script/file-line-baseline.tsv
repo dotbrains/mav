@@ -4,7 +4,7 @@
     403	crates/project/tests/integration/project_tests.rs
    13566	crates/agent_ui/src/agent_panel.rs
    12396	crates/editor/src/editor.rs
-    8928	crates/editor/src/element.rs
+    8724	crates/editor/src/element.rs
    12065	crates/agent_ui/src/conversation_view/thread_view.rs
     464	crates/project_panel/src/project_panel_tests.rs
    10763	crates/agent_ui/src/conversation_view.rs
