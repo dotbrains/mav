@@ -15,7 +15,8 @@
     7259	crates/sidebar/src/sidebar.rs
     4940	crates/dev_container/src/devcontainer_manifest.rs
      447	crates/dev_container/src/devcontainer_manifest/test_support.rs
-     851	crates/dev_container/src/devcontainer_manifest/test_http.rs
+     376	crates/dev_container/src/devcontainer_manifest/test_http.rs
+     490	crates/dev_container/src/devcontainer_manifest/go_http.rs
       48	crates/dev_container/src/devcontainer_manifest/docker_in_docker_http.rs
      214	crates/dev_container/src/devcontainer_manifest/docker_in_docker_blob.rs
        8	crates/dev_container/src/devcontainer_manifest/docker_in_docker_install.rs
