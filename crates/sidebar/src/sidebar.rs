@@ -20,15 +20,21 @@ mod import_onboarding_banner;
 mod selection_actions;
 #[path = "sidebar/sidebar_chrome_rendering.rs"]
 mod sidebar_chrome_rendering;
+#[path = "sidebar/sidebar_constructor.rs"]
+mod sidebar_constructor;
 #[path = "sidebar/sidebar_entries.rs"]
 mod sidebar_entries;
 #[path = "sidebar/sidebar_runtime.rs"]
 mod sidebar_runtime;
+#[path = "sidebar/sidebar_state.rs"]
+mod sidebar_state;
 #[path = "sidebar/workspace_subscriptions.rs"]
 mod workspace_subscriptions;
 use active_thread_info::all_thread_infos_for_workspace;
 use import_onboarding_banner::render_import_onboarding_banner;
 use sidebar_entries::*;
+pub use sidebar_state::Sidebar;
+use sidebar_state::*;
 pub use workspace_info_dump::dump_workspace_info;
 #[path = "sidebar/draft_removal.rs"]
 mod draft_removal;
@@ -172,266 +178,7 @@ const DEFAULT_WIDTH: Pixels = px(300.0);
 const MIN_WIDTH: Pixels = px(200.0);
 const MAX_WIDTH: Pixels = px(800.0);
 
-#[derive(Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-enum SerializedSidebarView {
-    #[default]
-    ThreadList,
-    #[serde(alias = "Archive")]
-    History,
-}
-
-#[derive(Clone, Copy)]
-enum NewEntryTarget {
-    LastCreatedKind,
-    Terminal,
-}
-
-#[derive(Default, Serialize, Deserialize)]
-struct SerializedSidebar {
-    #[serde(default)]
-    width: Option<f32>,
-    #[serde(default)]
-    active_view: SerializedSidebarView,
-}
-
-#[derive(Debug, Default)]
-enum SidebarView {
-    #[default]
-    ThreadList,
-    Archive(Entity<ThreadsArchiveView>),
-}
-
-enum ArchiveWorktreeOutcome {
-    Success,
-    Cancelled,
-}
-
-// TODO: The mapping from workspace root paths to git repositories needs a
-// unified approach across the codebase: this function, `AgentPanel::classify_worktrees`,
-// thread persistence (which PathList is saved to the database), and thread
-// querying (which PathList is used to read threads back). All of these need
-// to agree on how repos are resolved for a given workspace, especially in
-// multi-root and nested-repo configurations.
-/// The sidebar re-derives its entire entry list from scratch on every
-/// change via `update_entries` → `rebuild_contents`. Avoid adding
-/// incremental or inter-event coordination state — if something can
-/// be computed from the current world state, compute it in the rebuild.
-pub struct Sidebar {
-    multi_workspace: WeakEntity<MultiWorkspace>,
-    width: Pixels,
-    focus_handle: FocusHandle,
-    filter_editor: Entity<Editor>,
-    thread_rename_editor: Entity<Editor>,
-    list_state: ListState,
-    contents: SidebarContents,
-    /// The index of the list item that currently has the keyboard focus
-    ///
-    /// Note: This is NOT the same as the active item.
-    selection: Option<usize>,
-    /// Tracks which sidebar entry is currently active (highlighted).
-    active_entry: Option<ActiveEntry>,
-    hovered_thread_index: Option<usize>,
-    renaming_thread_id: Option<ThreadId>,
-    /// Threads in the database-backed regeneration path need their own loading
-    /// state because they do not have a live `agent::Thread` to report it.
-    regenerating_titles: HashSet<ThreadId>,
-    /// start_renaming_thread must seed current title into the title editor
-    /// so this prevents that BufferEdited event from being interpreted as user input.
-    suppress_next_rename_edit: bool,
-
-    /// Updated only in response to explicit user actions (clicking a
-    /// thread, confirming in the thread switcher, etc.) — never from
-    /// background data changes. Used to sort the thread switcher popup.
-    thread_last_accessed: HashMap<ThreadId, DateTime<Utc>>,
-    terminal_last_accessed: HashMap<TerminalId, DateTime<Utc>>,
-    thread_switcher: Option<Entity<ThreadSwitcher>>,
-    _thread_switcher_subscriptions: Vec<gpui::Subscription>,
-    pending_thread_activation: Option<agent_ui::ThreadId>,
-    /// Persists live thread statuses across rebuilds so that Running→Completed
-    /// transitions can be detected even when the group is collapsed (and
-    /// thread entries are not present in the list).
-    live_thread_statuses: HashMap<acp::SessionId, (AgentThreadStatus, ThreadId)>,
-    /// Remembers whether each draft last rendered as empty or with content so
-    /// that when a draft that was empty gains content again, we refresh
-    /// its interaction time.
-    draft_kinds: HashMap<ThreadId, DraftKind>,
-    view: SidebarView,
-    restoring_tasks: HashMap<agent_ui::ThreadId, Task<()>>,
-    agent_options_menu_handle: PopoverMenuHandle<ContextMenu>,
-    recent_projects_popover_handle: PopoverMenuHandle<SidebarRecentProjects>,
-    sidebar_chrome: Entity<title_bar::SidebarChrome>,
-    project_header_menu_handles: HashMap<usize, PopoverMenuHandle<ContextMenu>>,
-    project_header_new_thread_menu_handles: HashMap<usize, PopoverMenuHandle<ContextMenu>>,
-    project_header_menu_ix: Option<usize>,
-    worktree_default_branches: HashMap<ProjectGroupKey, DefaultBranchCache>,
-    _subscriptions: Vec<gpui::Subscription>,
-    _draft_editor_observations: Vec<gpui::Subscription>,
-    update_task: Option<Task<()>>,
-    /// For the thread import banners, if there is just one we show "Import
-    /// Threads" but if we are showing both the external agents and other
-    /// channels import banners then we change the text to disambiguate the
-    /// buttons. This field tracks whether we were using verbose labels so they
-    /// can stay stable after dismissing one of the banners.
-    import_banners_use_verbose_labels: Option<bool>,
-    /// Display names of other release channels that have threads available to
-    /// import.
-    cross_channel_import_channels: Vec<SharedString>,
-}
-
 impl Sidebar {
-    pub fn new(
-        multi_workspace: Entity<MultiWorkspace>,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> Self {
-        let focus_handle = cx.focus_handle();
-        cx.on_focus_in(&focus_handle, window, Self::focus_in)
-            .detach();
-
-        AgentThreadWorktreeLabelFlag::watch(cx);
-
-        let filter_editor = cx.new(|cx| {
-            let mut editor = Editor::single_line(window, cx);
-            editor.set_placeholder_text("Search threads…", window, cx);
-            editor
-        });
-        let thread_rename_editor = cx.new(|cx| Editor::single_line(window, cx));
-        let sidebar_chrome = cx.new(|cx| {
-            let workspace = multi_workspace.read(cx).workspace().clone();
-            title_bar::SidebarChrome::new(
-                "sidebar-title-bar-controls",
-                workspace,
-                Some(multi_workspace.downgrade()),
-                window,
-                cx,
-            )
-        });
-
-        cx.subscribe_in(
-            &multi_workspace,
-            window,
-            |this, _multi_workspace, event: &MultiWorkspaceEvent, window, cx| match event {
-                MultiWorkspaceEvent::ActiveWorkspaceChanged { .. } => {
-                    let workspace = _multi_workspace.read(cx).workspace().clone();
-                    this.sidebar_chrome = cx.new(|cx| {
-                        title_bar::SidebarChrome::new(
-                            "sidebar-title-bar-controls",
-                            workspace,
-                            Some(_multi_workspace.downgrade()),
-                            window,
-                            cx,
-                        )
-                    });
-                    this.sync_active_entry_from_active_workspace(cx);
-                    this.replace_archived_panel_thread(window, cx);
-                    this.schedule_update_entries(false, cx);
-                }
-                MultiWorkspaceEvent::WorkspaceAdded(workspace) => {
-                    this.subscribe_to_workspace(workspace, window, cx);
-                    this.schedule_update_entries(false, cx);
-                }
-                MultiWorkspaceEvent::WorkspaceRemoved(_)
-                | MultiWorkspaceEvent::ProjectGroupsChanged => {
-                    this.schedule_update_entries(false, cx);
-                }
-            },
-        )
-        .detach();
-
-        cx.subscribe(&filter_editor, |this: &mut Self, _, event, cx| {
-            if let editor::EditorEvent::BufferEdited = event {
-                let query = this.filter_editor.read(cx).text(cx);
-                if !query.is_empty() {
-                    this.selection.take();
-                }
-                this.schedule_update_entries(!query.is_empty(), cx);
-            }
-        })
-        .detach();
-
-        cx.subscribe_in(
-            &thread_rename_editor,
-            window,
-            |this, title_editor, event, window, cx| {
-                this.handle_thread_rename_editor_event(title_editor, event, window, cx);
-            },
-        )
-        .detach();
-
-        cx.observe(&ThreadMetadataStore::global(cx), |this, _store, cx| {
-            this.schedule_update_entries(false, cx);
-        })
-        .detach();
-
-        cx.observe(
-            &TerminalThreadMetadataStore::global(cx),
-            |this, _store, cx| {
-                this.schedule_update_entries(false, cx);
-            },
-        )
-        .detach();
-
-        let channels_with_threads = channels_with_threads(cx);
-        cx.spawn(async move |this, cx| {
-            let channels = channels_with_threads.await;
-            this.update(cx, |this, cx| {
-                this.cross_channel_import_channels = channels;
-                cx.notify();
-            })
-            .ok();
-        })
-        .detach();
-
-        let deferred_multi_workspace = multi_workspace.downgrade();
-        cx.defer_in(window, move |this, window, cx| {
-            if let Some(multi_workspace) = deferred_multi_workspace.upgrade() {
-                let workspaces: Vec<_> = multi_workspace.read(cx).workspaces().cloned().collect();
-                for workspace in &workspaces {
-                    this.subscribe_to_workspace(workspace, window, cx);
-                }
-            }
-            this.schedule_update_entries(false, cx);
-        });
-
-        Self {
-            multi_workspace: multi_workspace.downgrade(),
-            width: DEFAULT_WIDTH,
-            focus_handle,
-            filter_editor,
-            thread_rename_editor,
-            list_state: ListState::new(0, gpui::ListAlignment::Top, px(1000.)),
-            contents: SidebarContents::default(),
-            selection: None,
-            active_entry: None,
-            hovered_thread_index: None,
-            renaming_thread_id: None,
-            regenerating_titles: HashSet::new(),
-            suppress_next_rename_edit: false,
-
-            thread_last_accessed: HashMap::new(),
-            terminal_last_accessed: HashMap::new(),
-            thread_switcher: None,
-            _thread_switcher_subscriptions: Vec::new(),
-            pending_thread_activation: None,
-            live_thread_statuses: HashMap::new(),
-            draft_kinds: HashMap::new(),
-            view: SidebarView::default(),
-            restoring_tasks: HashMap::new(),
-            agent_options_menu_handle: PopoverMenuHandle::default(),
-            recent_projects_popover_handle: PopoverMenuHandle::default(),
-            sidebar_chrome,
-            project_header_menu_handles: HashMap::new(),
-            project_header_new_thread_menu_handles: HashMap::new(),
-            project_header_menu_ix: None,
-            worktree_default_branches: HashMap::new(),
-            _subscriptions: Vec::new(),
-            _draft_editor_observations: Vec::new(),
-            update_task: None,
-            import_banners_use_verbose_labels: None,
-            cross_channel_import_channels: Vec::new(),
-        }
-    }
-
     /// Rebuilds the sidebar contents from current workspace and thread state.
     ///
     /// Iterates [`MultiWorkspace::project_group_keys`] to determine project
