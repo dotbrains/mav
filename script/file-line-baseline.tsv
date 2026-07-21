@@ -58,7 +58,7 @@
 2673	crates/search/src/project_search.rs
 5180	crates/vim/src/motion.rs
 5294	crates/agent_ui/src/message_editor.rs
-5343	crates/git/src/repository.rs
+3761	crates/git/src/repository.rs
 5149	crates/markdown/src/markdown.rs
 4261	crates/worktree/tests/integration/worktree_tests.rs
     5192	crates/project/src/lsp_command.rs
