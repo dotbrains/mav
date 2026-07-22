@@ -113,7 +113,6 @@
     2751	crates/gpui/src/elements/list.rs
     2750	crates/editor/src/hover_popover.rs
     2730	crates/mav/src/mav/open_listener.rs
-    2586	crates/editor/src/semantic_tokens.rs
     2574	crates/editor/src/display_map/inlay_map.rs
     2557	crates/debugger_ui/src/tests/debugger_panel.rs
     2534	crates/theme/src/default_colors.rs
