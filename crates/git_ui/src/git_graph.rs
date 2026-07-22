@@ -2228,7 +2228,7 @@ impl GitGraph {
                                     let mut to_column = lane_center_x(bounds, *to_column as f32);
 
                                     let mut to_row = to_row_center(
-                                        *on_row - first_visible_row,
+                                        on_row - first_visible_row,
                                         row_height,
                                         vertical_scroll_offset,
                                         bounds,

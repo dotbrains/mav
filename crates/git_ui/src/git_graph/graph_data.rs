@@ -1,4 +1,5 @@
 use super::*;
+use smallvec::{SmallVec, smallvec};
 
 pub(super) fn accent_colors_count(accents: &AccentColors) -> usize {
     accents.0.len()
