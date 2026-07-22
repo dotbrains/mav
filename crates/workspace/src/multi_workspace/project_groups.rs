@@ -1,7 +1,7 @@
 use super::*;
 
 impl MultiWorkspace {
-    fn subscribe_to_workspace(
+    pub(super) fn subscribe_to_workspace(
         workspace: &Entity<Workspace>,
         window: &Window,
         cx: &mut Context<Self>,
@@ -185,7 +185,7 @@ impl MultiWorkspace {
         cx.emit(MultiWorkspaceEvent::WorkspaceAdded(workspace));
     }
 
-    fn register_workspace(
+    pub(super) fn register_workspace(
         &mut self,
         workspace: &Entity<Workspace>,
         window: &Window,

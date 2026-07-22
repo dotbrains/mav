@@ -283,7 +283,11 @@ impl Project {
         self.buffer_store.read(cx).get_by_path(path)
     }
 
-    fn register_buffer(&mut self, buffer: &Entity<Buffer>, cx: &mut Context<Self>) -> Result<()> {
+    pub(super) fn register_buffer(
+        &mut self,
+        buffer: &Entity<Buffer>,
+        cx: &mut Context<Self>,
+    ) -> Result<()> {
         {
             let mut remotely_created_models = self.remotely_created_models.lock();
             if remotely_created_models.retain_count > 0 {
@@ -336,7 +340,7 @@ impl Project {
         })
     }
 
-    async fn send_buffer_ordered_messages(
+    pub(super) async fn send_buffer_ordered_messages(
         project: WeakEntity<Self>,
         rx: UnboundedReceiver<BufferOrderedMessage>,
         cx: &mut AsyncApp,

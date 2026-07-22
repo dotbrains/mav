@@ -1,6 +1,5 @@
 use super::*;
 
-#[async_trait(?Send)]
 impl LspCommand for GetDocumentLinks {
     type Response = Vec<LspDocumentLink>;
     type LspRequest = lsp::request::DocumentLinkRequest;

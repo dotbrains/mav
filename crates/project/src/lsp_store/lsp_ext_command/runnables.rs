@@ -7,7 +7,6 @@ use crate::{
     lsp_store::LspStore,
 };
 use anyhow::{Context as _, Result};
-use async_trait::async_trait;
 use collections::HashMap;
 use gpui::{App, AsyncApp, Entity};
 use language::{
@@ -147,7 +146,6 @@ pub fn runnable_to_task_template(label: String, args: RunnableArgs) -> TaskTempl
     task_template
 }
 
-#[async_trait(?Send)]
 impl LspCommand for GetLspRunnables {
     type Response = LspRunnables;
     type LspRequest = Runnables;

@@ -1,6 +1,5 @@
 use super::*;
 
-#[async_trait(?Send)]
 impl LspCommand for GetReferences {
     type Response = Vec<Location>;
     type LspRequest = lsp::request::References;

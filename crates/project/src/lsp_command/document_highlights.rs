@@ -1,6 +1,5 @@
 use super::*;
 
-#[async_trait(?Send)]
 impl LspCommand for GetDocumentHighlights {
     type Response = Vec<DocumentHighlight>;
     type LspRequest = lsp::request::DocumentHighlightRequest;

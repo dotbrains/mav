@@ -1,7 +1,10 @@
 use super::*;
 
 impl MultiWorkspace {
-    fn retain_active_workspace_without_serializing(&mut self, cx: &mut Context<Self>) -> bool {
+    pub(super) fn retain_active_workspace_without_serializing(
+        &mut self,
+        cx: &mut Context<Self>,
+    ) -> bool {
         let workspace = self.active_workspace.clone();
         if self.is_workspace_retained(&workspace) {
             return false;
@@ -15,7 +18,11 @@ impl MultiWorkspace {
     /// Detaches a workspace: clears session state, DB binding, cached
     /// group key, and emits `WorkspaceRemoved`. The DB row is preserved
     /// so the workspace still appears in the recent-projects list.
-    fn detach_workspace(&mut self, workspace: &Entity<Workspace>, cx: &mut Context<Self>) {
+    pub(super) fn detach_workspace(
+        &mut self,
+        workspace: &Entity<Workspace>,
+        cx: &mut Context<Self>,
+    ) {
         self.retained_workspaces
             .retain(|retained| retained != workspace);
         for group in &mut self.project_groups {
@@ -48,7 +55,11 @@ impl MultiWorkspace {
         }
     }
 
-    fn sync_sidebar_to_workspace(&self, workspace: &Entity<Workspace>, cx: &mut Context<Self>) {
+    pub(super) fn sync_sidebar_to_workspace(
+        &self,
+        workspace: &Entity<Workspace>,
+        cx: &mut Context<Self>,
+    ) {
         if self.sidebar_open() {
             let sidebar_focus_handle = self.sidebar.as_ref().map(|s| s.focus_handle(cx));
             workspace.update(cx, |workspace, _| {

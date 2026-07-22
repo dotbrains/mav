@@ -1,7 +1,7 @@
 use super::*;
 
 impl Session {
-    fn fetch<T: LocalDapCommand + PartialEq + Eq + Hash>(
+    pub(super) fn fetch<T: LocalDapCommand + PartialEq + Eq + Hash>(
         &mut self,
         request: T,
         process_result: impl FnOnce(&mut Self, Result<T::Response>, &mut Context<Self>) + 'static,
@@ -89,7 +89,7 @@ impl Session {
         })
     }
 
-    fn request<T: LocalDapCommand + PartialEq + Eq + Hash>(
+    pub(super) fn request<T: LocalDapCommand + PartialEq + Eq + Hash>(
         &self,
         request: T,
         process_result: impl FnOnce(
@@ -103,11 +103,11 @@ impl Session {
         Self::request_inner(&self.capabilities, &self.state, request, process_result, cx)
     }
 
-    fn invalidate_command_type<Command: LocalDapCommand>(&mut self) {
+    pub(super) fn invalidate_command_type<Command: LocalDapCommand>(&mut self) {
         self.requests.remove(&std::any::TypeId::of::<Command>());
     }
 
-    fn invalidate_generic(&mut self) {
+    pub(super) fn invalidate_generic(&mut self) {
         self.invalidate_command_type::<ModulesCommand>();
         self.invalidate_command_type::<LoadedSourcesCommand>();
         self.invalidate_command_type::<ThreadsCommand>();
@@ -119,7 +119,7 @@ impl Session {
         }
     }
 
-    fn invalidate_state(&mut self, key: &RequestSlot) {
+    pub(super) fn invalidate_state(&mut self, key: &RequestSlot) {
         self.requests
             .entry((&*key.0 as &dyn Any).type_id())
             .and_modify(|request_map| {

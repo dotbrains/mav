@@ -49,9 +49,9 @@ impl ThreadStatus {
 
 #[derive(Debug, Clone)]
 pub struct Thread {
-    dap: dap::Thread,
-    stack_frames: Vec<StackFrame>,
-    stack_frames_error: Option<SharedString>,
+    pub(super) dap: dap::Thread,
+    pub(super) stack_frames: Vec<StackFrame>,
+    pub(super) stack_frames_error: Option<SharedString>,
     _has_stopped: bool,
 }
 
@@ -90,7 +90,7 @@ pub enum SessionState {
 }
 
 impl SessionState {
-    pub(super) fn request_dap<R: LocalDapCommand>(&self, request: R) -> Task<Result<R::Response>>
+    pub(crate) fn request_dap<R: LocalDapCommand>(&self, request: R) -> Task<Result<R::Response>>
     where
         <R::DapRequest as dap::requests::Request>::Response: 'static,
         <R::DapRequest as dap::requests::Request>::Arguments: 'static + Send,
@@ -111,7 +111,7 @@ impl SessionState {
         }
     }
 
-    fn stopped(&mut self) {
+    pub(super) fn stopped(&mut self) {
         if let SessionState::Running(running) = self {
             running.has_ever_stopped = true;
         }
@@ -119,60 +119,60 @@ impl SessionState {
 }
 
 #[derive(Default)]
-struct ThreadStates {
+pub(super) struct ThreadStates {
     global_state: Option<ThreadStatus>,
     known_thread_states: IndexMap<ThreadId, ThreadStatus>,
 }
 
 impl ThreadStates {
-    fn stop_all_threads(&mut self) {
+    pub(super) fn stop_all_threads(&mut self) {
         self.global_state = Some(ThreadStatus::Stopped);
         self.known_thread_states.clear();
     }
 
-    fn exit_all_threads(&mut self) {
+    pub(super) fn exit_all_threads(&mut self) {
         self.global_state = Some(ThreadStatus::Exited);
         self.known_thread_states.clear();
     }
 
-    fn continue_all_threads(&mut self) {
+    pub(super) fn continue_all_threads(&mut self) {
         self.global_state = Some(ThreadStatus::Running);
         self.known_thread_states.clear();
     }
 
-    fn stop_thread(&mut self, thread_id: ThreadId) {
+    pub(super) fn stop_thread(&mut self, thread_id: ThreadId) {
         self.known_thread_states
             .insert(thread_id, ThreadStatus::Stopped);
     }
 
-    fn continue_thread(&mut self, thread_id: ThreadId) {
+    pub(super) fn continue_thread(&mut self, thread_id: ThreadId) {
         self.known_thread_states
             .insert(thread_id, ThreadStatus::Running);
     }
 
-    fn process_step(&mut self, thread_id: ThreadId) {
+    pub(super) fn process_step(&mut self, thread_id: ThreadId) {
         self.known_thread_states
             .insert(thread_id, ThreadStatus::Stepping);
     }
 
-    fn thread_status(&self, thread_id: ThreadId) -> ThreadStatus {
+    pub(super) fn thread_status(&self, thread_id: ThreadId) -> ThreadStatus {
         self.thread_state(thread_id)
             .unwrap_or(ThreadStatus::Running)
     }
 
-    fn thread_state(&self, thread_id: ThreadId) -> Option<ThreadStatus> {
+    pub(super) fn thread_state(&self, thread_id: ThreadId) -> Option<ThreadStatus> {
         self.known_thread_states
             .get(&thread_id)
             .copied()
             .or(self.global_state)
     }
 
-    fn exit_thread(&mut self, thread_id: ThreadId) {
+    pub(super) fn exit_thread(&mut self, thread_id: ThreadId) {
         self.known_thread_states
             .insert(thread_id, ThreadStatus::Exited);
     }
 
-    fn any_stopped_thread(&self) -> bool {
+    pub(super) fn any_stopped_thread(&self) -> bool {
         self.global_state
             .is_some_and(|state| state == ThreadStatus::Stopped)
             || self
@@ -185,16 +185,16 @@ impl ThreadStates {
 // TODO(debugger): Wrap dap types with reference counting so the UI doesn't have to clone them on refresh
 #[derive(Default)]
 pub struct SessionSnapshot {
-    threads: IndexMap<ThreadId, Thread>,
-    thread_states: ThreadStates,
-    variables: HashMap<VariableReference, Vec<dap::Variable>>,
-    stack_frames: IndexMap<StackFrameId, StackFrame>,
-    locations: HashMap<u64, dap::LocationsResponse>,
-    modules: Vec<dap::Module>,
-    loaded_sources: Vec<dap::Source>,
+    pub(super) threads: IndexMap<ThreadId, Thread>,
+    pub(super) thread_states: ThreadStates,
+    pub(super) variables: HashMap<VariableReference, Vec<dap::Variable>>,
+    pub(super) stack_frames: IndexMap<StackFrameId, StackFrame>,
+    pub(super) locations: HashMap<u64, dap::LocationsResponse>,
+    pub(super) modules: Vec<dap::Module>,
+    pub(super) loaded_sources: Vec<dap::Source>,
 }
 
-type IsEnabled = bool;
+pub(super) type IsEnabled = bool;
 
 #[derive(Copy, Clone, Default, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub struct OutputToken(pub usize);

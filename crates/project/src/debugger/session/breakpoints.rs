@@ -48,7 +48,7 @@ impl Session {
         }
     }
 
-    fn send_exception_breakpoints(&mut self, cx: &App) {
+    pub(super) fn send_exception_breakpoints(&mut self, cx: &App) {
         if let Some(local) = self.as_running() {
             let exception_filters = self
                 .exception_breakpoints
@@ -75,7 +75,7 @@ impl Session {
         }
     }
 
-    fn send_data_breakpoints(&mut self, cx: &mut Context<Self>) {
+    pub(super) fn send_data_breakpoints(&mut self, cx: &mut Context<Self>) {
         if let Some(mode) = self.as_running() {
             let breakpoints = self
                 .data_breakpoints

@@ -1,4 +1,5 @@
 use super::*;
+use crate::lsp_command::parse_completion_text_edit;
 
 impl LspStore {
     pub(super) async fn handle_resolve_completion_documentation(

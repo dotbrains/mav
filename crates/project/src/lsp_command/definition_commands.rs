@@ -1,6 +1,5 @@
 use super::*;
 
-#[async_trait(?Send)]
 impl LspCommand for GetDefinitions {
     type Response = Vec<LocationLink>;
     type LspRequest = lsp::request::GotoDefinition;
@@ -112,7 +111,6 @@ impl LspCommand for GetDefinitions {
     }
 }
 
-#[async_trait(?Send)]
 impl LspCommand for GetDeclarations {
     type Response = Vec<LocationLink>;
     type LspRequest = lsp::request::GotoDeclaration;
@@ -215,7 +213,6 @@ impl LspCommand for GetDeclarations {
     }
 }
 
-#[async_trait(?Send)]
 impl LspCommand for GetImplementations {
     type Response = Vec<LocationLink>;
     type LspRequest = lsp::request::GotoImplementation;
@@ -317,7 +314,6 @@ impl LspCommand for GetImplementations {
     }
 }
 
-#[async_trait(?Send)]
 impl LspCommand for GetTypeDefinitions {
     type Response = Vec<LocationLink>;
     type LspRequest = lsp::request::GotoTypeDefinition;

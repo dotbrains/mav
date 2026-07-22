@@ -1,7 +1,7 @@
 use super::*;
 
 impl Project {
-    fn on_buffer_store_event(
+    pub(super) fn on_buffer_store_event(
         &mut self,
         _: Entity<BufferStore>,
         event: &BufferStoreEvent,
@@ -27,7 +27,7 @@ impl Project {
         }
     }
 
-    fn on_image_store_event(
+    pub(super) fn on_image_store_event(
         &mut self,
         _: Entity<ImageStore>,
         event: &ImageStoreEvent,
@@ -43,7 +43,7 @@ impl Project {
         }
     }
 
-    fn on_dap_store_event(
+    pub(super) fn on_dap_store_event(
         &mut self,
         _: Entity<DapStore>,
         event: &DapStoreEvent,
@@ -58,7 +58,7 @@ impl Project {
         }
     }
 
-    fn on_lsp_store_event(
+    pub(super) fn on_lsp_store_event(
         &mut self,
         _: Entity<LspStore>,
         event: &LspStoreEvent,
@@ -208,7 +208,7 @@ impl Project {
         }
     }
 
-    fn on_remote_client_event(
+    pub(super) fn on_remote_client_event(
         &mut self,
         _: Entity<RemoteClient>,
         event: &remote::RemoteClientEvent,
@@ -230,7 +230,7 @@ impl Project {
         }
     }
 
-    fn on_settings_observer_event(
+    pub(super) fn on_settings_observer_event(
         &mut self,
         _: Entity<SettingsObserver>,
         event: &SettingsObserverEvent,
@@ -286,7 +286,7 @@ impl Project {
         }
     }
 
-    fn on_worktree_store_event(
+    pub(super) fn on_worktree_store_event(
         &mut self,
         _: Entity<WorktreeStore>,
         event: &WorktreeStoreEvent,
@@ -344,7 +344,7 @@ impl Project {
         }
     }
 
-    fn on_buffer_event(
+    pub(super) fn on_buffer_event(
         &mut self,
         buffer: Entity<Buffer>,
         event: &BufferEvent,
@@ -414,7 +414,7 @@ impl Project {
         None
     }
 
-    fn request_buffer_diff_recalculation(
+    pub(super) fn request_buffer_diff_recalculation(
         &mut self,
         buffer: &Entity<Buffer>,
         cx: &mut Context<Self>,

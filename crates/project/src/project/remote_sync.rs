@@ -1,7 +1,10 @@
 use super::*;
 
 impl Project {
-    fn synchronize_remote_buffers(&mut self, cx: &mut Context<Self>) -> Task<Result<()>> {
+    pub(super) fn synchronize_remote_buffers(
+        &mut self,
+        cx: &mut Context<Self>,
+    ) -> Task<Result<()>> {
         let project_id = match self.client_state {
             ProjectClientState::Collab {
                 sharing_has_stopped,
@@ -104,7 +107,7 @@ impl Project {
         })
     }
 
-    fn set_worktrees_from_proto(
+    pub(super) fn set_worktrees_from_proto(
         &mut self,
         worktrees: Vec<proto::WorktreeMetadata>,
         cx: &mut Context<Project>,
@@ -114,7 +117,7 @@ impl Project {
         })
     }
 
-    fn set_collaborators_from_proto(
+    pub(super) fn set_collaborators_from_proto(
         &mut self,
         messages: Vec<proto::Collaborator>,
         cx: &mut Context<Self>,

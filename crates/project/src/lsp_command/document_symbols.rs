@@ -1,6 +1,5 @@
 use super::*;
 
-#[async_trait(?Send)]
 impl LspCommand for GetDocumentSymbols {
     type Response = Vec<DocumentSymbol>;
     type LspRequest = lsp::request::DocumentSymbolRequest;

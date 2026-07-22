@@ -1,6 +1,5 @@
 use super::*;
 
-#[async_trait(?Send)]
 impl LspCommand for GetSignatureHelp {
     type Response = Option<SignatureHelp>;
     type LspRequest = lsp::SignatureHelpRequest;

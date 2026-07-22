@@ -10,7 +10,6 @@ impl GetCompletions {
     }
 }
 
-#[async_trait(?Send)]
 impl LspCommand for GetCompletions {
     type Response = CoreCompletionResponse;
     type LspRequest = lsp::request::Completion;

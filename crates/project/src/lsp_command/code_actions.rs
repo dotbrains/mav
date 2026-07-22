@@ -13,7 +13,6 @@ fn code_action_kind_matches(requested: &lsp::CodeActionKind, actual: &lsp::CodeA
             .is_some_and(|suffix| suffix.starts_with('.'))
 }
 
-#[async_trait(?Send)]
 impl LspCommand for GetCodeActions {
     type Response = Vec<CodeAction>;
     type LspRequest = lsp::request::CodeActionRequest;

@@ -63,7 +63,10 @@ impl Project {
         })
     }
 
-    fn enqueue_buffer_ordered_message(&mut self, message: BufferOrderedMessage) -> Result<()> {
+    pub(super) fn enqueue_buffer_ordered_message(
+        &mut self,
+        message: BufferOrderedMessage,
+    ) -> Result<()> {
         self.buffer_ordered_messages_tx
             .unbounded_send(message)
             .map_err(|e| anyhow!(e))

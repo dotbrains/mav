@@ -63,7 +63,6 @@ actions!(
     ]
 );
 
-#[derive(Clone, Copy, Default)]
 mod persistence;
 mod project_group_actions;
 mod project_groups;
@@ -75,7 +74,7 @@ mod workspace_delegation;
 mod workspace_open;
 
 pub use sidebar::{
-    DraggedSidebar, Sidebar, SidebarHandle, SidebarRenderState, render_sidebar_header_controls,
+    SidebarRenderState, render_sidebar_header_controls,
     render_sidebar_header_controls_with_project_pane_visibility,
     render_sidebar_header_controls_with_state, sidebar_side_context_menu,
 };

@@ -150,7 +150,6 @@ impl LspCommand for SemanticTokensFull {
     }
 }
 
-#[async_trait(?Send)]
 impl LspCommand for SemanticTokensDelta {
     type Response = SemanticTokensResponse;
     type LspRequest = lsp::SemanticTokensFullDeltaRequest;

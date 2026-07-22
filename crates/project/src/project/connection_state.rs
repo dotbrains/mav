@@ -1,7 +1,7 @@
 use super::*;
 
 impl Project {
-    fn release(&mut self, cx: &mut App) {
+    pub(super) fn release(&mut self, cx: &mut App) {
         if let Some(client) = self.remote_client.take() {
             let shutdown = client.update(cx, |client, cx| {
                 client.shutdown_processes(
@@ -348,5 +348,4 @@ impl Project {
             worktree_store.disable_scanner();
         });
     }
-
 }

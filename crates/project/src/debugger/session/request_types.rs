@@ -1,6 +1,6 @@
 use super::*;
 
-trait CacheableCommand: Any + Send + Sync {
+pub(super) trait CacheableCommand: Any + Send + Sync {
     fn dyn_eq(&self, rhs: &dyn CacheableCommand) -> bool;
     fn dyn_hash(&self, hasher: &mut dyn Hasher);
     fn as_any_arc(self: Arc<Self>) -> Arc<dyn Any + Send + Sync>;
@@ -23,7 +23,7 @@ where
     }
 }
 
-pub(crate) struct RequestSlot(Arc<dyn CacheableCommand>);
+pub(crate) struct RequestSlot(pub(crate) Arc<dyn CacheableCommand>);
 
 impl<T: LocalDapCommand + PartialEq + Eq + Hash> From<T> for RequestSlot {
     fn from(request: T) -> Self {

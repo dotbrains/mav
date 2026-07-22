@@ -1,6 +1,5 @@
 use super::*;
 
-#[async_trait(?Send)]
 impl LspCommand for GetHover {
     type Response = Option<Hover>;
     type LspRequest = lsp::request::HoverRequest;

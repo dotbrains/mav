@@ -1,6 +1,5 @@
 use crate::{lsp_command::LspCommand, lsp_store::LspStore, make_text_document_identifier};
 use anyhow::{Context as _, Result};
-use async_trait::async_trait;
 use gpui::{App, AsyncApp, Entity};
 use language::{Buffer, point_to_lsp, proto::deserialize_anchor};
 use lsp::{AdapterServerCapabilities, LanguageServer, LanguageServerId};
@@ -52,7 +51,6 @@ pub struct ExpandMacro {
     pub position: PointUtf16,
 }
 
-#[async_trait(?Send)]
 impl LspCommand for ExpandMacro {
     type Response = ExpandedMacro;
     type LspRequest = LspExtExpandMacro;
@@ -184,7 +182,6 @@ pub struct OpenDocs {
     pub position: PointUtf16,
 }
 
-#[async_trait(?Send)]
 impl LspCommand for OpenDocs {
     type Response = DocsUrls;
     type LspRequest = LspOpenDocs;

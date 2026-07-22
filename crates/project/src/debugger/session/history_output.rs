@@ -87,13 +87,13 @@ impl Session {
         })
     }
 
-    fn session_state(&self) -> &SessionSnapshot {
+    pub(super) fn session_state(&self) -> &SessionSnapshot {
         self.selected_snapshot_index
             .and_then(|ix| self.snapshots.get(ix))
             .unwrap_or_else(|| &self.active_snapshot)
     }
 
-    fn push_to_history(&mut self) {
+    pub(super) fn push_to_history(&mut self) {
         if !self.has_ever_stopped() {
             return;
         }
@@ -132,7 +132,7 @@ impl Session {
         self.selected_snapshot_index
     }
 
-    fn push_output(&mut self, event: OutputEvent) {
+    pub(super) fn push_output(&mut self, event: OutputEvent) {
         self.output.push_back(event);
         self.output_token.0 += 1;
     }

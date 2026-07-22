@@ -1,4 +1,5 @@
 use super::*;
+use crate::debugger::dap_store::DapStoreEvent;
 
 fn client_source(abs_path: &Path) -> dap::Source {
     dap::Source {
@@ -17,13 +18,13 @@ fn client_source(abs_path: &Path) -> dap::Source {
 
 #[derive(Clone)]
 pub struct RunningMode {
-    client: Arc<DebugAdapterClient>,
-    binary: DebugAdapterBinary,
-    tmp_breakpoint: Option<SourceBreakpoint>,
-    worktree: WeakEntity<Worktree>,
-    executor: BackgroundExecutor,
-    is_started: bool,
-    has_ever_stopped: bool,
+    pub(super) client: Arc<DebugAdapterClient>,
+    pub(super) binary: DebugAdapterBinary,
+    pub(super) tmp_breakpoint: Option<SourceBreakpoint>,
+    pub(super) worktree: WeakEntity<Worktree>,
+    pub(super) executor: BackgroundExecutor,
+    pub(super) is_started: bool,
+    pub(super) has_ever_stopped: bool,
     messages_tx: UnboundedSender<Message>,
 }
 
@@ -33,23 +34,8 @@ pub struct SessionQuirks {
     pub prefer_thread_name: bool,
 }
 
-fn client_source(abs_path: &Path) -> dap::Source {
-    dap::Source {
-        name: abs_path
-            .file_name()
-            .map(|filename| filename.to_string_lossy().into_owned()),
-        path: Some(abs_path.to_string_lossy().into_owned()),
-        source_reference: None,
-        presentation_hint: None,
-        origin: None,
-        sources: None,
-        adapter_data: None,
-        checksums: None,
-    }
-}
-
 impl RunningMode {
-    async fn new(
+    pub(super) async fn new(
         session_id: SessionId,
         parent_session: Option<Entity<Session>>,
         worktree: WeakEntity<Worktree>,
@@ -90,7 +76,11 @@ impl RunningMode {
         &self.worktree
     }
 
-    fn unset_breakpoints_from_paths(&self, paths: &Vec<Arc<Path>>, cx: &mut App) -> Task<()> {
+    pub(super) fn unset_breakpoints_from_paths(
+        &self,
+        paths: &Vec<Arc<Path>>,
+        cx: &mut App,
+    ) -> Task<()> {
         let tasks: Vec<_> = paths
             .iter()
             .map(|path| {
@@ -115,7 +105,7 @@ impl RunningMode {
         })
     }
 
-    fn send_breakpoints_from_path(
+    pub(super) fn send_breakpoints_from_path(
         &self,
         abs_path: Arc<Path>,
         reason: BreakpointUpdatedReason,
@@ -173,7 +163,7 @@ impl RunningMode {
         })
     }
 
-    fn send_exception_breakpoints(
+    pub(super) fn send_exception_breakpoints(
         &self,
         filters: Vec<ExceptionBreakpointsFilter>,
         supports_filter_options: bool,
@@ -197,7 +187,7 @@ impl RunningMode {
         self.request(arg)
     }
 
-    fn send_source_breakpoints(
+    pub(super) fn send_source_breakpoints(
         &self,
         ignore_breakpoints: bool,
         breakpoint_store: &Entity<BreakpointStore>,
@@ -270,7 +260,7 @@ impl RunningMode {
         })
     }
 
-    fn initialize_sequence(
+    pub(super) fn initialize_sequence(
         &self,
         capabilities: &Capabilities,
         initialized_rx: oneshot::Receiver<()>,
@@ -346,7 +336,7 @@ impl RunningMode {
                                 n => format!(" and {} other paths", n - 1),
                             }
                         );
-                        cx.emit(super::dap_store::DapStoreEvent::Notification(message));
+                        cx.emit(DapStoreEvent::Notification(message));
                     }
                 })?;
 
@@ -401,7 +391,7 @@ impl RunningMode {
         })
     }
 
-    fn reconnect_for_ssh(&self, cx: &mut AsyncApp) -> Option<Task<Result<()>>> {
+    pub(super) fn reconnect_for_ssh(&self, cx: &mut AsyncApp) -> Option<Task<Result<()>>> {
         let client = self.client.clone();
         let messages_tx = self.messages_tx.clone();
         let message_handler = Box::new(move |message| {
@@ -417,7 +407,7 @@ impl RunningMode {
         }
     }
 
-    fn request<R: LocalDapCommand>(&self, request: R) -> Task<Result<R::Response>>
+    pub(super) fn request<R: LocalDapCommand>(&self, request: R) -> Task<Result<R::Response>>
     where
         <R::DapRequest as dap::requests::Request>::Response: 'static,
         <R::DapRequest as dap::requests::Request>::Arguments: 'static + Send,

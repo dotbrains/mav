@@ -1,7 +1,7 @@
 use super::*;
 
 impl Session {
-    fn handle_start_debugging_request(
+    pub(super) fn handle_start_debugging_request(
         &mut self,
         request: dap::messages::Request,
         cx: &mut Context<Self>,
@@ -38,7 +38,7 @@ impl Session {
         })
     }
 
-    fn handle_run_in_terminal_request(
+    pub(super) fn handle_run_in_terminal_request(
         &mut self,
         request: dap::messages::Request,
         cx: &mut Context<Self>,

@@ -27,8 +27,6 @@ pub mod worktree_store;
 mod accessors;
 #[path = "project/buffer_operations.rs"]
 mod buffer_operations;
-#[cfg(any(test, feature = "test-support"))]
-#[path = "project/test_support.rs"]
 #[path = "project/connection_state.rs"]
 mod connection_state;
 mod constructors;
@@ -48,6 +46,7 @@ mod path_access;
 mod peer_handlers;
 mod project_completion;
 mod project_lsp_types;
+mod project_path_matching;
 mod project_support_types;
 mod project_types;
 mod remote_handlers;
@@ -55,6 +54,8 @@ mod remote_handlers;
 mod remote_sync;
 #[path = "project/search_worktrees.rs"]
 mod search_worktrees;
+#[cfg(any(test, feature = "test-support"))]
+#[path = "project/test_support.rs"]
 mod test_support;
 use buffer_diff::BufferDiff;
 use context_server_store::ContextServerStore;

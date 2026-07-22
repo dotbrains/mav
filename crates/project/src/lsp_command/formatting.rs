@@ -17,7 +17,6 @@ impl OnTypeFormatting {
     }
 }
 
-#[async_trait(?Send)]
 impl LspCommand for OnTypeFormatting {
     type Response = Option<Transaction>;
     type LspRequest = lsp::request::OnTypeFormatting;

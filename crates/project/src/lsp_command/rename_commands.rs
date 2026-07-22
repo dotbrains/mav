@@ -1,6 +1,5 @@
 use super::*;
 
-#[async_trait(?Send)]
 impl LspCommand for PrepareRename {
     type Response = PrepareRenameResponse;
     type LspRequest = lsp::request::PrepareRenameRequest;
@@ -192,7 +191,6 @@ impl LspCommand for PrepareRename {
     }
 }
 
-#[async_trait(?Send)]
 impl LspCommand for PerformRename {
     type Response = ProjectTransaction;
     type LspRequest = lsp::request::Rename;

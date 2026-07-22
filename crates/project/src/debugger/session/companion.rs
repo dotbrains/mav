@@ -1,7 +1,7 @@
 use super::*;
 
 impl Session {
-    fn launch_browser_for_remote_server(
+    pub(super) fn launch_browser_for_remote_server(
         &mut self,
         mut request: LaunchBrowserInCompanionParams,
         cx: &mut Context<Self>,
@@ -188,7 +188,7 @@ impl Session {
         }));
     }
 
-    fn kill_browser(&self, request: KillCompanionBrowserParams, cx: &mut App) {
+    pub(super) fn kill_browser(&self, request: KillCompanionBrowserParams, cx: &mut App) {
         let Some(companion_port) = self.companion_port else {
             log::error!("received killCompanionBrowser but js-debug-companion is not running");
             return;
@@ -214,7 +214,7 @@ impl Session {
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct LaunchBrowserInCompanionParams {
+pub(super) struct LaunchBrowserInCompanionParams {
     server_port: u16,
     params: HashMap<String, serde_json::Value>,
     #[serde(flatten)]
@@ -223,7 +223,7 @@ struct LaunchBrowserInCompanionParams {
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct KillCompanionBrowserParams {
+pub(super) struct KillCompanionBrowserParams {
     launch_id: u64,
 }
 

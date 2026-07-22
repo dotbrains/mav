@@ -1,6 +1,5 @@
 use super::*;
 
-#[async_trait(?Send)]
 impl LspCommand for InlayHints {
     type Response = Vec<InlayHint>;
     type LspRequest = lsp::InlayHintRequest;

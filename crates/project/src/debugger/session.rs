@@ -84,7 +84,10 @@ mod threads_modules_memory;
 mod types;
 mod watchers_eval;
 use request_types::*;
+pub use request_types::{CompletionsQuery, SessionStateEvent};
+pub use running_mode::{RunningMode, SessionQuirks};
 use types::*;
+pub use types::{ThreadId, ThreadStatus};
 const MAX_TRACKED_OUTPUT_EVENTS: usize = 5000;
 const DEBUG_HISTORY_LIMIT: usize = 10;
 

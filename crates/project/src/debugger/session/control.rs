@@ -13,12 +13,16 @@ impl Session {
         Some(())
     }
 
-    fn empty_response(&mut self, res: Result<()>, _cx: &mut Context<Self>) -> Option<()> {
+    pub(super) fn empty_response(
+        &mut self,
+        res: Result<()>,
+        _cx: &mut Context<Self>,
+    ) -> Option<()> {
         res.log_err()?;
         Some(())
     }
 
-    fn on_step_response<T: LocalDapCommand + PartialEq + Eq + Hash>(
+    pub(super) fn on_step_response<T: LocalDapCommand + PartialEq + Eq + Hash>(
         thread_id: ThreadId,
     ) -> impl FnOnce(&mut Self, Result<T::Response>, &mut Context<Self>) -> Option<T::Response> + 'static
     {
@@ -37,7 +41,7 @@ impl Session {
         }
     }
 
-    fn clear_active_debug_line_response(
+    pub(super) fn clear_active_debug_line_response(
         &mut self,
         response: Result<()>,
         cx: &mut Context<Session>,
@@ -47,7 +51,7 @@ impl Session {
         Some(())
     }
 
-    fn clear_active_debug_line(&mut self, cx: &mut Context<Session>) {
+    pub(super) fn clear_active_debug_line(&mut self, cx: &mut Context<Session>) {
         self.breakpoint_store.update(cx, |store, cx| {
             store.remove_active_position(Some(self.id), cx)
         });

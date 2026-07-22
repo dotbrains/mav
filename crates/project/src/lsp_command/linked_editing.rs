@@ -12,7 +12,6 @@ impl LinkedEditingRange {
     }
 }
 
-#[async_trait(?Send)]
 impl LspCommand for LinkedEditingRange {
     type Response = Vec<Range<Anchor>>;
     type LspRequest = lsp::request::LinkedEditingRange;

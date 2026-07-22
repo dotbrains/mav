@@ -31,7 +31,6 @@ use crate::{
     lsp_store::{LocalLspStore, LspDocumentLink, LspFoldingRange, LspStore},
 };
 use anyhow::{Context as _, Result};
-use async_trait::async_trait;
 use client::proto::{self, PeerId};
 use clock::Global;
 use collections::HashMap;
@@ -65,6 +64,7 @@ use text::{BufferId, LineEnding};
 pub(crate) use types::*;
 use util::{ResultExt as _, debug_panic};
 
+pub(crate) use completions::parse_completion_text_edit;
 use location_links::language_server_for_buffer;
 pub use location_links::{
     location_link_from_lsp, location_link_from_proto, location_link_to_proto,
@@ -106,7 +106,6 @@ pub(crate) fn make_lsp_text_document_position(
     })
 }
 
-#[async_trait(?Send)]
 pub trait LspCommand: 'static + Sized + Send + std::fmt::Debug {
     type Response: 'static + Default + Send + std::fmt::Debug;
     type LspRequest: 'static + Send + lsp::request::Request;

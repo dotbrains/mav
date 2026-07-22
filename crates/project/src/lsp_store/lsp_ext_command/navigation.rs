@@ -7,7 +7,6 @@ use crate::{
     make_lsp_text_document_position, make_text_document_identifier,
 };
 use anyhow::{Context as _, Result};
-use async_trait::async_trait;
 use gpui::{App, AsyncApp, Entity};
 use language::{Buffer, proto::deserialize_anchor};
 use lsp::{AdapterServerCapabilities, LanguageServer, LanguageServerId};
@@ -49,7 +48,6 @@ impl lsp::request::Request for LspGoToParentModule {
     const METHOD: &'static str = "experimental/parentModule";
 }
 
-#[async_trait(?Send)]
 impl LspCommand for SwitchSourceHeader {
     type Response = SwitchSourceHeaderResult;
     type LspRequest = LspSwitchSourceHeader;
@@ -131,7 +129,6 @@ impl LspCommand for SwitchSourceHeader {
     }
 }
 
-#[async_trait(?Send)]
 impl LspCommand for GoToParentModule {
     type Response = Vec<LocationLink>;
     type LspRequest = LspGoToParentModule;

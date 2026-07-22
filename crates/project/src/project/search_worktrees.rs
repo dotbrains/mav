@@ -1,7 +1,11 @@
 use super::*;
 
 impl Project {
-    fn search_impl(&mut self, query: SearchQuery, cx: &mut Context<Self>) -> SearchResultsHandle {
+    pub(super) fn search_impl(
+        &mut self,
+        query: SearchQuery,
+        cx: &mut Context<Self>,
+    ) -> SearchResultsHandle {
         let client: Option<(AnyProtoClient, _)> = if let Some(ssh_client) = &self.remote_client {
             Some((ssh_client.read(cx).proto_client(), 0))
         } else if let Some(remote_id) = self.remote_id() {
@@ -385,7 +389,7 @@ impl Project {
         });
     }
 
-    fn add_worktree(&mut self, worktree: &Entity<Worktree>, cx: &mut Context<Self>) {
+    pub(super) fn add_worktree(&mut self, worktree: &Entity<Worktree>, cx: &mut Context<Self>) {
         self.worktree_store.update(cx, |worktree_store, cx| {
             worktree_store.add(worktree, cx);
         });
