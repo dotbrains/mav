@@ -4,6 +4,8 @@ mod alacritty;
 mod ansi_text;
 mod colors;
 mod pty_info;
+mod subprocess;
+mod terminal_bounds;
 pub mod terminal_settings;
 
 #[cfg(not(windows))]
@@ -27,19 +29,18 @@ use async_channel::{Receiver, Sender};
 use collections::{HashMap, VecDeque};
 use futures::StreamExt;
 use pty_info::{ProcessIdGetter, PtyProcessInfo};
-use serde::{Deserialize, Serialize};
 use settings::Settings;
 use task::{HideStrategy, Shell, ShellKind, SpawnInTerminal};
 use terminal_settings::{AlternateScroll, CursorShape as SettingsCursorShape, TerminalSettings};
 use theme::ActiveTheme;
 use urlencoding;
-use util::{ResultExt as _, paths::PathStyle, truncate_and_trailoff};
+use util::{paths::PathStyle, truncate_and_trailoff};
 
 #[cfg(unix)]
 use std::os::unix::process::ExitStatusExt;
 use std::{
     borrow::Cow,
-    cmp::{self, min},
+    cmp::min,
     fmt::{self, Display, Formatter},
     ops::{BitOr, BitOrAssign, Deref},
     path::{Path, PathBuf},
@@ -57,13 +58,16 @@ use vte::ansi::{Processor, StdSyncHandler};
 use gpui::{
     App, AppContext as _, BackgroundExecutor, Bounds, ClipboardItem, Context, EventEmitter,
     Keystroke, Modifiers, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent, Pixels,
-    Point as GpuiPoint, ScrollWheelEvent, Size, Task, TouchPhase, Window, actions, px,
+    Point as GpuiPoint, ScrollWheelEvent, Task, TouchPhase, Window, actions, px,
 };
 
 #[cfg(not(windows))]
 use crate::alacritty::current_child_signal_mask;
 pub use ansi_text::{AnsiSpans, ParsedAnsiText, parse_ansi_text, strip_ansi_text};
 pub use colors::{get_color_at_index, rgba_color};
+use subprocess::{SubprocessHandle, convert_lf_to_crlf, spawn_task_subprocess};
+pub use terminal_bounds::TerminalBounds;
+use terminal_bounds::normalize_terminal_bounds;
 
 use crate::alacritty::{
     AlacrittyCell, AlacrittyGridIterator, AlacrittyHyperlink, AlacrittySearch, AlacrittyTerm,
@@ -464,11 +468,6 @@ actions!(
     ]
 );
 
-const DEBUG_TERMINAL_WIDTH: Pixels = px(500.);
-const DEBUG_TERMINAL_HEIGHT: Pixels = px(30.);
-const DEBUG_CELL_WIDTH: Pixels = px(5.);
-const DEBUG_LINE_HEIGHT: Pixels = px(5.);
-
 /// Inserts Mav-specific environment variables for terminal sessions.
 /// Used by both local terminals and remote terminals (via SSH).
 pub fn insert_mav_terminal_env(
@@ -577,74 +576,6 @@ impl fmt::Debug for TerminalBackendEvent {
 
 enum PtyEvent {
     Event(TerminalBackendEvent),
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct TerminalBounds {
-    pub cell_width: Pixels,
-    pub line_height: Pixels,
-    pub bounds: Bounds<Pixels>,
-}
-
-impl TerminalBounds {
-    pub fn new(line_height: Pixels, cell_width: Pixels, bounds: Bounds<Pixels>) -> Self {
-        TerminalBounds {
-            cell_width,
-            line_height,
-            bounds,
-        }
-    }
-
-    pub fn num_lines(&self) -> usize {
-        // Tolerance to prevent f32 precision from losing a row:
-        // `N * line_height / line_height` can be N-epsilon, which floor()
-        // would round down, pushing the first line into invisible scrollback.
-        let raw = self.bounds.size.height / self.line_height;
-        raw.next_up().floor() as usize
-    }
-
-    pub fn num_columns(&self) -> usize {
-        let raw = self.bounds.size.width / self.cell_width;
-        raw.next_up().floor() as usize
-    }
-
-    pub fn height(&self) -> Pixels {
-        self.bounds.size.height
-    }
-
-    pub fn width(&self) -> Pixels {
-        self.bounds.size.width
-    }
-
-    pub fn cell_width(&self) -> Pixels {
-        self.cell_width
-    }
-
-    pub fn line_height(&self) -> Pixels {
-        self.line_height
-    }
-}
-
-impl Default for TerminalBounds {
-    fn default() -> Self {
-        TerminalBounds::new(
-            DEBUG_LINE_HEIGHT,
-            DEBUG_CELL_WIDTH,
-            Bounds {
-                origin: GpuiPoint::default(),
-                size: Size {
-                    width: DEBUG_TERMINAL_WIDTH,
-                    height: DEBUG_TERMINAL_HEIGHT,
-                },
-            },
-        )
-    }
-}
-
-fn normalize_terminal_bounds(mut bounds: TerminalBounds) -> TerminalBounds {
-    bounds.bounds.size.height = cmp::max(bounds.line_height, bounds.height());
-    bounds.bounds.size.width = cmp::max(bounds.cell_width, bounds.width());
-    bounds
 }
 
 #[derive(Error, Debug)]
@@ -2749,142 +2680,6 @@ fn task_summary(task: &TaskState, exit_status: Option<ExitStatus>) -> (bool, Str
     (success, task_line, command_line)
 }
 
-/// Converts bare LFs into CRLFs so output captured from a pipe (rather than a
-/// PTY) wraps correctly in Alacritty. A PTY's line discipline performs this
-/// `ONLCR` translation for us; piped output (e.g. `ls` run outside a PTY) only
-/// emits `\n`, which moves Alacritty's cursor down without returning it to
-/// column zero and makes the rendered output look misaligned. Alacritty has no
-/// setting for this, so we insert a `\r` before each `\n` that lacks one.
-fn convert_lf_to_crlf(bytes: &[u8], previous_byte_was_cr: &mut bool) -> Vec<u8> {
-    let mut converted = Vec::with_capacity(bytes.len());
-    for &byte in bytes {
-        if byte == b'\n' && !*previous_byte_was_cr {
-            converted.push(b'\r');
-        }
-        converted.push(byte);
-        *previous_byte_was_cr = byte == b'\r';
-    }
-    converted
-}
-
-/// Owns a non-PTY task subprocess and the background task pumping its output
-/// into the terminal emulator. Used by headless hosts (e.g. the eval CLI) where
-/// PTY allocation fails with `ENOTTY`. Dropping this kills the child.
-struct SubprocessHandle {
-    child: Arc<parking_lot::Mutex<Option<util::process::Child>>>,
-    _reader: Task<()>,
-}
-
-impl SubprocessHandle {
-    fn kill(&self) {
-        if let Some(child) = self.child.lock().as_mut() {
-            child.kill().log_err();
-        }
-    }
-}
-
-/// Spawns `program`/`args` as a plain subprocess with piped stdout/stderr and
-/// drives its output into `term`, mirroring what the Alacritty event loop does
-/// for a PTY but without one. Used when [`HeadlessTerminal`] is enabled.
-fn spawn_task_subprocess(
-    program: String,
-    args: Vec<String>,
-    env: HashMap<String, String>,
-    working_directory: Option<PathBuf>,
-    term: Arc<AlacrittyTermLock>,
-    events_tx: futures::channel::mpsc::UnboundedSender<PtyEvent>,
-    executor: &BackgroundExecutor,
-) -> Result<SubprocessHandle> {
-    use futures::io::AsyncReadExt as _;
-    use std::process::Stdio;
-
-    let mut command = util::command::new_std_command(&program);
-    command.args(&args);
-    command.envs(&env);
-    if let Some(directory) = &working_directory {
-        command.current_dir(directory);
-    }
-
-    let mut child =
-        util::process::Child::spawn(command, Stdio::null(), Stdio::piped(), Stdio::piped())?;
-    let stdout = child.stdout.take();
-    let stderr = child.stderr.take();
-    let child = Arc::new(parking_lot::Mutex::new(Some(child)));
-
-    let reader = executor.spawn({
-        let child = child.clone();
-        let executor = executor.clone();
-        async move {
-            // stdout and stderr are pumped concurrently, each through its own
-            // parser; the shared term mutex serializes grid mutation.
-            type BoxedReader = Box<dyn futures::io::AsyncRead + Unpin + Send>;
-            let pump = |reader: Option<BoxedReader>| {
-                let term = term.clone();
-                let events_tx = events_tx.clone();
-                async move {
-                    let Some(mut reader) = reader else { return };
-                    let mut processor = Processor::<StdSyncHandler>::new();
-                    let mut buffer = [0u8; 8192];
-                    let mut previous_byte_was_cr = false;
-                    loop {
-                        match reader.read(&mut buffer).await {
-                            Ok(0) => return,
-                            Err(error) => {
-                                log::warn!("failed to read subprocess output: {error}");
-                                return;
-                            }
-                            Ok(count) => {
-                                let converted =
-                                    convert_lf_to_crlf(&buffer[..count], &mut previous_byte_was_cr);
-                                {
-                                    let mut term = term.lock();
-                                    processor.advance(&mut *term, &converted);
-                                }
-                                events_tx
-                                    .unbounded_send(PtyEvent::Event(TerminalBackendEvent::Wakeup))
-                                    .ok();
-                            }
-                        }
-                    }
-                }
-            };
-            let stdout = stdout.map(|reader| Box::new(reader) as BoxedReader);
-            let stderr = stderr.map(|reader| Box::new(reader) as BoxedReader);
-            futures::future::join(pump(stdout), pump(stderr)).await;
-
-            // Both pipes are closed, so the child has exited or is about to.
-            // Poll for its status without holding the lock across an await.
-            let status = loop {
-                let status = match child.lock().as_mut() {
-                    Some(child) => match child.try_status() {
-                        Ok(status) => status,
-                        Err(error) => {
-                            log::warn!("failed to get subprocess exit status: {error}");
-                            break None;
-                        }
-                    },
-                    None => Some(ExitStatus::default()),
-                };
-                match status {
-                    Some(status) => break Some(status),
-                    None => executor.timer(Duration::from_millis(20)).await,
-                }
-            };
-            child.lock().take();
-            let event = match status {
-                Some(status) => TerminalBackendEvent::ChildExit(status),
-                None => TerminalBackendEvent::Exit,
-            };
-            events_tx.unbounded_send(PtyEvent::Event(event)).ok();
-        }
-    });
-
-    Ok(SubprocessHandle {
-        child,
-        _reader: reader,
-    })
-}
-
 impl Drop for Terminal {
     fn drop(&mut self) {
         if let Some(subprocess) = self.subprocess.take() {
@@ -4434,7 +4229,7 @@ mod tests {
                         px(8.0),
                         Bounds {
                             origin: GpuiPoint::default(),
-                            size: Size {
+                            size: gpui::Size {
                                 width: px(800.0),
                                 height: px(height),
                             },
@@ -4460,7 +4255,7 @@ mod tests {
                         px(cell_width),
                         Bounds {
                             origin: GpuiPoint::default(),
-                            size: Size {
+                            size: gpui::Size {
                                 width: px(width),
                                 height: px(400.0),
                             },
