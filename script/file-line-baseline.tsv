@@ -65,7 +65,7 @@
 261	crates/file_finder/src/file_finder_tests.rs
 3618	crates/editor/src/display_map/block_map.rs
 1166	crates/editor/src/inlays/inlay_hints.rs
-4576	crates/terminal/src/terminal.rs
+4478	crates/terminal/src/terminal.rs
     4555	crates/gpui/src/elements/div.rs
     4553	crates/agent_servers/src/acp.rs
     4332	crates/edit_prediction/src/edit_prediction_tests.rs
