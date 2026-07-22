@@ -81,7 +81,6 @@
     4008	crates/gpui/src/geometry.rs
     4002	crates/vim/src/object.rs
     3822	crates/text/src/text.rs
-    3633	crates/vim/src/command.rs
     3595	crates/util/src/paths.rs
     3594	crates/mav/src/visual_test_runner.rs
     3559	crates/open_ai/src/completion.rs
