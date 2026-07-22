@@ -9,9 +9,9 @@ pub struct CompanionExcerptPatch {
 }
 
 pub(crate) struct Companion {
-    rhs_display_map_id: EntityId,
+    pub(super) rhs_display_map_id: EntityId,
     rhs_custom_block_to_balancing_block: RefCell<HashMap<CustomBlockId, CustomBlockId>>,
-    lhs_custom_block_to_balancing_block: RefCell<HashMap<CustomBlockId, CustomBlockId>>,
+    pub(super) lhs_custom_block_to_balancing_block: RefCell<HashMap<CustomBlockId, CustomBlockId>>,
 }
 
 impl Companion {

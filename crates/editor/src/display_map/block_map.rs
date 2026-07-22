@@ -35,8 +35,8 @@ mod block;
 mod model;
 #[path = "block_map/types.rs"]
 mod types;
-use model::*;
-use types::*;
+pub use model::*;
+pub use types::*;
 
 const NEWLINES: &[u8; rope::Chunk::MASK_BITS] = &[b'\n'; _];
 const BULLETS: &[u8; rope::Chunk::MASK_BITS] = &[b'*'; _];

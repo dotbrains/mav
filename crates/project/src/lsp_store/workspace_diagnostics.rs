@@ -381,7 +381,7 @@ impl LspStore {
                 server_id,
                 registration_id,
                 ..
-            } => self.diagnostic_registration_exists(*server_id, registration_id),
+            } => self.diagnostic_registration_exists(*server_id, &registration_id),
             LspPullDiagnostics::Default => false,
         });
         let mut unchanged_buffers = HashMap::default();

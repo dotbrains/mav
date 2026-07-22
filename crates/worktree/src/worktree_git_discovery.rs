@@ -86,7 +86,11 @@ pub(super) async fn build_gitignore(abs_path: &Path, fs: &dyn Fs) -> Result<Giti
     build_gitignore_with_root(abs_path, parent, fs).await
 }
 
-async fn build_gitignore_with_root(abs_path: &Path, root: &Path, fs: &dyn Fs) -> Result<Gitignore> {
+pub(super) async fn build_gitignore_with_root(
+    abs_path: &Path,
+    root: &Path,
+    fs: &dyn Fs,
+) -> Result<Gitignore> {
     let contents = fs
         .load(abs_path)
         .await
@@ -98,7 +102,7 @@ async fn build_gitignore_with_root(abs_path: &Path, root: &Path, fs: &dyn Fs) ->
     Ok(builder.build()?)
 }
 
-async fn discover_ancestor_git_repo(
+pub(super) async fn discover_ancestor_git_repo(
     fs: Arc<dyn Fs>,
     root_abs_path: &SanitizedPath,
 ) -> (

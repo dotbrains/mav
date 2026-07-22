@@ -14,7 +14,7 @@ pub(super) struct Selection {
 }
 
 #[derive(Clone, Copy, Debug)]
-struct SelectionAnchor {
+pub(super) struct SelectionAnchor {
     pub(super) point: Point,
     pub(super) side: SelectionSide,
 }
@@ -33,7 +33,7 @@ pub(super) enum SelectionType {
 }
 
 impl Selection {
-    fn new(selection_type: SelectionType, point: Point, side: SelectionSide) -> Self {
+    pub(super) fn new(selection_type: SelectionType, point: Point, side: SelectionSide) -> Self {
         let anchor = SelectionAnchor { point, side };
         Self {
             ty: selection_type,
@@ -69,7 +69,7 @@ pub struct Hyperlink {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-enum HyperlinkData {
+pub(super) enum HyperlinkData {
     Alacritty(AlacrittyHyperlink),
     Owned { id: Option<Arc<str>>, uri: Arc<str> },
 }

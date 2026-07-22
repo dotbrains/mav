@@ -80,6 +80,9 @@ use subprocess::{SubprocessHandle, convert_lf_to_crlf, spawn_task_subprocess};
 pub use terminal_bounds::TerminalBounds;
 use terminal_bounds::normalize_terminal_bounds;
 use terminal_model::*;
+pub use terminal_model::{
+    Cell, Content, IndexedCell, Search, is_app_chosen_exact_color, is_default_background_color,
+};
 pub use terminal_types::{Cursor, CursorShape, HoveredWord, Modes, Point, Range, SelectionRange};
 
 use crate::alacritty::{

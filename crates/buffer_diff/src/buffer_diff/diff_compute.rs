@@ -1,4 +1,5 @@
 use super::*;
+use std::cmp::Ordering;
 
 pub(super) fn build_diff_options(
     language: Option<LanguageName>,

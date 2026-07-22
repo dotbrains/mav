@@ -756,14 +756,14 @@ fn terminal_point_from_alacritty(point: AlacPoint) -> Point {
 impl Range {
     #[cfg(test)]
     fn to_alacritty(self) -> RangeInclusive<AlacPoint> {
-        self.start.to_alacritty()..=self.end.to_alacritty()
+        self.start().to_alacritty()..=self.end().to_alacritty()
     }
 
     fn from_alacritty(range: RangeInclusive<AlacPoint>) -> Self {
-        Self {
-            start: terminal_point_from_alacritty(*range.start()),
-            end: terminal_point_from_alacritty(*range.end()),
-        }
+        Self::new(
+            terminal_point_from_alacritty(*range.start()),
+            terminal_point_from_alacritty(*range.end()),
+        )
     }
 }
 

@@ -7,6 +7,7 @@ mod patch_mapping;
 use diff_compute::*;
 use gpui::{App, AppContext as _, Context, Entity, EventEmitter, Task};
 use hunks::*;
+pub use hunks::{DiffHunk, DiffHunkSecondaryStatus, DiffHunkStatus, DiffHunkStatusKind};
 use imara_diff::{Algorithm, Sink, intern::InternedInput, sources::lines_with_terminator};
 use language::{
     Capability, DiffOptions, Language, LanguageName, LanguageRegistry,

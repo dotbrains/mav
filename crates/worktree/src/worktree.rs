@@ -88,7 +88,7 @@ use worktree_scan_state::{
     UpdateObservationState,
 };
 pub use worktree_settings::WorktreeSettings;
-use worktree_state::{LocalSnapshot, LocalWorktree, RemoteWorktree, Snapshot};
+pub use worktree_state::{LocalSnapshot, LocalWorktree, RemoteWorktree, Snapshot};
 pub use worktree_types::{
     CreatedEntry, Event, LoadedBinaryFile, LoadedFile, ProjectEntryId, WorkDirectory,
 };
@@ -3187,7 +3187,10 @@ use worktree_file_decoding::decode_file_text;
 
 mod worktree_git_discovery;
 pub use worktree_git_discovery::discover_root_repo_common_dir;
-use worktree_git_discovery::{NullWatcher, build_gitignore, discover_git_paths};
+use worktree_git_discovery::{
+    NullWatcher, build_gitignore, build_gitignore_with_root, discover_ancestor_git_repo,
+    discover_git_paths,
+};
 
 mod worktree_model_handle;
 pub use worktree_model_handle::WorktreeModelHandle;

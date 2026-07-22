@@ -47,7 +47,7 @@ use std::{
     cmp::Reverse, collections::hash_map, mem, ops::Range, path::Path, str::FromStr, sync::Arc,
 };
 use text::{BufferId, LineEnding};
-use types::*;
+pub(crate) use types::*;
 use util::{ResultExt as _, debug_panic};
 
 use location_links::language_server_for_buffer;

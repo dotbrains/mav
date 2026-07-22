@@ -19,6 +19,7 @@ use anyhow::Result;
 use clock::Lamport;
 pub use clock::ReplicaId;
 use collections::{HashMap, HashSet};
+pub use history::Transaction;
 use history::*;
 pub use line_ending::{LineEnding, chunks_with_line_ending};
 pub use line_indent::LineIndent;

@@ -69,7 +69,7 @@ impl Selection {
         }
     }
 
-    fn tail(&self) -> usize {
+    pub(super) fn tail(&self) -> usize {
         if self.reversed { self.end } else { self.start }
     }
 }

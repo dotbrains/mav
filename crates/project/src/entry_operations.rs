@@ -7,7 +7,7 @@ impl Project {
             .find(|tree| tree.read(cx).root_name() == root_name)
     }
 
-    fn emit_group_key_changed_if_needed(&mut self, cx: &mut Context<Self>) {
+    pub(super) fn emit_group_key_changed_if_needed(&mut self, cx: &mut Context<Self>) {
         let new_worktree_paths = self.worktree_paths(cx);
         if new_worktree_paths != self.last_worktree_paths {
             let old_worktree_paths =
