@@ -6,6 +6,7 @@ mod page_data;
 pub mod pages;
 mod setting_field;
 mod setting_field_renderers;
+mod settings_file_target;
 mod settings_file_updates;
 #[cfg(test)]
 mod settings_file_updates_tests;
@@ -53,10 +54,7 @@ use ui::{
     prelude::*,
 };
 
-use mav_actions::{
-    AGENT_SKILLS_SETTINGS_PATH, OpenProjectSettings, OpenSettings, OpenSettingsAt,
-    OpenSettingsAtTarget,
-};
+use mav_actions::{AGENT_SKILLS_SETTINGS_PATH, OpenProjectSettings, OpenSettings, OpenSettingsAt};
 use util::{ResultExt as _, paths::PathStyle, rel_path::RelPath};
 use workspace::{
     AppState, MultiWorkspace, OpenOptions, OpenVisible, Workspace, WorkspaceSettings,
@@ -83,6 +81,7 @@ use crate::setting_field_renderers::{
     render_dropdown, render_editable_number_field, render_font_picker, render_icon_theme_picker,
     render_text_field, render_theme_picker, render_toggle_button,
 };
+use crate::settings_file_target::SettingsFileTarget;
 use crate::settings_file_updates::{
     ProjectSettingsUpdateQueue, open_user_settings_in_workspace, update_settings_file,
 };
@@ -347,23 +346,6 @@ fn init_renderers(cx: &mut App) {
         .add_basic_renderer::<settings::TerminalBell>(render_dropdown)
         // please semicolon stay on next line
         ;
-}
-
-#[derive(Clone, Copy)]
-enum SettingsFileTarget {
-    User,
-    Project(WorktreeId),
-}
-
-impl From<&OpenSettingsAtTarget> for SettingsFileTarget {
-    fn from(target: &OpenSettingsAtTarget) -> Self {
-        match target {
-            OpenSettingsAtTarget::User => Self::User,
-            OpenSettingsAtTarget::Project { worktree_id } => {
-                Self::Project(WorktreeId::from_usize(*worktree_id))
-            }
-        }
-    }
 }
 
 pub fn open_settings_editor(
