@@ -1,6 +1,16 @@
 pub mod fs_watcher;
+#[path = "fs/job.rs"]
+mod job;
+#[path = "fs/metadata.rs"]
+mod metadata;
+#[path = "fs/trash_entry.rs"]
+mod trash_entry;
 
 pub use fs_watcher::requires_poll_watcher;
+use job::JobTracker;
+pub use job::{JobEvent, JobEventReceiver, JobEventSender, JobId, JobInfo};
+pub use metadata::{CopyOptions, CreateOptions, MTime, Metadata, RemoveOptions, RenameOptions};
+pub use trash_entry::{TrashRestoreError, TrashedEntry};
 
 use parking_lot::Mutex;
 use std::ffi::OsString;
@@ -180,70 +190,6 @@ pub trait Fs: Send + Sync {
     }
 }
 
-// We use our own type rather than `trash::TrashItem` directly to avoid carrying
-// over fields we don't need (e.g. `time_deleted`) and to insulate callers and
-// tests from changes to that crate's API surface.
-/// Represents a file or directory that has been moved to the system trash,
-/// retaining enough information to restore it to its original location.
-#[derive(Clone, PartialEq, Debug)]
-pub struct TrashedEntry {
-    /// Platform-specific identifier for the file/directory in the trash.
-    ///
-    /// * Freedesktop – Path to the `.trashinfo` file.
-    /// * macOS & Windows – Full path to the file/directory in the system's
-    /// trash.
-    pub id: OsString,
-    /// Name of the file/directory at the time of trashing, including extension.
-    pub name: OsString,
-    /// Absolute path to the parent directory at the time of trashing.
-    pub original_parent: PathBuf,
-}
-
-impl From<trash::TrashItem> for TrashedEntry {
-    fn from(item: trash::TrashItem) -> Self {
-        Self {
-            id: item.id,
-            name: item.name,
-            original_parent: item.original_parent,
-        }
-    }
-}
-
-impl TrashedEntry {
-    fn into_trash_item(self) -> trash::TrashItem {
-        trash::TrashItem {
-            id: self.id,
-            name: self.name,
-            original_parent: self.original_parent,
-            // `TrashedEntry` doesn't preserve `time_deleted` as we don't
-            // currently need it for restore, so we default it to 0 here.
-            time_deleted: 0,
-        }
-    }
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum TrashRestoreError {
-    #[error("The specified `path` ({}) was not found in the system's trash.", path.display())]
-    NotFound { path: PathBuf },
-    #[error("File or directory ({}) already exists at the restore destination.", path.display())]
-    Collision { path: PathBuf },
-    #[error("Unknown error ({description})")]
-    Unknown { description: String },
-}
-
-impl From<trash::Error> for TrashRestoreError {
-    fn from(err: trash::Error) -> Self {
-        match err {
-            trash::Error::RestoreCollision { path, .. } => Self::Collision { path },
-            trash::Error::Unknown { description } => Self::Unknown { description },
-            other => Self::Unknown {
-                description: other.to_string(),
-            },
-        }
-    }
-}
-
 struct GlobalFs(Arc<dyn Fs>);
 
 impl Global for GlobalFs {}
@@ -257,141 +203,6 @@ impl dyn Fs {
     /// Sets the global [`Fs`].
     pub fn set_global(fs: Arc<Self>, cx: &mut App) {
         cx.set_global(GlobalFs(fs));
-    }
-}
-
-#[derive(Copy, Clone, Default)]
-pub struct CreateOptions {
-    pub overwrite: bool,
-    pub ignore_if_exists: bool,
-}
-
-#[derive(Copy, Clone, Default)]
-pub struct CopyOptions {
-    pub overwrite: bool,
-    pub ignore_if_exists: bool,
-}
-
-#[derive(Copy, Clone, Default)]
-pub struct RenameOptions {
-    pub overwrite: bool,
-    pub ignore_if_exists: bool,
-    /// Whether to create parent directories if they do not exist.
-    pub create_parents: bool,
-}
-
-#[derive(Copy, Clone, Default)]
-pub struct RemoveOptions {
-    pub recursive: bool,
-    pub ignore_if_not_exists: bool,
-}
-
-#[derive(Copy, Clone, Debug)]
-pub struct Metadata {
-    pub inode: u64,
-    pub mtime: MTime,
-    pub is_symlink: bool,
-    pub is_dir: bool,
-    pub len: u64,
-    pub is_fifo: bool,
-    pub is_executable: bool,
-}
-
-/// Filesystem modification time. The purpose of this newtype is to discourage use of operations
-/// that do not make sense for mtimes. In particular, it is not always valid to compare mtimes using
-/// `<` or `>`, as there are many things that can cause the mtime of a file to be earlier than it
-/// was. See ["mtime comparison considered harmful" - apenwarr](https://apenwarr.ca/log/20181113).
-///
-/// Do not derive Ord, PartialOrd, or arithmetic operation traits.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Deserialize, Serialize)]
-#[serde(transparent)]
-pub struct MTime(SystemTime);
-
-pub type JobId = usize;
-
-#[derive(Clone, Debug)]
-pub struct JobInfo {
-    pub start: Instant,
-    pub message: SharedString,
-    pub id: JobId,
-}
-
-#[derive(Debug, Clone)]
-pub enum JobEvent {
-    Started { info: JobInfo },
-    Completed { id: JobId },
-}
-
-pub type JobEventSender = futures::channel::mpsc::UnboundedSender<JobEvent>;
-pub type JobEventReceiver = futures::channel::mpsc::UnboundedReceiver<JobEvent>;
-
-struct JobTracker {
-    id: JobId,
-    subscribers: Arc<Mutex<Vec<JobEventSender>>>,
-}
-
-impl JobTracker {
-    fn new(info: JobInfo, subscribers: Arc<Mutex<Vec<JobEventSender>>>) -> Self {
-        let id = info.id;
-        {
-            let mut subs = subscribers.lock();
-            subs.retain(|sender| {
-                sender
-                    .unbounded_send(JobEvent::Started { info: info.clone() })
-                    .is_ok()
-            });
-        }
-        Self { id, subscribers }
-    }
-}
-
-impl Drop for JobTracker {
-    fn drop(&mut self) {
-        let mut subs = self.subscribers.lock();
-        subs.retain(|sender| {
-            sender
-                .unbounded_send(JobEvent::Completed { id: self.id })
-                .is_ok()
-        });
-    }
-}
-
-impl MTime {
-    /// Conversion intended for persistence and testing.
-    pub fn from_seconds_and_nanos(secs: u64, nanos: u32) -> Self {
-        MTime(UNIX_EPOCH + Duration::new(secs, nanos))
-    }
-
-    /// Conversion intended for persistence.
-    pub fn to_seconds_and_nanos_for_persistence(self) -> Option<(u64, u32)> {
-        self.0
-            .duration_since(UNIX_EPOCH)
-            .ok()
-            .map(|duration| (duration.as_secs(), duration.subsec_nanos()))
-    }
-
-    /// Returns the value wrapped by this `MTime`, for presentation to the user. The name including
-    /// "_for_user" is to discourage misuse - this method should not be used when making decisions
-    /// about file dirtiness.
-    pub fn timestamp_for_user(self) -> SystemTime {
-        self.0
-    }
-
-    /// Temporary method to split out the behavior changes from introduction of this newtype.
-    pub fn bad_is_greater_than(self, other: MTime) -> bool {
-        self.0 > other.0
-    }
-}
-
-impl From<proto::Timestamp> for MTime {
-    fn from(timestamp: proto::Timestamp) -> Self {
-        MTime(timestamp.into())
-    }
-}
-
-impl From<MTime> for proto::Timestamp {
-    fn from(mtime: MTime) -> Self {
-        mtime.0.into()
     }
 }
 
