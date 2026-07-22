@@ -7,6 +7,7 @@ mod buffer_operations;
 mod buffer_parsing;
 mod buffer_preview;
 mod buffer_selections_edits;
+#[cfg(any(test, feature = "test-support"))]
 mod buffer_test_helpers;
 mod buffer_transactions;
 mod buffer_undo_completion;

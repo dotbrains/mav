@@ -85,6 +85,16 @@ pub trait InteractiveElement: Sized {
         self
     }
 
+    /// Apply the given style when this element is focused from keyboard navigation.
+    fn focus_visible(mut self, f: impl FnOnce(StyleRefinement) -> StyleRefinement) -> Self {
+        debug_assert!(
+            self.interactivity().focus_visible_style.is_none(),
+            "focus-visible style already set"
+        );
+        self.interactivity().focus_visible_style = Some(Box::new(f(StyleRefinement::default())));
+        self
+    }
+
     /// Apply the given style to this element when the mouse hovers over a group member
     fn group_hover(
         mut self,
