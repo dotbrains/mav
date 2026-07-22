@@ -244,6 +244,53 @@ impl ProjectPath {
     }
 }
 
+/// A path that has been resolved to an existing project-relative or absolute path.
+#[derive(Debug, Clone)]
+pub enum ResolvedPath {
+    ProjectPath {
+        project_path: ProjectPath,
+        is_dir: bool,
+    },
+    AbsPath {
+        path: String,
+        is_dir: bool,
+    },
+}
+
+impl ResolvedPath {
+    pub fn abs_path(&self) -> Option<&str> {
+        match self {
+            Self::AbsPath { path, .. } => Some(path),
+            _ => None,
+        }
+    }
+
+    pub fn into_abs_path(self) -> Option<String> {
+        match self {
+            Self::AbsPath { path, .. } => Some(path),
+            _ => None,
+        }
+    }
+
+    pub fn project_path(&self) -> Option<&ProjectPath> {
+        match self {
+            Self::ProjectPath { project_path, .. } => Some(project_path),
+            _ => None,
+        }
+    }
+
+    pub fn is_file(&self) -> bool {
+        !self.is_dir()
+    }
+
+    pub fn is_dir(&self) -> bool {
+        match self {
+            Self::ProjectPath { is_dir, .. } => *is_dir,
+            Self::AbsPath { is_dir, .. } => *is_dir,
+        }
+    }
+}
+
 pub(super) enum EntitySubscription {
     Project(PendingEntitySubscription<Project>),
     BufferStore(PendingEntitySubscription<BufferStore>),
