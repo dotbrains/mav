@@ -1,12 +1,16 @@
 #[path = "buffer_diff/diff_compute.rs"]
 mod diff_compute;
+#[path = "buffer_diff/diff_lifecycle.rs"]
 mod diff_lifecycle;
+#[path = "buffer_diff/diff_operations.rs"]
 mod diff_operations;
 #[path = "buffer_diff/hunks.rs"]
 mod hunks;
 #[path = "buffer_diff/patch_mapping.rs"]
 mod patch_mapping;
+#[path = "buffer_diff/snapshot_queries.rs"]
 mod snapshot_queries;
+#[path = "buffer_diff/snapshot_staging.rs"]
 mod snapshot_staging;
 #[cfg(test)]
 mod test_base_text;

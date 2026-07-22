@@ -1,4 +1,5 @@
 use super::*;
+use crate::rendered_line::source_range_for_rendered;
 
 impl MarkdownElementBuilder {
     pub(super) fn source_range_for_rendered(

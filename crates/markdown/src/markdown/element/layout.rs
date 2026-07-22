@@ -1,8 +1,5 @@
 use super::super::*;
 use super::MarkdownElement;
-use super::layout::{
-    collect_image_alt_text, render_copy_code_block_button, render_wrap_code_block_button,
-};
 
 impl Styled for MarkdownElement {
     fn style(&mut self) -> &mut StyleRefinement {

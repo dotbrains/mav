@@ -17,13 +17,13 @@ impl MarkdownElement {
                 current_img_block_range.take();
             }
             MarkdownTagEnd::Paragraph => {
-                self.pop_markdown_paragraph(&mut builder);
+                self.pop_markdown_paragraph(builder);
             }
             MarkdownTagEnd::Heading(_) => {
-                self.pop_markdown_heading(&mut builder);
+                self.pop_markdown_heading(builder);
             }
             MarkdownTagEnd::BlockQuote(_kind) => {
-                self.pop_markdown_block_quote(&mut builder);
+                self.pop_markdown_block_quote(builder);
             }
             MarkdownTagEnd::CodeBlock => {
                 builder.trim_trailing_newline();
@@ -105,7 +105,7 @@ impl MarkdownElement {
                 builder.pop_div();
             }
             MarkdownTagEnd::Item => {
-                self.pop_markdown_list_item(&mut builder);
+                self.pop_markdown_list_item(builder);
             }
             MarkdownTagEnd::Emphasis => builder.pop_text_style(),
             MarkdownTagEnd::Strong => builder.pop_text_style(),

@@ -44,7 +44,7 @@ impl BufferDiffSnapshot {
         self.buffer_snapshot.version()
     }
 
-    fn original_buffer_snapshot(&self) -> &text::BufferSnapshot {
+    pub(super) fn original_buffer_snapshot(&self) -> &text::BufferSnapshot {
         &self.buffer_snapshot
     }
 

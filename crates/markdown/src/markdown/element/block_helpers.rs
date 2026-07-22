@@ -45,7 +45,7 @@ impl MarkdownElement {
         }
     }
 
-    pub(super) fn push_markdown_image(
+    pub(crate) fn push_markdown_image(
         &self,
         builder: &mut MarkdownElementBuilder,
         range: &Range<usize>,
@@ -71,7 +71,7 @@ impl MarkdownElement {
         builder.push_image_child(image_element);
     }
 
-    pub(super) fn push_markdown_paragraph(
+    pub(crate) fn push_markdown_paragraph(
         &self,
         builder: &mut MarkdownElementBuilder,
         range: &Range<usize>,
@@ -96,12 +96,12 @@ impl MarkdownElement {
         builder.push_div(paragraph, range, markdown_end);
     }
 
-    pub(super) fn pop_markdown_paragraph(&self, builder: &mut MarkdownElementBuilder) {
+    pub(crate) fn pop_markdown_paragraph(&self, builder: &mut MarkdownElementBuilder) {
         builder.pop_div();
         builder.pop_text_style();
     }
 
-    pub(super) fn push_markdown_heading(
+    pub(crate) fn push_markdown_heading(
         &self,
         builder: &mut MarkdownElementBuilder,
         level: pulldown_cmark::HeadingLevel,
@@ -135,12 +135,12 @@ impl MarkdownElement {
         builder.push_div(heading, range, markdown_end);
     }
 
-    pub(super) fn pop_markdown_heading(&self, builder: &mut MarkdownElementBuilder) {
+    pub(crate) fn pop_markdown_heading(&self, builder: &mut MarkdownElementBuilder) {
         builder.pop_div();
         builder.pop_text_style();
     }
 
-    pub(super) fn push_markdown_block_quote(
+    pub(crate) fn push_markdown_block_quote(
         &self,
         builder: &mut MarkdownElementBuilder,
         kind: Option<pulldown_cmark::BlockQuoteKind>,
@@ -187,7 +187,7 @@ impl MarkdownElement {
         builder.push_div(block_div, range, markdown_end);
     }
 
-    pub(super) fn pop_markdown_block_quote(&self, builder: &mut MarkdownElementBuilder) {
+    pub(crate) fn pop_markdown_block_quote(&self, builder: &mut MarkdownElementBuilder) {
         builder.pop_div();
         builder.pop_text_style();
     }
@@ -300,7 +300,7 @@ impl MarkdownElement {
         builder.pop_div();
     }
 
-    pub(super) fn push_markdown_list_item(
+    pub(crate) fn push_markdown_list_item(
         &self,
         builder: &mut MarkdownElementBuilder,
         bullet: AnyElement,
@@ -322,7 +322,7 @@ impl MarkdownElement {
         builder.push_div(div().flex_1().w_0(), range, markdown_end);
     }
 
-    pub(super) fn pop_markdown_list_item(&self, builder: &mut MarkdownElementBuilder) {
+    pub(crate) fn pop_markdown_list_item(&self, builder: &mut MarkdownElementBuilder) {
         builder.pop_div();
         builder.pop_div();
     }

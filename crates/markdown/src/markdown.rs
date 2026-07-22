@@ -49,26 +49,34 @@ use util::maybe;
 
 use std::borrow::Cow;
 use std::collections::BTreeMap;
+use std::mem;
 use std::ops::Range;
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
+use std::time::Duration;
 
 use collections::{HashMap, HashSet};
 use gpui::{
-    AnyElement, App, Bounds, ClipboardItem, Entity, FocusHandle, Focusable, Hsla, Image,
-    ImageFormat, ImageSource, ScrollHandle, Stateful, StyleRefinement, StyledImage, Subscription,
-    Task, TextAlign, TextStyle, TextStyleRefinement, actions,
+    AnyElement, App, BorderStyle, Bounds, ClipboardItem, CursorStyle, DispatchPhase, Edges,
+    EdgesRefinement, Entity, FocusHandle, Focusable, FontStyle, FontWeight, GlobalElementId,
+    Hitbox, HitboxBehavior, Hsla, Image, ImageFormat, ImageSource, KeyContext, Length, MouseButton,
+    MouseDownEvent, MouseEvent, MouseMoveEvent, MouseUpEvent, Point, ScrollHandle, Stateful,
+    StrikethroughStyle, StyleRefinement, StyledImage, StyledText, Subscription, Task, TextAlign,
+    TextLayout, TextRun, TextStyle, TextStyleRefinement, UnderlineStyle, Window, WrappedLineLayout,
+    actions, img, point, quad,
 };
-use language::{Language, LanguageRegistry};
+use language::{CharClassifier, Language, LanguageRegistry, Rope};
 use parser::CodeBlockMetadata;
 use parser::{
     MarkdownEvent, MarkdownTag, MarkdownTagEnd, ParsedMetadataBlock, parse_links_only,
     parse_markdown_with_options,
 };
-use pulldown_cmark::BlockQuoteKind;
+use pulldown_cmark::{Alignment, BlockQuoteKind};
+use smallvec::SmallVec;
 use sum_tree::TreeMap;
-use ui::{Tooltip, prelude::*};
+use theme::SyntaxTheme;
+use ui::{Checkbox, CopyButton, ScrollAxes, Scrollbars, Tooltip, WithScrollbar, prelude::*};
 use util::ResultExt;
 
 use crate::parser::CodeBlockKind;

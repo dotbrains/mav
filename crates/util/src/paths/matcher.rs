@@ -1,5 +1,6 @@
 use super::*;
 
+#[derive(Clone)]
 pub struct PathMatcher {
     sources: Vec<(String, RelPathBuf, /*trailing separator*/ bool)>,
     glob: GlobSet,

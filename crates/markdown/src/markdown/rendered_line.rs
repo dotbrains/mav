@@ -1,15 +1,15 @@
 use super::*;
 
 pub(super) struct RenderedLine {
-    layout: TextLayout,
-    source_mappings: Vec<SourceMapping>,
-    source_end: usize,
-    language: Option<Arc<Language>>,
-    text_align: TextAlign,
+    pub(super) layout: TextLayout,
+    pub(super) source_mappings: Vec<SourceMapping>,
+    pub(super) source_end: usize,
+    pub(super) language: Option<Arc<Language>>,
+    pub(super) text_align: TextAlign,
 }
 
 impl RenderedLine {
-    fn rendered_index_for_source_index(&self, source_index: usize) -> usize {
+    pub(super) fn rendered_index_for_source_index(&self, source_index: usize) -> usize {
         if source_index >= self.source_end {
             return self.layout.len();
         }
@@ -24,7 +24,7 @@ impl RenderedLine {
         (mapping.rendered_index + (source_index - mapping.source_index)).min(self.layout.len())
     }
 
-    fn source_index_for_rendered_index(&self, rendered_index: usize) -> usize {
+    pub(super) fn source_index_for_rendered_index(&self, rendered_index: usize) -> usize {
         if rendered_index >= self.layout.len() {
             return self.source_end;
         }
@@ -43,7 +43,7 @@ impl RenderedLine {
     /// When the rendered index is exactly at the start of a segment with a gap from the previous
     /// segment (e.g., after stripped markdown syntax like backticks), this returns the end of the
     /// previous segment rather than the start of the current one.
-    fn source_index_for_exclusive_rendered_end(&self, rendered_index: usize) -> usize {
+    pub(super) fn source_index_for_exclusive_rendered_end(&self, rendered_index: usize) -> usize {
         if rendered_index >= self.layout.len() {
             return self.source_end;
         }
@@ -73,7 +73,7 @@ impl RenderedLine {
         self.source_mappings[ix].source_index
     }
 
-    fn alignment_offset_for_segment(
+    pub(super) fn alignment_offset_for_segment(
         &self,
         available_width: Pixels,
         segment_start_x: Pixels,
@@ -87,7 +87,10 @@ impl RenderedLine {
         }
     }
 
-    fn source_index_for_position(&self, position: Point<Pixels>) -> Result<usize, usize> {
+    pub(super) fn source_index_for_position(
+        &self,
+        position: Point<Pixels>,
+    ) -> Result<usize, usize> {
         let adjusted_position = maybe!({
             if self.text_align == TextAlign::Left {
                 return None;
@@ -156,11 +159,11 @@ impl RenderedLine {
 
 #[derive(Copy, Clone, Debug, Default)]
 pub(super) struct SourceMapping {
-    rendered_index: usize,
-    source_index: usize,
+    pub(super) rendered_index: usize,
+    pub(super) source_index: usize,
 }
 
-fn source_range_for_rendered(
+pub(super) fn source_range_for_rendered(
     mappings: &[SourceMapping],
     rendered: &Range<usize>,
 ) -> Option<Range<usize>> {

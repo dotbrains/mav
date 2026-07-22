@@ -1,6 +1,7 @@
 use super::super::*;
 use super::MarkdownElement;
 use super::layout::collect_image_alt_text;
+use crate::builder::alignment_to_text_align;
 
 impl MarkdownElement {
     #[allow(clippy::too_many_arguments)]
@@ -30,9 +31,9 @@ impl MarkdownElement {
                     &parsed_markdown.source,
                 );
                 if let Some(image) = images.get(&range.start) {
-                    current_img_block_range = Some(range.clone());
+                    *current_img_block_range = Some(range.clone());
                     self.push_markdown_image(
-                        &mut builder,
+                        builder,
                         range,
                         image.clone().into(),
                         dest_url.clone(),
@@ -45,9 +46,9 @@ impl MarkdownElement {
                     .as_ref()
                     .and_then(|resolve| resolve(dest_url.as_ref()))
                 {
-                    current_img_block_range = Some(range.clone());
+                    *current_img_block_range = Some(range.clone());
                     self.push_markdown_image(
-                        &mut builder,
+                        builder,
                         range,
                         source,
                         dest_url.clone(),
@@ -62,12 +63,7 @@ impl MarkdownElement {
                     .table
                     .current_cell_alignment()
                     .and_then(alignment_to_text_align);
-                self.push_markdown_paragraph(
-                    &mut builder,
-                    range,
-                    markdown_end,
-                    text_align_override,
-                );
+                self.push_markdown_paragraph(builder, range, markdown_end, text_align_override);
             }
             MarkdownTag::Heading { level, .. } => {
                 let text_align_override = builder
@@ -75,7 +71,7 @@ impl MarkdownElement {
                     .current_cell_alignment()
                     .and_then(alignment_to_text_align);
                 self.push_markdown_heading(
-                    &mut builder,
+                    builder,
                     *level,
                     range,
                     markdown_end,
@@ -83,7 +79,7 @@ impl MarkdownElement {
                 );
             }
             MarkdownTag::BlockQuote(kind) => {
-                self.push_markdown_block_quote(&mut builder, *kind, range, markdown_end);
+                self.push_markdown_block_quote(builder, *kind, range, markdown_end);
             }
             MarkdownTag::CodeBlock { kind, .. } => {
                 if render_mermaid_diagrams
@@ -110,8 +106,8 @@ impl MarkdownElement {
                             copy_button_visibility,
                         ),
                     );
-                    rendered_mermaid_block = true;
-                    continue;
+                    *rendered_mermaid_block = true;
+                    return;
                 }
 
                 let language = match kind {
@@ -198,8 +194,8 @@ impl MarkdownElement {
             MarkdownTag::HtmlBlock => {
                 builder.push_div(div(), range, markdown_end);
                 if let Some(block) = parsed_markdown.html_blocks.get(&range.start) {
-                    self.render_html_block(block, &mut builder, markdown_end, cx);
-                    handled_html_block = true;
+                    self.render_html_block(block, builder, markdown_end, cx);
+                    *handled_html_block = true;
                 }
             }
             MarkdownTag::List(bullet_index) => {
@@ -237,7 +233,7 @@ impl MarkdownElement {
                 } else {
                     div().child("•").into_any_element()
                 };
-                self.push_markdown_list_item(&mut builder, bullet, range, markdown_end);
+                self.push_markdown_list_item(builder, bullet, range, markdown_end);
             }
             MarkdownTag::Emphasis => builder.push_text_style(TextStyleRefinement {
                 font_style: Some(FontStyle::Italic),
@@ -299,13 +295,13 @@ impl MarkdownElement {
             MarkdownTag::MetadataBlock(_) => {
                 if let Some(metadata_block) = parsed_markdown.metadata_blocks.get(&range.start) {
                     self.push_metadata_block(
-                        &mut builder,
+                        builder,
                         &parsed_markdown.source,
                         metadata_block,
                         markdown_end,
                         cx,
                     );
-                    rendered_metadata_block = true;
+                    *rendered_metadata_block = true;
                 }
             }
             MarkdownTag::Table(alignments) => {

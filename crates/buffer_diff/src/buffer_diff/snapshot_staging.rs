@@ -1,7 +1,7 @@
 use super::*;
 
 impl BufferDiffSnapshot {
-    fn stage_or_unstage_hunks_impl(
+    pub(super) fn stage_or_unstage_hunks_impl(
         &mut self,
         unstaged_diff: &Self,
         stage: bool,
@@ -222,7 +222,7 @@ impl BufferDiffSnapshot {
 }
 
 impl BufferDiffSnapshot {
-    fn hunks_intersecting_range_impl<'a>(
+    pub(super) fn hunks_intersecting_range_impl<'a>(
         &'a self,
         filter: impl 'a + Fn(&DiffHunkSummary) -> bool,
         buffer: &'a text::BufferSnapshot,
@@ -344,7 +344,7 @@ impl BufferDiffSnapshot {
         })
     }
 
-    fn hunks_intersecting_range_rev_impl<'a>(
+    pub(super) fn hunks_intersecting_range_rev_impl<'a>(
         &'a self,
         filter: impl 'a + Fn(&DiffHunkSummary) -> bool,
         buffer: &'a text::BufferSnapshot,

@@ -6,7 +6,7 @@ pub enum AnyDiv {
 }
 
 impl AnyDiv {
-    fn into_any_element(self) -> AnyElement {
+    pub(super) fn into_any_element(self) -> AnyElement {
         match self {
             Self::Div(div) => div.into_any_element(),
             Self::Stateful(div) => div.into_any_element(),

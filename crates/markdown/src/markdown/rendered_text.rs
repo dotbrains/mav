@@ -1,16 +1,16 @@
 use super::rendered_line::RenderedLine;
 use super::*;
 
-pub(super) struct RenderedMarkdown {
-    element: AnyElement,
-    text: RenderedText,
+pub struct RenderedMarkdown {
+    pub(super) element: AnyElement,
+    pub(super) text: RenderedText,
 }
 
 #[derive(Clone)]
 pub(super) struct RenderedText {
-    lines: Rc<[RenderedLine]>,
-    links: Rc<[RenderedLink]>,
-    footnote_refs: Rc<[RenderedFootnoteRef]>,
+    pub(super) lines: Rc<[RenderedLine]>,
+    pub(super) links: Rc<[RenderedLink]>,
+    pub(super) footnote_refs: Rc<[RenderedFootnoteRef]>,
 }
 
 struct WrappedLineSegment {

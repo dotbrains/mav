@@ -86,8 +86,8 @@ pub(super) struct MarkdownElementBuilder {
     pub(super) syntax_theme: Arc<SyntaxTheme>,
 }
 
-struct DivStackEntry {
-    div: AnyDiv,
+pub(super) struct DivStackEntry {
+    pub(super) div: AnyDiv,
     line_break_mode: LineBreakMode,
 }
 
@@ -107,13 +107,13 @@ impl DivStackEntry {
 }
 
 #[derive(Default)]
-struct PendingLine {
-    text: String,
-    runs: Vec<TextRun>,
-    source_mappings: Vec<SourceMapping>,
+pub(super) struct PendingLine {
+    pub(super) text: String,
+    pub(super) runs: Vec<TextRun>,
+    pub(super) source_mappings: Vec<SourceMapping>,
 }
 
-struct ListStackEntry {
+pub(super) struct ListStackEntry {
     bullet_index: Option<u64>,
 }
 
