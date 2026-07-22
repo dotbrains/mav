@@ -307,3 +307,54 @@ async fn test_store_cache_updates_after_save_and_delete(cx: &mut TestAppContext)
         assert_eq!(second_path_entries, vec!["session-1"]);
     });
 }
+
+#[test]
+fn test_dedup_db_operations_keeps_latest_operation_for_session() {
+    let now = Utc::now();
+
+    let meta = make_metadata("session-1", "First Thread", now, PathList::default());
+    let thread_id = meta.thread_id;
+    let operations = vec![DbOperation::Upsert(meta), DbOperation::Delete(thread_id)];
+
+    let deduped = ThreadMetadataStore::dedup_db_operations(operations);
+
+    assert_eq!(deduped.len(), 1);
+    assert_eq!(deduped[0], DbOperation::Delete(thread_id));
+}
+
+#[test]
+fn test_dedup_db_operations_keeps_latest_insert_for_same_session() {
+    let now = Utc::now();
+    let later = now + chrono::Duration::seconds(1);
+
+    let old_metadata = make_metadata("session-1", "Old Title", now, PathList::default());
+    let shared_thread_id = old_metadata.thread_id;
+    let new_metadata = ThreadMetadata {
+        thread_id: shared_thread_id,
+        ..make_metadata("session-1", "New Title", later, PathList::default())
+    };
+
+    let deduped = ThreadMetadataStore::dedup_db_operations(vec![
+        DbOperation::Upsert(old_metadata),
+        DbOperation::Upsert(new_metadata.clone()),
+    ]);
+
+    assert_eq!(deduped.len(), 1);
+    assert_eq!(deduped[0], DbOperation::Upsert(new_metadata));
+}
+
+#[test]
+fn test_dedup_db_operations_preserves_distinct_sessions() {
+    let now = Utc::now();
+
+    let metadata1 = make_metadata("session-1", "First Thread", now, PathList::default());
+    let metadata2 = make_metadata("session-2", "Second Thread", now, PathList::default());
+    let deduped = ThreadMetadataStore::dedup_db_operations(vec![
+        DbOperation::Upsert(metadata1.clone()),
+        DbOperation::Upsert(metadata2.clone()),
+    ]);
+
+    assert_eq!(deduped.len(), 2);
+    assert!(deduped.contains(&DbOperation::Upsert(metadata1)));
+    assert!(deduped.contains(&DbOperation::Upsert(metadata2)));
+}
