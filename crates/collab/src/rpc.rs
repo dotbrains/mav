@@ -1,7 +1,10 @@
 mod connection_pool;
+#[path = "rpc/headers.rs"]
+mod headers;
 #[path = "rpc/updates.rs"]
 mod updates;
 
+use headers::{AppVersionHeader, ProtocolVersion, ReleaseChannelHeader};
 use updates::*;
 
 use crate::api::{CloudflareIpCountryHeader, SystemIdHeader};
@@ -27,7 +30,6 @@ use axum::{
         ConnectInfo, WebSocketUpgrade,
         ws::{CloseFrame as AxumCloseFrame, Message as AxumMessage},
     },
-    headers::{Header, HeaderName},
     http::StatusCode,
     middleware,
     response::IntoResponse,
@@ -55,7 +57,6 @@ use rpc::{
         RequestMessage, ShareProject, UpdateChannelBufferCollaborators,
     },
 };
-use semver::Version;
 use std::{
     any::TypeId,
     future::Future,
@@ -1110,90 +1111,6 @@ fn broadcast<F>(
         {
             tracing::error!("failed to send to {:?} {}", receiver_id, error);
         }
-    }
-}
-
-pub struct ProtocolVersion(u32);
-
-impl Header for ProtocolVersion {
-    fn name() -> &'static HeaderName {
-        static MAV_PROTOCOL_VERSION: OnceLock<HeaderName> = OnceLock::new();
-        MAV_PROTOCOL_VERSION.get_or_init(|| HeaderName::from_static("x-mav-protocol-version"))
-    }
-
-    fn decode<'i, I>(values: &mut I) -> Result<Self, axum::headers::Error>
-    where
-        Self: Sized,
-        I: Iterator<Item = &'i axum::http::HeaderValue>,
-    {
-        let version = values
-            .next()
-            .ok_or_else(axum::headers::Error::invalid)?
-            .to_str()
-            .map_err(|_| axum::headers::Error::invalid())?
-            .parse()
-            .map_err(|_| axum::headers::Error::invalid())?;
-        Ok(Self(version))
-    }
-
-    fn encode<E: Extend<axum::http::HeaderValue>>(&self, values: &mut E) {
-        values.extend([self.0.to_string().parse().unwrap()]);
-    }
-}
-
-pub struct AppVersionHeader(Version);
-impl Header for AppVersionHeader {
-    fn name() -> &'static HeaderName {
-        static MAV_APP_VERSION: OnceLock<HeaderName> = OnceLock::new();
-        MAV_APP_VERSION.get_or_init(|| HeaderName::from_static("x-mav-app-version"))
-    }
-
-    fn decode<'i, I>(values: &mut I) -> Result<Self, axum::headers::Error>
-    where
-        Self: Sized,
-        I: Iterator<Item = &'i axum::http::HeaderValue>,
-    {
-        let version = values
-            .next()
-            .ok_or_else(axum::headers::Error::invalid)?
-            .to_str()
-            .map_err(|_| axum::headers::Error::invalid())?
-            .parse()
-            .map_err(|_| axum::headers::Error::invalid())?;
-        Ok(Self(version))
-    }
-
-    fn encode<E: Extend<axum::http::HeaderValue>>(&self, values: &mut E) {
-        values.extend([self.0.to_string().parse().unwrap()]);
-    }
-}
-
-#[derive(Debug)]
-pub struct ReleaseChannelHeader(String);
-
-impl Header for ReleaseChannelHeader {
-    fn name() -> &'static HeaderName {
-        static MAV_RELEASE_CHANNEL: OnceLock<HeaderName> = OnceLock::new();
-        MAV_RELEASE_CHANNEL.get_or_init(|| HeaderName::from_static("x-mav-release-channel"))
-    }
-
-    fn decode<'i, I>(values: &mut I) -> Result<Self, axum::headers::Error>
-    where
-        Self: Sized,
-        I: Iterator<Item = &'i axum::http::HeaderValue>,
-    {
-        Ok(Self(
-            values
-                .next()
-                .ok_or_else(axum::headers::Error::invalid)?
-                .to_str()
-                .map_err(|_| axum::headers::Error::invalid())?
-                .to_owned(),
-        ))
-    }
-
-    fn encode<E: Extend<axum::http::HeaderValue>>(&self, values: &mut E) {
-        values.extend([self.0.parse().unwrap()]);
     }
 }
 
