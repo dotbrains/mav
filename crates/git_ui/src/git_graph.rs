@@ -19,10 +19,9 @@ use git::{
 use gpui::{
     Action, Anchor, AnyElement, App, Bounds, ClickEvent, ClipboardItem, DefiniteLength,
     DismissEvent, DragMoveEvent, ElementId, Empty, Entity, EventEmitter, FocusHandle, Focusable,
-    Hsla, MouseButton, MouseDownEvent, PathBuilder, Pixels, Point, ScrollStrategy,
-    ScrollWheelEvent, SharedString, Subscription, Task, TextStyleRefinement,
-    UniformListScrollHandle, WeakEntity, Window, actions, anchored, deferred, point, prelude::*,
-    px, uniform_list,
+    MouseButton, MouseDownEvent, PathBuilder, Pixels, Point, ScrollStrategy, ScrollWheelEvent,
+    SharedString, Subscription, Task, TextStyleRefinement, UniformListScrollHandle, WeakEntity,
+    Window, actions, anchored, deferred, point, prelude::*, px, uniform_list,
 };
 use language::line_diff;
 use menu::{Cancel, SelectFirst, SelectLast, SelectNext, SelectPrevious};
@@ -43,11 +42,11 @@ use std::{
     ops::Range,
     rc::Rc,
     sync::{Arc, OnceLock},
-    time::{Duration, Instant},
+    time::Duration,
 };
 use task::{ResolvedTask, TaskContext, TaskVariables, VariableName};
 use theme::AccentColors;
-use time::{OffsetDateTime, UtcOffset, format_description::BorrowedFormatItem};
+use time::{OffsetDateTime, UtcOffset};
 use ui::{
     Chip, ColumnWidthConfig, CommonAnimationExt as _, ContextMenu, ContextMenuEntry, DiffStat,
     Divider, HeaderResizeInfo, HighlightedLabel, ListItem, ListItemSpacing,
@@ -61,38 +60,9 @@ use workspace::{
     item::{Item, ItemEvent, TabTooltipContent},
 };
 
-const COMMIT_CIRCLE_RADIUS: Pixels = px(3.5);
-const COMMIT_CIRCLE_STROKE_WIDTH: Pixels = px(1.5);
-const LANE_WIDTH: Pixels = px(16.0);
-const LEFT_PADDING: Pixels = px(12.0);
-const LINE_WIDTH: Pixels = px(1.5);
 const RESIZE_HANDLE_WIDTH: f32 = 8.0;
-const COPIED_STATE_DURATION: Duration = Duration::from_secs(2);
 const COMMIT_TAG_LIST_WIDTH_IN_REMS: Rems = rems(10.);
 const CUSTOM_GIT_COMMANDS_DOCS_SLUG: &str = "tasks#custom-git-commands";
-// Extra vertical breathing room added to the UI line height when computing
-// the git graph's row height, so commit dots and lines have space around them.
-const ROW_VERTICAL_PADDING: Pixels = px(4.0);
-
-struct CopiedState {
-    copied_at: Option<Instant>,
-}
-
-impl CopiedState {
-    fn new(_window: &mut Window, _cx: &mut Context<Self>) -> Self {
-        Self { copied_at: None }
-    }
-
-    fn is_copied(&self) -> bool {
-        self.copied_at
-            .map(|t| t.elapsed() < COPIED_STATE_DURATION)
-            .unwrap_or(false)
-    }
-
-    fn mark_copied(&mut self) {
-        self.copied_at = Some(Instant::now());
-    }
-}
 
 struct DraggedSplitHandle;
 
@@ -105,11 +75,20 @@ use commit_tag_picker::*;
 mod changed_files;
 use changed_files::*;
 
+mod copied_state;
+use copied_state::*;
+
 mod graph_data;
 use graph_data::*;
 
+mod graph_layout;
+use graph_layout::*;
+
 mod state;
 use state::*;
+
+mod time_format;
+use time_format::*;
 
 #[cfg(any(test, feature = "test-support"))]
 mod random_dag;
@@ -147,70 +126,6 @@ actions!(
 #[action(namespace = git_graph)]
 pub struct OpenAtCommit {
     pub sha: String,
-}
-
-fn timestamp_format() -> &'static [BorrowedFormatItem<'static>] {
-    static FORMAT: OnceLock<Vec<BorrowedFormatItem<'static>>> = OnceLock::new();
-    FORMAT.get_or_init(|| {
-        time::format_description::parse("[day] [month repr:short] [year] [hour]:[minute]")
-            .unwrap_or_default()
-    })
-}
-
-fn format_timestamp(timestamp: i64) -> String {
-    let Ok(datetime) = OffsetDateTime::from_unix_timestamp(timestamp) else {
-        return "Unknown".to_string();
-    };
-
-    let local_offset = UtcOffset::current_local_offset().unwrap_or(UtcOffset::UTC);
-    let local_datetime = datetime.to_offset(local_offset);
-
-    local_datetime
-        .format(timestamp_format())
-        .unwrap_or_default()
-}
-
-fn lane_center_x(bounds: Bounds<Pixels>, lane: f32) -> Pixels {
-    bounds.origin.x + LEFT_PADDING + lane * LANE_WIDTH + LANE_WIDTH / 2.0
-}
-
-fn to_row_center(
-    to_row: usize,
-    row_height: Pixels,
-    scroll_offset: Pixels,
-    bounds: Bounds<Pixels>,
-) -> Pixels {
-    bounds.origin.y + to_row as f32 * row_height + row_height / 2.0 - scroll_offset
-}
-
-fn draw_commit_circle(center_x: Pixels, center_y: Pixels, color: Hsla, window: &mut Window) {
-    let radius = COMMIT_CIRCLE_RADIUS;
-
-    let mut builder = PathBuilder::fill();
-
-    // Start at the rightmost point of the circle
-    builder.move_to(point(center_x + radius, center_y));
-
-    // Draw the circle using two arc_to calls (top half, then bottom half)
-    builder.arc_to(
-        point(radius, radius),
-        px(0.),
-        false,
-        true,
-        point(center_x - radius, center_y),
-    );
-    builder.arc_to(
-        point(radius, radius),
-        px(0.),
-        false,
-        true,
-        point(center_x + radius, center_y),
-    );
-    builder.close();
-
-    if let Ok(path) = builder.build() {
-        window.paint_path(path, color);
-    }
 }
 
 fn compute_diff_stats(diff: &CommitDiff) -> (usize, usize) {
