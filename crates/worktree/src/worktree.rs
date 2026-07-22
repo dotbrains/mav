@@ -4,6 +4,7 @@ mod worktree_file;
 mod worktree_repository;
 mod worktree_scan_state;
 mod worktree_settings;
+mod worktree_state;
 mod worktree_types;
 
 use ::ignore::gitignore::{Gitignore, GitignoreBuilder};
@@ -86,6 +87,7 @@ use worktree_scan_state::{
     UpdateObservationState,
 };
 pub use worktree_settings::WorktreeSettings;
+use worktree_state::{LocalSnapshot, LocalWorktree, RemoteWorktree, Snapshot};
 pub use worktree_types::{
     CreatedEntry, Event, LoadedBinaryFile, LoadedFile, ProjectEntryId, WorkDirectory,
 };
@@ -109,87 +111,6 @@ pub const FS_WATCH_LATENCY: Duration = Duration::from_millis(100);
 pub enum Worktree {
     Local(LocalWorktree),
     Remote(RemoteWorktree),
-}
-
-pub struct LocalWorktree {
-    snapshot: LocalSnapshot,
-    scan_requests_tx: async_channel::Sender<ScanRequest>,
-    path_prefixes_to_scan_tx: async_channel::Sender<PathPrefixScanRequest>,
-    is_scanning: (watch::Sender<bool>, watch::Receiver<bool>),
-    snapshot_subscriptions: VecDeque<(usize, oneshot::Sender<()>)>,
-    _background_scanner_tasks: Vec<Task<()>>,
-    update_observer: Option<UpdateObservationState>,
-    fs: Arc<dyn Fs>,
-    fs_case_sensitive: bool,
-    visible: bool,
-    next_entry_id: Arc<AtomicUsize>,
-    settings: WorktreeSettings,
-    share_private_files: bool,
-    scanning_enabled: bool,
-    force_defer_watch: bool,
-}
-
-pub struct RemoteWorktree {
-    snapshot: Snapshot,
-    background_snapshot: Arc<Mutex<(Snapshot, Vec<proto::UpdateWorktree>)>>,
-    project_id: u64,
-    client: AnyProtoClient,
-    file_scan_inclusions: PathMatcher,
-    updates_tx: Option<UnboundedSender<proto::UpdateWorktree>>,
-    update_observer: Option<mpsc::UnboundedSender<proto::UpdateWorktree>>,
-    snapshot_subscriptions: VecDeque<(usize, oneshot::Sender<()>)>,
-    replica_id: ReplicaId,
-    visible: bool,
-    disconnected: bool,
-    received_initial_update: bool,
-}
-
-#[derive(Clone)]
-pub struct Snapshot {
-    id: WorktreeId,
-    /// The absolute path of the worktree root.
-    abs_path: Arc<SanitizedPath>,
-    path_style: PathStyle,
-    root_name: Arc<RelPath>,
-    root_char_bag: CharBag,
-    entries_by_path: SumTree<Entry>,
-    entries_by_id: SumTree<PathEntry>,
-    root_repo_common_dir: Option<Arc<SanitizedPath>>,
-    always_included_entries: Vec<Arc<RelPath>>,
-
-    /// A number that increases every time the worktree begins scanning
-    /// a set of paths from the filesystem. This scanning could be caused
-    /// by some operation performed on the worktree, such as reading or
-    /// writing a file, or by an event reported by the filesystem.
-    scan_id: usize,
-
-    /// The latest scan id that has completed, and whose preceding scans
-    /// have all completed. The current `scan_id` could be more than one
-    /// greater than the `completed_scan_id` if operations are performed
-    /// on the worktree while it is processing a file-system event.
-    completed_scan_id: usize,
-}
-
-#[derive(Clone)]
-pub struct LocalSnapshot {
-    snapshot: Snapshot,
-    global_gitignore: Option<Arc<Gitignore>>,
-    /// Exclude files for all git repositories in the worktree, indexed by their absolute path.
-    /// The boolean indicates whether the gitignore needs to be updated.
-    repo_exclude_by_work_dir_abs_path: HashMap<Arc<Path>, (Arc<Gitignore>, bool)>,
-    /// All of the gitignore files in the worktree, indexed by their absolute path.
-    /// The boolean indicates whether the gitignore needs to be updated.
-    ignores_by_parent_abs_path: HashMap<Arc<Path>, (Arc<Gitignore>, bool)>,
-    /// All of the git repositories in the worktree, indexed by the project entry
-    /// id of their parent directory.
-    git_repositories: TreeMap<ProjectEntryId, LocalRepositoryEntry>,
-    /// The file handle of the worktree root
-    /// (so we can find it after it's been moved)
-    root_file_handle: Option<Arc<dyn fs::FileHandle>>,
-    /// Maps canonical absolute paths of externally watched symlinked directories
-    /// to their relative paths within the worktree, used to translate FSEvents
-    /// canonical-path events back to worktree-relative paths.
-    external_canonical_to_relative: BTreeMap<Arc<Path>, Arc<RelPath>>,
 }
 
 impl Deref for LocalRepositoryEntry {
