@@ -1,3 +1,4 @@
+mod active_language;
 mod components;
 #[path = "settings_ui/navigation.rs"]
 mod navigation;
@@ -42,7 +43,7 @@ use std::{
     ops::Range,
     path::PathBuf,
     rc::Rc,
-    sync::{Arc, LazyLock, RwLock},
+    sync::Arc,
     time::Duration,
 };
 use theme_settings::ThemeSettings;
@@ -62,6 +63,8 @@ use workspace::{
     client_side_decorations,
 };
 
+pub(crate) use crate::active_language::active_language;
+use crate::active_language::active_language_mut;
 use crate::components::{
     EnumVariantDropdown, NumberField, NumberFieldMode, NumberFieldType, SettingsInputField,
     SettingsSectionHeader, font_picker, icon_theme_picker, render_ollama_model_picker,
@@ -549,26 +552,6 @@ fn open_settings_editor_with(
         )
         .log_err();
     });
-}
-
-/// The current sub page path that is selected.
-/// If this is empty the selected page is rendered,
-/// otherwise the last sub page gets rendered.
-///
-/// Global so that `pick` and `write` callbacks can access it
-/// and use it to dynamically render sub pages (e.g. for language settings)
-static ACTIVE_LANGUAGE: LazyLock<RwLock<Option<SharedString>>> =
-    LazyLock::new(|| RwLock::new(Option::None));
-
-fn active_language() -> Option<SharedString> {
-    ACTIVE_LANGUAGE
-        .read()
-        .ok()
-        .and_then(|language| language.clone())
-}
-
-fn active_language_mut() -> Option<std::sync::RwLockWriteGuard<'static, Option<SharedString>>> {
-    ACTIVE_LANGUAGE.write().ok()
 }
 
 pub struct SettingsWindow {
