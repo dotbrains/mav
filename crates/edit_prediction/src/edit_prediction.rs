@@ -78,6 +78,7 @@ pub mod fim;
 mod license_detection;
 pub mod mercury;
 pub mod metrics;
+mod model_types;
 pub mod ollama;
 mod onboarding_modal;
 pub mod open_ai_response;
@@ -145,15 +146,11 @@ struct EditPredictionStoreGlobal(Entity<EditPredictionStore>);
 
 impl Global for EditPredictionStoreGlobal {}
 
-/// Configuration for using the raw Zeta2 endpoint.
-/// When set, the client uses the raw endpoint and constructs the prompt itself.
-/// The version is also used as the Baseten environment name (lowercased).
-#[derive(Clone)]
-pub struct Zeta2RawConfig {
-    pub model_id: Option<String>,
-    pub environment: Option<String>,
-    pub format: ZetaFormat,
-}
+pub use model_types::{
+    ContextRetrievalFinishedDebugEvent, ContextRetrievalStartedDebugEvent, DebugEvent,
+    EditPredictionFinishedDebugEvent, EditPredictionModel, EditPredictionModelInput,
+    EditPredictionStartedDebugEvent, Zeta2RawConfig,
+};
 
 pub struct EditPredictionStore {
     client: Arc<Client>,
@@ -181,66 +178,6 @@ pub struct EditPredictionStore {
 pub(crate) struct EditPredictionRejectionPayload {
     rejection: EditPredictionRejection,
     organization_id: Option<OrganizationId>,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub enum EditPredictionModel {
-    Zeta,
-    Fim { format: EditPredictionPromptFormat },
-    Mercury,
-}
-
-pub struct EditPredictionModelInput {
-    project: Entity<Project>,
-    buffer: Entity<Buffer>,
-    snapshot: BufferSnapshot,
-    position: Anchor,
-    events: Vec<Arc<zeta_prompt::Event>>,
-    related_files: Vec<RelatedFile>,
-    editable_context: Option<Task<anyhow::Result<Vec<RelatedFile>>>>,
-    mode: PredictEditsMode,
-    trigger: PredictEditsRequestTrigger,
-    diagnostic_search_range: Range<Point>,
-    debug_tx: Option<mpsc::UnboundedSender<DebugEvent>>,
-    can_collect_data: bool,
-    is_open_source: bool,
-    allow_jump: bool,
-}
-
-#[derive(Debug)]
-pub enum DebugEvent {
-    ContextRetrievalStarted(ContextRetrievalStartedDebugEvent),
-    ContextRetrievalFinished(ContextRetrievalFinishedDebugEvent),
-    EditPredictionStarted(EditPredictionStartedDebugEvent),
-    EditPredictionFinished(EditPredictionFinishedDebugEvent),
-}
-
-#[derive(Debug)]
-pub struct ContextRetrievalStartedDebugEvent {
-    pub project_entity_id: EntityId,
-    pub timestamp: Instant,
-    pub search_prompt: String,
-}
-
-#[derive(Debug)]
-pub struct ContextRetrievalFinishedDebugEvent {
-    pub project_entity_id: EntityId,
-    pub timestamp: Instant,
-    pub metadata: Vec<(&'static str, SharedString)>,
-}
-
-#[derive(Debug)]
-pub struct EditPredictionStartedDebugEvent {
-    pub buffer: WeakEntity<Buffer>,
-    pub position: Anchor,
-    pub prompt: Option<String>,
-}
-
-#[derive(Debug)]
-pub struct EditPredictionFinishedDebugEvent {
-    pub buffer: WeakEntity<Buffer>,
-    pub position: Anchor,
-    pub model_output: Option<String>,
 }
 
 /// An event with associated metadata for reconstructing buffer state.
