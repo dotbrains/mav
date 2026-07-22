@@ -1,5 +1,214 @@
 use super::*;
 
+pub(crate) type AnyObserver = Box<dyn FnMut(&mut Window, &mut App) -> bool + 'static>;
+
+pub(crate) type AnyWindowFocusListener =
+    Box<dyn FnMut(&WindowFocusEvent, &mut Window, &mut App) -> bool + 'static>;
+
+pub(crate) struct WindowFocusEvent {
+    pub(crate) previous_focus_path: SmallVec<[FocusId; 8]>,
+    pub(crate) current_focus_path: SmallVec<[FocusId; 8]>,
+}
+
+impl WindowFocusEvent {
+    pub fn is_focus_in(&self, focus_id: FocusId) -> bool {
+        !self.previous_focus_path.contains(&focus_id) && self.current_focus_path.contains(&focus_id)
+    }
+
+    pub fn is_focus_out(&self, focus_id: FocusId) -> bool {
+        self.previous_focus_path.contains(&focus_id) && !self.current_focus_path.contains(&focus_id)
+    }
+}
+
+pub(crate) type FrameCallback = Box<dyn FnOnce(&mut Window, &mut App)>;
+
+pub(crate) type AnyMouseListener =
+    Box<dyn FnMut(&dyn Any, DispatchPhase, &mut Window, &mut App) + 'static>;
+
+#[derive(Clone)]
+pub(crate) struct CursorStyleRequest {
+    pub(crate) hitbox_id: Option<HitboxId>,
+    pub(crate) style: CursorStyle,
+}
+
+#[derive(Default, Eq, PartialEq)]
+pub(crate) struct HitTest {
+    pub(crate) ids: SmallVec<[HitboxId; 8]>,
+    pub(crate) hover_hitbox_count: usize,
+}
+
+pub(crate) struct DeferredDraw {
+    pub(crate) current_view: EntityId,
+    pub(crate) priority: usize,
+    pub(crate) parent_node: DispatchNodeId,
+    pub(crate) element_id_stack: SmallVec<[ElementId; 32]>,
+    pub(crate) text_style_stack: Vec<TextStyleRefinement>,
+    pub(crate) content_mask: Option<ContentMask<Pixels>>,
+    pub(crate) rem_size: Pixels,
+    pub(crate) element: Option<AnyElement>,
+    pub(crate) absolute_offset: Point<Pixels>,
+    pub(crate) prepaint_range: Range<PrepaintStateIndex>,
+    pub(crate) paint_range: Range<PaintIndex>,
+}
+
+pub(crate) struct Frame {
+    pub(crate) focus: Option<FocusId>,
+    pub(crate) window_active: bool,
+    pub(crate) element_states: FxHashMap<(GlobalElementId, TypeId), ElementStateBox>,
+    pub(crate) accessed_element_states: Vec<(GlobalElementId, TypeId)>,
+    pub(crate) mouse_listeners: Vec<Option<AnyMouseListener>>,
+    pub(crate) dispatch_tree: DispatchTree,
+    pub(crate) scene: Scene,
+    pub(crate) hitboxes: Vec<Hitbox>,
+    pub(crate) window_control_hitboxes: Vec<(WindowControlArea, Hitbox)>,
+    pub(crate) deferred_draws: Vec<DeferredDraw>,
+    pub(crate) input_handlers: Vec<Option<PlatformInputHandler>>,
+    pub(crate) tooltip_requests: Vec<Option<TooltipRequest>>,
+    pub(crate) cursor_styles: Vec<CursorStyleRequest>,
+    #[cfg(any(test, feature = "test-support"))]
+    pub(crate) debug_bounds: FxHashMap<String, Bounds<Pixels>>,
+    #[cfg(any(feature = "inspector", debug_assertions))]
+    pub(crate) next_inspector_instance_ids: FxHashMap<Rc<crate::InspectorElementPath>, usize>,
+    #[cfg(any(feature = "inspector", debug_assertions))]
+    pub(crate) inspector_hitboxes: FxHashMap<HitboxId, crate::InspectorElementId>,
+    pub(crate) tab_stops: TabStopMap,
+}
+
+#[derive(Clone, Default)]
+pub(crate) struct PrepaintStateIndex {
+    pub(crate) hitboxes_index: usize,
+    pub(crate) tooltips_index: usize,
+    pub(crate) deferred_draws_index: usize,
+    pub(crate) dispatch_tree_index: usize,
+    pub(crate) accessed_element_states_index: usize,
+    pub(crate) line_layout_index: LineLayoutIndex,
+}
+
+#[derive(Clone, Default)]
+pub(crate) struct PaintIndex {
+    pub(crate) scene_index: usize,
+    pub(crate) mouse_listeners_index: usize,
+    pub(crate) input_handlers_index: usize,
+    pub(crate) cursor_styles_index: usize,
+    pub(crate) accessed_element_states_index: usize,
+    pub(crate) tab_handle_index: usize,
+    pub(crate) line_layout_index: LineLayoutIndex,
+}
+
+impl Frame {
+    pub(crate) fn new(dispatch_tree: DispatchTree) -> Self {
+        Frame {
+            focus: None,
+            window_active: false,
+            element_states: FxHashMap::default(),
+            accessed_element_states: Vec::new(),
+            mouse_listeners: Vec::new(),
+            dispatch_tree,
+            scene: Scene::default(),
+            hitboxes: Vec::new(),
+            window_control_hitboxes: Vec::new(),
+            deferred_draws: Vec::new(),
+            input_handlers: Vec::new(),
+            tooltip_requests: Vec::new(),
+            cursor_styles: Vec::new(),
+
+            #[cfg(any(test, feature = "test-support"))]
+            debug_bounds: FxHashMap::default(),
+
+            #[cfg(any(feature = "inspector", debug_assertions))]
+            next_inspector_instance_ids: FxHashMap::default(),
+
+            #[cfg(any(feature = "inspector", debug_assertions))]
+            inspector_hitboxes: FxHashMap::default(),
+            tab_stops: TabStopMap::default(),
+        }
+    }
+
+    pub(crate) fn clear(&mut self) {
+        self.element_states.clear();
+        self.accessed_element_states.clear();
+        self.mouse_listeners.clear();
+        self.dispatch_tree.clear();
+        self.scene.clear();
+        self.input_handlers.clear();
+        self.tooltip_requests.clear();
+        self.cursor_styles.clear();
+        self.hitboxes.clear();
+        self.window_control_hitboxes.clear();
+        self.deferred_draws.clear();
+        self.tab_stops.clear();
+        self.focus = None;
+
+        #[cfg(any(test, feature = "test-support"))]
+        {
+            self.debug_bounds.clear();
+        }
+
+        #[cfg(any(feature = "inspector", debug_assertions))]
+        {
+            self.next_inspector_instance_ids.clear();
+            self.inspector_hitboxes.clear();
+        }
+    }
+
+    pub(crate) fn cursor_style(&self, window: &Window) -> Option<CursorStyle> {
+        self.cursor_styles
+            .iter()
+            .rev()
+            .fold_while(None, |style, request| match request.hitbox_id {
+                None => Done(Some(request.style)),
+                Some(hitbox_id) => Continue(style.or_else(|| {
+                    hitbox_id
+                        .is_hovered_ignoring_last_input(window)
+                        .then_some(request.style)
+                })),
+            })
+            .into_inner()
+    }
+
+    pub(crate) fn hit_test(&self, position: Point<Pixels>) -> HitTest {
+        let mut set_hover_hitbox_count = false;
+        let mut hit_test = HitTest::default();
+        for hitbox in self.hitboxes.iter().rev() {
+            let bounds = hitbox.bounds.intersect(&hitbox.content_mask.bounds);
+            if bounds.contains(&position) {
+                hit_test.ids.push(hitbox.id);
+                if !set_hover_hitbox_count
+                    && hitbox.behavior == HitboxBehavior::BlockMouseExceptScroll
+                {
+                    hit_test.hover_hitbox_count = hit_test.ids.len();
+                    set_hover_hitbox_count = true;
+                }
+                if hitbox.behavior == HitboxBehavior::BlockMouse {
+                    break;
+                }
+            }
+        }
+        if !set_hover_hitbox_count {
+            hit_test.hover_hitbox_count = hit_test.ids.len();
+        }
+        hit_test
+    }
+
+    pub(crate) fn focus_path(&self) -> SmallVec<[FocusId; 8]> {
+        self.focus
+            .map(|focus_id| self.dispatch_tree.focus_path(focus_id))
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn finish(&mut self, prev_frame: &mut Self) {
+        for element_state_key in &self.accessed_element_states {
+            if let Some((element_state_key, element_state)) =
+                prev_frame.element_states.remove_entry(element_state_key)
+            {
+                self.element_states.insert(element_state_key, element_state);
+            }
+        }
+
+        self.scene.finish();
+    }
+}
+
 impl Window {
     pub(super) fn complete_frame(&self) {
         self.platform_window.completed_frame();
