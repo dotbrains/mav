@@ -77,6 +77,7 @@ mod macos_build {
             gpui_dir.join("src/color.rs"),
             gpui_dir.join("src/window.rs"),
             gpui_dir.join("src/platform.rs"),
+            gpui_dir.join("src/platform/atlas.rs"),
         ];
 
         // Source files from this crate
