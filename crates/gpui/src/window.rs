@@ -74,6 +74,7 @@ mod paint_media;
 mod paint_primitives;
 mod primitives;
 mod prompts;
+mod tooltip;
 
 pub use a11y::A11ySubtreeBuilder;
 pub use content_mask::ContentMask;
@@ -86,6 +87,8 @@ pub use handles::{AnyWindowHandle, WindowHandle, WindowId};
 pub use hitbox::{Hitbox, HitboxBehavior, HitboxId, WindowControlArea};
 pub(crate) use invalidation::WindowInvalidator;
 pub use primitives::{ElementId, PaintQuad, fill, outline, quad};
+pub use tooltip::TooltipId;
+pub(crate) use tooltip::{TooltipBounds, TooltipRequest};
 
 use self::a11y::A11y;
 #[cfg(not(target_family = "wasm"))]
@@ -176,34 +179,6 @@ pub(crate) struct CursorStyleRequest {
 pub(crate) struct HitTest {
     pub(crate) ids: SmallVec<[HitboxId; 8]>,
     pub(crate) hover_hitbox_count: usize,
-}
-
-/// An identifier for a tooltip.
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
-pub struct TooltipId(usize);
-
-impl TooltipId {
-    /// Checks if the tooltip is currently hovered.
-    pub fn is_hovered(&self, window: &Window) -> bool {
-        window
-            .tooltip_bounds
-            .as_ref()
-            .is_some_and(|tooltip_bounds| {
-                tooltip_bounds.id == *self
-                    && tooltip_bounds.bounds.contains(&window.mouse_position())
-            })
-    }
-}
-
-pub(crate) struct TooltipBounds {
-    id: TooltipId,
-    bounds: Bounds<Pixels>,
-}
-
-#[derive(Clone)]
-pub(crate) struct TooltipRequest {
-    id: TooltipId,
-    tooltip: AnyTooltip,
 }
 
 pub(crate) struct DeferredDraw {
