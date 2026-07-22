@@ -5,6 +5,7 @@ mod worktree_repository;
 mod worktree_scan_state;
 mod worktree_settings;
 mod worktree_state;
+mod worktree_traits;
 mod worktree_types;
 
 use ::ignore::gitignore::{Gitignore, GitignoreBuilder};
@@ -3171,163 +3172,6 @@ async fn is_dot_git(path: &Path, fs: &dyn Fs) -> bool {
     matches!(config_metadata, Ok(Some(_)))
 }
 
-async fn build_gitignore(abs_path: &Path, fs: &dyn Fs) -> Result<Gitignore> {
-    let parent = abs_path.parent().unwrap_or_else(|| Path::new("/"));
-    build_gitignore_with_root(abs_path, parent, fs).await
-}
-
-async fn build_gitignore_with_root(abs_path: &Path, root: &Path, fs: &dyn Fs) -> Result<Gitignore> {
-    let contents = fs
-        .load(abs_path)
-        .await
-        .with_context(|| format!("failed to load gitignore file at {}", abs_path.display()))?;
-    let mut builder = GitignoreBuilder::new(root);
-    for line in contents.lines() {
-        builder.add_line(Some(abs_path.into()), line)?;
-    }
-    Ok(builder.build()?)
-}
-
-impl Deref for Worktree {
-    type Target = Snapshot;
-
-    fn deref(&self) -> &Self::Target {
-        match self {
-            Worktree::Local(worktree) => &worktree.snapshot,
-            Worktree::Remote(worktree) => &worktree.snapshot,
-        }
-    }
-}
-
-impl Deref for LocalWorktree {
-    type Target = LocalSnapshot;
-
-    fn deref(&self) -> &Self::Target {
-        &self.snapshot
-    }
-}
-
-impl Deref for RemoteWorktree {
-    type Target = Snapshot;
-
-    fn deref(&self) -> &Self::Target {
-        &self.snapshot
-    }
-}
-
-impl fmt::Debug for LocalWorktree {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.snapshot.fmt(f)
-    }
-}
-
-impl fmt::Debug for Snapshot {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        struct EntriesById<'a>(&'a SumTree<PathEntry>);
-        struct EntriesByPath<'a>(&'a SumTree<Entry>);
-
-        impl fmt::Debug for EntriesByPath<'_> {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                f.debug_map()
-                    .entries(self.0.iter().map(|entry| (&entry.path, entry.id)))
-                    .finish()
-            }
-        }
-
-        impl fmt::Debug for EntriesById<'_> {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                f.debug_list().entries(self.0.iter()).finish()
-            }
-        }
-
-        f.debug_struct("Snapshot")
-            .field("id", &self.id)
-            .field("root_name", &self.root_name)
-            .field("entries_by_path", &EntriesByPath(&self.entries_by_path))
-            .field("entries_by_id", &EntriesById(&self.entries_by_id))
-            .finish()
-    }
-}
-
-async fn discover_ancestor_git_repo(
-    fs: Arc<dyn Fs>,
-    root_abs_path: &SanitizedPath,
-) -> (
-    HashMap<Arc<Path>, (Arc<Gitignore>, bool)>,
-    Option<Arc<Gitignore>>,
-    Option<(PathBuf, WorkDirectory)>,
-) {
-    let mut exclude = None;
-    let mut ignores = HashMap::default();
-    for (index, ancestor) in root_abs_path.as_path().ancestors().enumerate() {
-        if index != 0 {
-            if ancestor == paths::home_dir() {
-                // Unless $HOME is itself the worktree root, don't consider it as a
-                // containing git repository---expensive and likely unwanted.
-                break;
-            } else if let Ok(ignore) = build_gitignore(&ancestor.join(GITIGNORE), fs.as_ref()).await
-            {
-                ignores.insert(ancestor.into(), (ignore.into(), false));
-            }
-        }
-
-        let ancestor_dot_git = ancestor.join(DOT_GIT);
-        log::trace!("considering ancestor: {ancestor_dot_git:?}");
-        // Check whether the directory or file called `.git` exists (in the
-        // case of worktrees it's a file.)
-        if fs
-            .metadata(&ancestor_dot_git)
-            .await
-            .is_ok_and(|metadata| metadata.is_some())
-        {
-            let dot_git_abs_path = if index != 0 {
-                // We canonicalize, since the FS events use the canonicalized path.
-                match fs.canonicalize(&ancestor_dot_git).await.log_err() {
-                    Some(path) => path,
-                    None => continue,
-                }
-            } else {
-                ancestor_dot_git.clone()
-            };
-            let dot_git_abs_path: Arc<Path> = dot_git_abs_path.as_path().into();
-            let (_, common_dir_abs_path) = discover_git_paths(&dot_git_abs_path, fs.as_ref()).await;
-
-            let repo_exclude_abs_path = common_dir_abs_path.join(REPO_EXCLUDE);
-            if let Ok(repo_exclude) =
-                build_gitignore_with_root(&repo_exclude_abs_path, ancestor, fs.as_ref()).await
-            {
-                exclude = Some(Arc::new(repo_exclude));
-            }
-
-            if index != 0 {
-                let location_in_repo = root_abs_path
-                    .as_path()
-                    .strip_prefix(ancestor)
-                    .unwrap()
-                    .into();
-                log::info!("inserting parent git repo for this worktree: {location_in_repo:?}");
-                // We associate the external git repo with our root folder and
-                // also mark where in the git repo the root folder is located.
-                return (
-                    ignores,
-                    exclude,
-                    Some((
-                        dot_git_abs_path.as_ref().into(),
-                        WorkDirectory::AboveProject {
-                            absolute_path: ancestor.into(),
-                            location_in_repo,
-                        },
-                    )),
-                );
-            }
-
-            break;
-        }
-    }
-
-    (ignores, exclude, None)
-}
-
 mod worktree_diff;
 use worktree_diff::{build_diff, char_bag_for_path, merge_event_roots, swap_to_front};
 
@@ -3343,7 +3187,7 @@ use worktree_file_decoding::decode_file_text;
 
 mod worktree_git_discovery;
 pub use worktree_git_discovery::discover_root_repo_common_dir;
-use worktree_git_discovery::{NullWatcher, discover_git_paths};
+use worktree_git_discovery::{NullWatcher, build_gitignore, discover_git_paths};
 
 mod worktree_model_handle;
 pub use worktree_model_handle::WorktreeModelHandle;
