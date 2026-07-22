@@ -113,7 +113,6 @@
     2751	crates/gpui/src/elements/list.rs
     2750	crates/editor/src/hover_popover.rs
     2730	crates/mav/src/mav/open_listener.rs
-    2557	crates/debugger_ui/src/tests/debugger_panel.rs
     2534	crates/theme/src/default_colors.rs
     2529	crates/vim/src/normal.rs
     2528	crates/terminal_view/src/terminal_element.rs
