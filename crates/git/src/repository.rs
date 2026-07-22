@@ -39,12 +39,18 @@ use util::{ResultExt, paths};
 use uuid::Uuid;
 
 mod commit_data;
+mod exclude_override;
+mod log_options;
 mod types;
 mod worktree;
 
 pub use askpass::{AskPassDelegate, AskPassResult, AskPassSession};
 pub use commit_data::{CommitData, CommitDataReader, InitialGraphCommitData};
 use commit_data::{CommitDataRequest, parse_cat_file_commit};
+pub use exclude_override::GitExcludeOverride;
+pub use log_options::{
+    LogOrder, LogSource, SearchCommitArgs, commit_hash_search_query, delete_branch_flag,
+};
 pub use types::*;
 pub use worktree::{
     CreateWorktreeTarget, Worktree, original_repo_path_from_common_dir, parse_worktrees_from_str,
@@ -119,180 +125,6 @@ impl std::fmt::Display for FetchOptions {
             FetchOptions::All => write!(f, "--all"),
             FetchOptions::Remote(remote) => write!(f, "{}", remote.name),
         }
-    }
-}
-
-/// Modifies .git/info/exclude temporarily
-pub struct GitExcludeOverride {
-    git_exclude_path: PathBuf,
-    original_excludes: Option<String>,
-    added_excludes: Option<String>,
-}
-
-impl GitExcludeOverride {
-    const START_BLOCK_MARKER: &str = "\n\n#  ====== Auto-added by Mav: =======\n";
-    const END_BLOCK_MARKER: &str = "\n#  ====== End of auto-added by Mav =======\n";
-
-    pub async fn new(git_exclude_path: PathBuf) -> Result<Self> {
-        let original_excludes =
-            smol::fs::read_to_string(&git_exclude_path)
-                .await
-                .ok()
-                .map(|content| {
-                    // Auto-generated lines are normally cleaned up in
-                    // `restore_original()` or `drop()`, but may stuck in rare cases.
-                    // Make sure to remove them.
-                    Self::remove_auto_generated_block(&content)
-                });
-
-        Ok(GitExcludeOverride {
-            git_exclude_path,
-            original_excludes,
-            added_excludes: None,
-        })
-    }
-
-    pub async fn add_excludes(&mut self, excludes: &str) -> Result<()> {
-        self.added_excludes = Some(if let Some(ref already_added) = self.added_excludes {
-            format!("{already_added}\n{excludes}")
-        } else {
-            excludes.to_string()
-        });
-
-        let mut content = self.original_excludes.clone().unwrap_or_default();
-
-        content.push_str(Self::START_BLOCK_MARKER);
-        content.push_str(self.added_excludes.as_ref().unwrap());
-        content.push_str(Self::END_BLOCK_MARKER);
-
-        smol::fs::write(&self.git_exclude_path, content).await?;
-        Ok(())
-    }
-
-    pub async fn restore_original(&mut self) -> Result<()> {
-        if let Some(ref original) = self.original_excludes {
-            smol::fs::write(&self.git_exclude_path, original).await?;
-        } else if self.git_exclude_path.exists() {
-            smol::fs::remove_file(&self.git_exclude_path).await?;
-        }
-
-        self.added_excludes = None;
-
-        Ok(())
-    }
-
-    fn remove_auto_generated_block(content: &str) -> String {
-        let start_marker = Self::START_BLOCK_MARKER;
-        let end_marker = Self::END_BLOCK_MARKER;
-        let mut content = content.to_string();
-
-        let start_index = content.find(start_marker);
-        let end_index = content.rfind(end_marker);
-
-        if let (Some(start), Some(end)) = (start_index, end_index) {
-            if end > start {
-                content.replace_range(start..end + end_marker.len(), "");
-            }
-        }
-
-        // Older versions of Mav didn't have end-of-block markers,
-        // so it's impossible to determine auto-generated lines.
-        // Conservatively remove the standard list of excludes
-        let standard_excludes = format!(
-            "{}{}",
-            Self::START_BLOCK_MARKER,
-            include_str!("./checkpoint.gitignore")
-        );
-        content = content.replace(&standard_excludes, "");
-
-        content
-    }
-}
-
-impl Drop for GitExcludeOverride {
-    fn drop(&mut self) {
-        if self.added_excludes.is_some() {
-            let git_exclude_path = self.git_exclude_path.clone();
-            let original_excludes = self.original_excludes.clone();
-            smol::spawn(async move {
-                if let Some(original) = original_excludes {
-                    smol::fs::write(&git_exclude_path, original).await
-                } else {
-                    smol::fs::remove_file(&git_exclude_path).await
-                }
-            })
-            .detach();
-        }
-    }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Copy)]
-pub enum LogOrder {
-    #[default]
-    DateOrder,
-    TopoOrder,
-    AuthorDateOrder,
-    ReverseChronological,
-}
-
-impl LogOrder {
-    pub fn as_arg(&self) -> &'static str {
-        match self {
-            LogOrder::DateOrder => "--date-order",
-            LogOrder::TopoOrder => "--topo-order",
-            LogOrder::AuthorDateOrder => "--author-date-order",
-            LogOrder::ReverseChronological => "--reverse",
-        }
-    }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
-pub enum LogSource {
-    #[default]
-    All,
-    Branch(SharedString),
-    Sha(Oid),
-    Path(RepoPath),
-}
-
-impl LogSource {
-    fn get_args(&self) -> Result<Vec<&str>> {
-        match self {
-            LogSource::All => Ok(vec![
-                "--ignore-missing", // needed in case of unborn HEAD
-                "--branches",
-                "--remotes",
-                "--tags",
-                "HEAD",
-            ]),
-            LogSource::Branch(branch) => Ok(vec![branch.as_str()]),
-            LogSource::Sha(oid) => Ok(vec![
-                str::from_utf8(oid.as_bytes()).context("Failed to build str from sha")?,
-            ]),
-            LogSource::Path(path) => Ok(vec!["--follow", "--", path.as_unix_str()]),
-        }
-    }
-}
-
-pub struct SearchCommitArgs {
-    pub query: SharedString,
-    pub case_sensitive: bool,
-}
-
-pub fn commit_hash_search_query(query: &str) -> Option<&str> {
-    let query = query.trim();
-    (7..=40)
-        .contains(&query.len())
-        .then_some(query)
-        .filter(|query| query.bytes().all(|byte| byte.is_ascii_hexdigit()))
-}
-
-pub fn delete_branch_flag(is_remote_tracking_ref: bool, force: bool) -> &'static str {
-    match (is_remote_tracking_ref, force) {
-        (true, true) => "-Dr",
-        (true, false) => "-dr",
-        (false, true) => "-D",
-        (false, false) => "-d",
     }
 }
 
