@@ -3,6 +3,8 @@ mod connection_pool;
 mod headers;
 #[path = "rpc/responses.rs"]
 mod responses;
+#[path = "rpc/session.rs"]
+mod session;
 #[path = "rpc/updates.rs"]
 mod updates;
 #[path = "rpc/utils.rs"]
@@ -11,11 +13,12 @@ mod utils;
 use headers::{AppVersionHeader, ProtocolVersion, ReleaseChannelHeader};
 pub use responses::ConnectionGuard;
 use responses::{Response, StreamResponse};
+pub use session::Principal;
+use session::{DbHandle, MessageContext, Session};
 use updates::*;
 use utils::ResultExt;
 
 use crate::api::{CloudflareIpCountryHeader, SystemIdHeader};
-use crate::entities::User;
 use crate::{
     AppState, Error, Result, auth,
     db::{
@@ -44,7 +47,6 @@ use axum::{
 };
 use collections::{HashSet, TypeIdHashMap};
 pub use connection_pool::{ConnectionPool, MavVersion};
-use core::fmt::{self, Debug, Formatter};
 use futures::TryFutureExt as _;
 use rpc::proto::split_repository_update;
 use tracing::Span;
@@ -67,11 +69,8 @@ use rpc::{
 use std::{
     any::TypeId,
     future::Future,
-    marker::PhantomData,
     mem,
     net::SocketAddr,
-    ops::{Deref, DerefMut},
-    rc::Rc,
     sync::{Arc, OnceLock, atomic::AtomicBool},
     time::{Duration, Instant},
 };
@@ -98,161 +97,6 @@ const HOST_WAITING_MS: &str = "host_waiting_ms";
 type MessageHandler =
     Box<dyn Send + Sync + Fn(Box<dyn AnyTypedEnvelope>, Session, Span) -> BoxFuture<'static, ()>>;
 
-#[derive(Clone, Debug)]
-pub enum Principal {
-    User(User),
-}
-
-impl Principal {
-    fn update_span(&self, span: &tracing::Span) {
-        match &self {
-            Principal::User(user) => {
-                span.record("user_id", user.id.0);
-                span.record("username", &user.username);
-                span.record("login", &user.github_login);
-            }
-        }
-    }
-}
-
-#[derive(Clone)]
-struct MessageContext {
-    session: Session,
-    span: tracing::Span,
-}
-
-impl Deref for MessageContext {
-    type Target = Session;
-
-    fn deref(&self) -> &Self::Target {
-        &self.session
-    }
-}
-
-impl MessageContext {
-    pub fn forward_request<T: RequestMessage>(
-        &self,
-        receiver_id: ConnectionId,
-        request: T,
-    ) -> impl Future<Output = anyhow::Result<T::Response>> {
-        let request_start_time = Instant::now();
-        let span = self.span.clone();
-        tracing::info!("start forwarding request");
-        self.peer
-            .forward_request(self.connection_id, receiver_id, request)
-            .inspect(move |_| {
-                span.record(
-                    HOST_WAITING_MS,
-                    request_start_time.elapsed().as_micros() as f64 / 1000.0,
-                );
-            })
-            .inspect_err(|_| tracing::error!("error forwarding request"))
-            .inspect_ok(|_| tracing::info!("finished forwarding request"))
-    }
-
-    pub fn forward_request_stream<T: RequestMessage>(
-        &self,
-        receiver_id: ConnectionId,
-        request: T,
-    ) -> impl Future<Output = anyhow::Result<BoxStream<'static, anyhow::Result<T::Response>>>> {
-        let request_start_time = Instant::now();
-        let span = self.span.clone();
-        let peer = self.peer.clone();
-        let envelope = request.into_envelope(0, None, Some(self.connection_id.into()));
-        async move {
-            tracing::info!("start forwarding stream request");
-            let stream = peer
-                .request_stream_dynamic(receiver_id, envelope, T::NAME)
-                .await;
-            span.record(
-                HOST_WAITING_MS,
-                request_start_time.elapsed().as_micros() as f64 / 1000.0,
-            );
-            let stream = stream
-                .inspect_err(|_| tracing::error!("error forwarding stream request"))?
-                .map(|response| {
-                    T::Response::from_envelope(response?)
-                        .context("received response of the wrong type")
-                })
-                .boxed();
-            tracing::info!("finished opening forwarded stream request");
-            Ok(stream)
-        }
-    }
-}
-
-#[derive(Clone)]
-struct Session {
-    principal: Principal,
-    connection_id: ConnectionId,
-    db: Arc<tokio::sync::Mutex<DbHandle>>,
-    peer: Arc<Peer>,
-    connection_pool: Arc<parking_lot::Mutex<ConnectionPool>>,
-    app_state: Arc<AppState>,
-    /// The GeoIP country code for the user.
-    #[allow(unused)]
-    geoip_country_code: Option<String>,
-    #[allow(unused)]
-    system_id: Option<String>,
-    _executor: Executor,
-}
-
-impl Session {
-    async fn db(&self) -> tokio::sync::MutexGuard<'_, DbHandle> {
-        #[cfg(feature = "test-support")]
-        tokio::task::yield_now().await;
-        let guard = self.db.lock().await;
-        #[cfg(feature = "test-support")]
-        tokio::task::yield_now().await;
-        guard
-    }
-
-    async fn connection_pool(&self) -> ConnectionPoolGuard<'_> {
-        #[cfg(feature = "test-support")]
-        tokio::task::yield_now().await;
-        let guard = self.connection_pool.lock();
-        ConnectionPoolGuard {
-            guard,
-            _not_send: PhantomData,
-        }
-    }
-
-    #[expect(dead_code)]
-    fn is_staff(&self) -> bool {
-        match &self.principal {
-            Principal::User(user) => user.admin,
-        }
-    }
-
-    fn user_id(&self) -> UserId {
-        match &self.principal {
-            Principal::User(user) => user.id,
-        }
-    }
-}
-
-impl Debug for Session {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut result = f.debug_struct("Session");
-        match &self.principal {
-            Principal::User(user) => {
-                result.field("user", &user.username);
-            }
-        }
-        result.field("connection_id", &self.connection_id).finish()
-    }
-}
-
-struct DbHandle(Arc<Database>);
-
-impl Deref for DbHandle {
-    type Target = Database;
-
-    fn deref(&self) -> &Self::Target {
-        self.0.as_ref()
-    }
-}
-
 pub struct Server {
     id: parking_lot::Mutex<ServerId>,
     peer: Arc<Peer>,
@@ -260,11 +104,6 @@ pub struct Server {
     app_state: Arc<AppState>,
     handlers: TypeIdHashMap<MessageHandler>,
     teardown: watch::Sender<bool>,
-}
-
-struct ConnectionPoolGuard<'a> {
-    guard: parking_lot::MutexGuard<'a, ConnectionPool>,
-    _not_send: PhantomData<Rc<()>>,
 }
 
 impl Server {
@@ -1014,27 +853,6 @@ impl Server {
         }
 
         Ok(())
-    }
-}
-
-impl Deref for ConnectionPoolGuard<'_> {
-    type Target = ConnectionPool;
-
-    fn deref(&self) -> &Self::Target {
-        &self.guard
-    }
-}
-
-impl DerefMut for ConnectionPoolGuard<'_> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.guard
-    }
-}
-
-impl Drop for ConnectionPoolGuard<'_> {
-    fn drop(&mut self) {
-        #[cfg(feature = "test-support")]
-        self.check_invariants();
     }
 }
 
