@@ -68,7 +68,7 @@
 4273	crates/terminal/src/terminal.rs
 4310	crates/gpui/src/elements/div.rs
     4257	crates/agent_servers/src/acp.rs
-    4332	crates/edit_prediction/src/edit_prediction_tests.rs
+    3705	crates/edit_prediction/src/edit_prediction_tests.rs
     4321	crates/language/src/buffer_tests.rs
     4307	crates/vim/src/helix.rs
     4273	crates/agent_ui/src/thread_metadata_store.rs
