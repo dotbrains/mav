@@ -1,14 +1,14 @@
 use super::*;
 
 impl KeymapFile {
-    fn build_keymap_action(
+    pub(super) fn build_keymap_action(
         action: &KeymapAction,
         cx: &App,
     ) -> std::result::Result<(Box<dyn Action>, Option<String>), String> {
         Self::build_keymap_action_value(&action.0, cx)
     }
 
-    fn build_keymap_action_value(
+    pub(super) fn build_keymap_action_value(
         action: &Value,
         cx: &App,
     ) -> std::result::Result<(Box<dyn Action>, Option<String>), String> {

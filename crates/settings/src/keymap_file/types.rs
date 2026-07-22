@@ -32,7 +32,7 @@ pub(crate) static KEY_BINDING_VALIDATORS: LazyLock<BTreeMap<TypeId, Box<dyn KeyB
 /// determines whether its bindings are used.
 #[derive(Debug, Deserialize, Default, Clone, JsonSchema)]
 #[serde(transparent)]
-pub struct KeymapFile(Vec<KeymapSection>);
+pub struct KeymapFile(pub(super) Vec<KeymapSection>);
 
 /// Keymap section which binds keystrokes to actions.
 #[derive(Debug, Deserialize, Default, Clone, JsonSchema)]
@@ -48,11 +48,11 @@ pub struct KeymapSection {
     /// position-equivalent mappings for some non-QWERTY keyboards. This is currently only supported
     /// on macOS. See the documentation for more details.
     #[serde(default)]
-    use_key_equivalents: bool,
+    pub(super) use_key_equivalents: bool,
     /// This keymap section's unbindings, as a JSON object mapping keystrokes to actions. These are
     /// parsed before `bindings`, so bindings later in the same section can still take precedence.
     #[serde(default)]
-    unbind: Option<IndexMap<String, UnbindTargetAction>>,
+    pub(super) unbind: Option<IndexMap<String, UnbindTargetAction>>,
     /// This keymap section's bindings, as a JSON object mapping keystrokes to actions. The
     /// keystrokes key is a string representing a sequence of keystrokes to type, where the
     /// keystrokes are separated by whitespace. Each keystroke is a sequence of modifiers (`ctrl`,
@@ -61,9 +61,9 @@ pub struct KeymapSection {
     /// the binding that occurs later in the file is preferred. For displaying keystrokes in the UI,
     /// the later binding for the same action is preferred.
     #[serde(default)]
-    bindings: Option<IndexMap<String, KeymapAction>>,
+    pub(super) bindings: Option<IndexMap<String, KeymapAction>>,
     #[serde(flatten)]
-    unrecognized_fields: IndexMap<String, Value>,
+    pub(super) unrecognized_fields: IndexMap<String, Value>,
     // This struct intentionally uses permissive types for its fields, rather than validating during
     // deserialization. The purpose of this is to allow loading the portion of the keymap that doesn't
     // have errors. The downside of this is that the errors are not reported with line+column info.
@@ -86,7 +86,7 @@ impl KeymapSection {
 /// actual schema used for it is automatically generated in `KeymapFile::generate_json_schema`.
 #[derive(Debug, Deserialize, Default, Clone)]
 #[serde(transparent)]
-pub struct KeymapAction(Value);
+pub struct KeymapAction(pub(super) Value);
 
 impl std::fmt::Display for KeymapAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -117,7 +117,7 @@ impl JsonSchema for KeymapAction {
 
 #[derive(Debug, Deserialize, Default, Clone)]
 #[serde(transparent)]
-pub struct UnbindTargetAction(Value);
+pub struct UnbindTargetAction(pub(super) Value);
 
 impl JsonSchema for UnbindTargetAction {
     fn schema_name() -> Cow<'static, str> {

@@ -5,7 +5,7 @@ pub struct ActionSequence(pub Vec<Box<dyn Action>>);
 register_action!(ActionSequence);
 
 impl ActionSequence {
-    fn build_sequence(
+    pub(super) fn build_sequence(
         value: Value,
         cx: &App,
     ) -> std::result::Result<Box<dyn Action>, ActionBuildError> {
@@ -34,7 +34,7 @@ impl ActionSequence {
         }
     }
 
-    fn expected_array_error() -> ActionBuildError {
+    pub(super) fn expected_array_error() -> ActionBuildError {
         ActionBuildError::BuildError {
             name: Self::name_for_type().to_string(),
             error: anyhow::anyhow!("expected array of actions"),

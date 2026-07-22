@@ -36,8 +36,9 @@ mod update;
 mod update_types;
 
 pub use action_sequence::ActionSequence;
+use types::KEY_BINDING_VALIDATORS;
 pub use types::{
-    KEY_BINDING_VALIDATORS, KeyBindingValidator, KeyBindingValidatorRegistration, KeymapAction,
-    KeymapFile, KeymapFileLoadResult, KeymapSection, UnbindTargetAction,
+    KeyBindingValidator, KeyBindingValidatorRegistration, KeymapAction, KeymapFile,
+    KeymapFileLoadResult, KeymapSection, UnbindTargetAction,
 };
 pub use update_types::{KeybindSource, KeybindUpdateOperation, KeybindUpdateTarget};

@@ -74,7 +74,7 @@ pub struct KeybindUpdateTarget<'a> {
 }
 
 impl<'a> KeybindUpdateTarget<'a> {
-    fn action_value(&self) -> Result<Value> {
+    pub(super) fn action_value(&self) -> Result<Value> {
         if self.action_name == gpui::NoAction.name() {
             return Ok(Value::Null);
         }
@@ -90,7 +90,7 @@ impl<'a> KeybindUpdateTarget<'a> {
         Ok(value)
     }
 
-    fn keystrokes_unparsed(&self) -> String {
+    pub(super) fn keystrokes_unparsed(&self) -> String {
         let mut keystrokes = String::with_capacity(self.keystrokes.len() * 8);
         for keystroke in self.keystrokes {
             // The reason use `keystroke.unparse()` instead of `keystroke.inner.unparse()`

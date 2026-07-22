@@ -113,7 +113,7 @@ impl KeymapFile {
             let context_predicate: Option<Rc<KeyBindingContextPredicate>> = if context.is_empty() {
                 None
             } else {
-                match KeyBindingContextPredicate::parse(context) {
+                match KeyBindingContextPredicate::parse(&context) {
                     Ok(context_predicate) => Some(context_predicate.into()),
                     Err(err) => {
                         // Leading space is to separate from the message indicating which section
@@ -141,8 +141,8 @@ impl KeymapFile {
             if let Some(unbind) = unbind {
                 for (keystrokes, action) in unbind {
                     let result = Self::load_unbinding(
-                        keystrokes,
-                        action,
+                        &keystrokes,
+                        &action,
                         context_predicate.clone(),
                         *use_key_equivalents,
                         cx,
@@ -173,8 +173,8 @@ impl KeymapFile {
             if let Some(bindings) = bindings {
                 for (keystrokes, action) in bindings {
                     let result = Self::load_keybinding(
-                        keystrokes,
-                        action,
+                        &keystrokes,
+                        &action,
                         context_predicate.clone(),
                         *use_key_equivalents,
                         cx,
@@ -232,7 +232,7 @@ impl KeymapFile {
         }
     }
 
-    fn load_keybinding(
+    pub(super) fn load_keybinding(
         keystrokes: &str,
         action: &KeymapAction,
         context: Option<Rc<KeyBindingContextPredicate>>,
@@ -242,7 +242,7 @@ impl KeymapFile {
         Self::load_keybinding_action_value(keystrokes, &action.0, context, use_key_equivalents, cx)
     }
 
-    fn load_keybinding_action_value(
+    pub(super) fn load_keybinding_action_value(
         keystrokes: &str,
         action: &Value,
         context: Option<Rc<KeyBindingContextPredicate>>,
@@ -279,7 +279,7 @@ impl KeymapFile {
         }
     }
 
-    fn load_unbinding(
+    pub(super) fn load_unbinding(
         keystrokes: &str,
         action: &UnbindTargetAction,
         context: Option<Rc<KeyBindingContextPredicate>>,
@@ -328,7 +328,9 @@ impl KeymapFile {
         Self::parse_action_value(&action.0)
     }
 
-    fn parse_action_value(action: &Value) -> Result<Option<(&String, Option<&Value>)>, String> {
+    pub(super) fn parse_action_value(
+        action: &Value,
+    ) -> Result<Option<(&String, Option<&Value>)>, String> {
         let name_and_input = match action {
             Value::Array(items) => {
                 if items.len() != 2 {
