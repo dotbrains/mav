@@ -2,6 +2,7 @@ mod background_scanner;
 mod ignore;
 mod worktree_file;
 mod worktree_repository;
+mod worktree_scan_state;
 mod worktree_settings;
 mod worktree_types;
 
@@ -80,6 +81,10 @@ use util::{
     rel_path::{RelPath, RelPathBuf},
 };
 use worktree_repository::LocalRepositoryEntry;
+use worktree_scan_state::{
+    BackgroundScannerState, EventRoot, PathPrefixScanRequest, ScanRequest, ScanState,
+    UpdateObservationState,
+};
 pub use worktree_settings::WorktreeSettings;
 pub use worktree_types::{
     CreatedEntry, Event, LoadedBinaryFile, LoadedFile, ProjectEntryId, WorkDirectory,
@@ -122,16 +127,6 @@ pub struct LocalWorktree {
     share_private_files: bool,
     scanning_enabled: bool,
     force_defer_watch: bool,
-}
-
-pub struct PathPrefixScanRequest {
-    path: Arc<RelPath>,
-    done: SmallVec<[barrier::Sender; 1]>,
-}
-
-struct ScanRequest {
-    relative_paths: Vec<Arc<RelPath>>,
-    done: SmallVec<[barrier::Sender; 1]>,
 }
 
 pub struct RemoteWorktree {
@@ -197,29 +192,6 @@ pub struct LocalSnapshot {
     external_canonical_to_relative: BTreeMap<Arc<Path>, Arc<RelPath>>,
 }
 
-struct BackgroundScannerState {
-    snapshot: LocalSnapshot,
-    symlink_paths_by_target: HashMap<Arc<Path>, SmallVec<[Arc<RelPath>; 1]>>,
-    scanned_dirs: HashSet<ProjectEntryId>,
-    watched_dir_abs_paths_by_entry_id: HashMap<ProjectEntryId, Arc<Path>>,
-    path_prefixes_to_scan: HashSet<Arc<RelPath>>,
-    paths_to_scan: HashSet<Arc<RelPath>>,
-    /// The ids of all of the entries that were removed from the snapshot
-    /// as part of the current update. These entry ids may be re-used
-    /// if the same inode is discovered at a new path, or if the given
-    /// path is re-created after being deleted.
-    removed_entries: HashMap<u64, Entry>,
-    changed_paths: Vec<Arc<RelPath>>,
-    prev_snapshot: Snapshot,
-    scanning_enabled: bool,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct EventRoot {
-    path: Arc<RelPath>,
-    was_rescanned: bool,
-}
-
 impl Deref for LocalRepositoryEntry {
     type Target = WorkDirectory;
 
@@ -240,26 +212,6 @@ impl DerefMut for LocalSnapshot {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.snapshot
     }
-}
-
-enum ScanState {
-    Started,
-    Updated {
-        snapshot: LocalSnapshot,
-        changes: UpdatedEntriesSet,
-        barrier: SmallVec<[barrier::Sender; 1]>,
-        scanning: bool,
-    },
-    RootUpdated {
-        new_path: Arc<SanitizedPath>,
-    },
-    RootDeleted,
-}
-
-struct UpdateObservationState {
-    snapshots_tx: mpsc::UnboundedSender<(LocalSnapshot, UpdatedEntriesSet)>,
-    resume_updates: watch::Sender<()>,
-    _maintain_remote_snapshot: Task<Option<()>>,
 }
 
 impl EventEmitter<Event> for Worktree {}
