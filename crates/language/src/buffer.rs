@@ -86,7 +86,7 @@ pub use highlighted_text::{EditPreview, HighlightedText, HighlightedTextBuilder,
 pub use lsp::DiagnosticSeverity;
 #[cfg(any(test, feature = "test-support"))]
 pub use utilities::TestFile;
-use utilities::contiguous_ranges;
+pub(crate) use utilities::contiguous_ranges;
 pub use utilities::{CharClassifier, trailing_whitespace_ranges};
 
 /// An in-memory representation of a source code file, including its text,
