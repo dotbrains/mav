@@ -275,8 +275,8 @@ mod state;
 #[cfg(test)]
 mod tests;
 
-pub use markdown::{diagnostics_markdown_style, hover_markdown_style};
-use markdown::{open_markdown_url, parse_blocks};
+use markdown::parse_blocks;
+pub use markdown::{diagnostics_markdown_style, hover_markdown_style, open_markdown_url};
 pub use popovers::{DiagnosticPopover, InfoPopover};
 use query::show_hover;
 pub use state::HoverState;
