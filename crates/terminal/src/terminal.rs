@@ -3,6 +3,7 @@ mod mappings;
 mod alacritty;
 mod ansi_text;
 mod colors;
+mod headless;
 mod process_helpers;
 mod pty_info;
 mod subprocess;
@@ -72,6 +73,7 @@ use gpui::{
 use crate::alacritty::current_child_signal_mask;
 pub use ansi_text::{AnsiSpans, ParsedAnsiText, parse_ansi_text, strip_ansi_text};
 pub use colors::{get_color_at_index, rgba_color};
+pub use headless::HeadlessTerminal;
 use subprocess::{SubprocessHandle, convert_lf_to_crlf, spawn_task_subprocess};
 pub use terminal_bounds::TerminalBounds;
 use terminal_bounds::normalize_terminal_bounds;
@@ -89,23 +91,6 @@ use crate::alacritty::{
 };
 use crate::mappings::colors::to_vte_rgb;
 use crate::mappings::keys::to_esc_str;
-
-/// Process-wide flag set by headless hosts (e.g. the eval CLI) that have no
-/// controlling TTY. In such sandboxes PTY allocation and acquiring a
-/// controlling terminal fail with `ENOTTY`, so when this is set terminals run
-/// their command as a plain subprocess with piped output instead of through a
-/// PTY. The normal editor leaves it unset to preserve the interactive PTY
-/// experience.
-#[derive(Clone, Copy, Default)]
-pub struct HeadlessTerminal(pub bool);
-
-impl gpui::Global for HeadlessTerminal {}
-
-impl HeadlessTerminal {
-    pub fn is_enabled(cx: &App) -> bool {
-        cx.try_global::<Self>().is_some_and(|headless| headless.0)
-    }
-}
 
 #[derive(Clone, Copy, Debug)]
 enum Scroll {
