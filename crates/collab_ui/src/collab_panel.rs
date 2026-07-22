@@ -2,12 +2,15 @@ mod channel_modal;
 mod contact_finder;
 mod list_entry;
 mod notification_toast;
+#[path = "collab_panel/panel_state.rs"]
+mod panel_state;
 #[path = "collab_panel/render_helpers.rs"]
 mod render_helpers;
 
 use self::channel_modal::ChannelModal;
 use self::list_entry::{ListEntry, Section};
 use self::notification_toast::CollabNotificationToast;
+use self::panel_state::*;
 use self::render_helpers::{
     DraggedChannelView, JoinChannelTooltip, render_participant_name_and_handle, render_tree_branch,
 };
@@ -58,9 +61,6 @@ use workspace::{
     },
 };
 
-const FILTER_OCCUPIED_CHANNELS_KEY: &str = "filter_occupied_channels";
-const FAVORITE_CHANNELS_KEY: &str = "favorite_channels";
-
 actions!(
     collab_panel,
     [
@@ -94,14 +94,6 @@ actions!(
         MoveChannelDown,
     ]
 );
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-struct ChannelMoveClipboard {
-    channel_id: ChannelId,
-}
-
-const COLLABORATION_PANEL_KEY: &str = "CollaborationPanel";
-const TOAST_DURATION: Duration = Duration::from_secs(5);
 
 pub fn init(cx: &mut App) {
     cx.observe_new(|workspace: &mut Workspace, _, _| {
@@ -237,27 +229,6 @@ pub fn init(cx: &mut App) {
     .detach();
 }
 
-#[derive(Debug)]
-pub enum ChannelEditingState {
-    Create {
-        location: Option<ChannelId>,
-        pending_name: Option<String>,
-    },
-    Rename {
-        location: ChannelId,
-        pending_name: Option<String>,
-    },
-}
-
-impl ChannelEditingState {
-    fn pending_name(&self) -> Option<String> {
-        match self {
-            ChannelEditingState::Create { pending_name, .. } => pending_name.clone(),
-            ChannelEditingState::Rename { pending_name, .. } => pending_name.clone(),
-        }
-    }
-}
-
 pub struct CollabPanel {
     fs: Arc<dyn Fs>,
     focus_handle: FocusHandle,
@@ -285,11 +256,6 @@ pub struct CollabPanel {
     notification_store: Entity<NotificationStore>,
     current_notification_toast: Option<(u64, Task<()>)>,
     mark_as_read_tasks: HashMap<u64, Task<anyhow::Result<()>>>,
-}
-
-#[derive(Serialize, Deserialize)]
-struct SerializedCollabPanel {
-    collapsed_channels: Option<Vec<u64>>,
 }
 
 impl CollabPanel {
