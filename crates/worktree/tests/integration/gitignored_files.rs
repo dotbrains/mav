@@ -1,4 +1,5 @@
 use super::*;
+use pretty_assertions::assert_eq;
 
 #[gpui::test]
 async fn test_open_gitignored_files(cx: &mut TestAppContext) {
