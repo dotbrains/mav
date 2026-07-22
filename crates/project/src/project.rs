@@ -49,13 +49,13 @@ pub use project_lsp_types::{
 pub(crate) use project_lsp_types::{CoreCompletion, CoreCompletionResponse};
 pub use project_support_types::{ColorPresentation, DirectoryItem, DirectoryLister, DocumentColor};
 pub use project_types::{
-    AgentLocation, AgentLocationChanged, DebugAdapterClientState, DisableAiSettings, Event,
-    LocalProjectFlags, LspPullDiagnostics, OpenedBufferEvent, ProjectItem, ProjectPath,
-    PulledDiagnostics, ResolvedPath, ToastLink,
+    AgentLocation, AgentLocationChanged, CURRENT_PROJECT_FEATURES, DebugAdapterClientState,
+    DisableAiSettings, Event, LocalProjectFlags, LspPullDiagnostics, OpenedBufferEvent,
+    ProjectItem, ProjectPath, PulledDiagnostics, ResolvedPath, ToastLink,
 };
 use project_types::{
-    BufferOrderedMessage, CURRENT_PROJECT_FEATURES, DownloadingFile, EntitySubscription,
-    ProjectClientState, RemotelyCreatedModelGuard, RemotelyCreatedModels,
+    BufferOrderedMessage, DownloadingFile, EntitySubscription, ProjectClientState,
+    RemotelyCreatedModelGuard, RemotelyCreatedModels,
 };
 pub mod search_history;
 pub mod yarn;
