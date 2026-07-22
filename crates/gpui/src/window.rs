@@ -75,6 +75,7 @@ mod paint_media;
 mod paint_primitives;
 mod primitives;
 mod prompts;
+mod state;
 mod tooltip;
 
 pub use a11y::A11ySubtreeBuilder;
@@ -103,6 +104,8 @@ pub use self::input::DrawPhase;
 #[cfg(feature = "input-latency-histogram")]
 use self::input::{InputLatencySnapshot, InputLatencyTracker};
 use self::input::{InputRateTracker, PendingInput};
+pub use self::state::DispatchPhase;
+use self::state::{ElementStateBox, InputModality, ModifierState};
 use crate::util::{
     ceil_to_device_pixel, floor_to_device_pixel, round_half_toward_zero,
     round_half_toward_zero_f64, round_stroke_to_device_pixel, round_to_device_pixel,
@@ -118,43 +121,6 @@ pub const DEFAULT_ADDITIONAL_WINDOW_SIZE: Size<Pixels> = Size {
     width: Pixels(900.),
     height: Pixels(750.),
 };
-
-/// Represents the two different phases when dispatching events.
-#[derive(Default, Copy, Clone, Debug, Eq, PartialEq)]
-pub enum DispatchPhase {
-    /// After the capture phase comes the bubble phase, in which mouse event listeners are
-    /// invoked front to back and keyboard event listeners are invoked from the focused element
-    /// to the root of the element tree. This is the phase you'll most commonly want to use when
-    /// registering event listeners.
-    #[default]
-    Bubble,
-    /// During the initial capture phase, mouse event listeners are invoked back to front, and keyboard
-    /// listeners are invoked from the root of the tree downward toward the focused element. This phase
-    /// is used for special purposes such as clearing the "pressed" state for click events. If
-    /// you stop event propagation during this phase, you need to know what you're doing. Handlers
-    /// outside of the immediate region may rely on detecting non-local events during this phase.
-    Capture,
-}
-
-impl DispatchPhase {
-    /// Returns true if this represents the "bubble" phase.
-    #[inline]
-    pub fn bubble(self) -> bool {
-        self == DispatchPhase::Bubble
-    }
-
-    /// Returns true if this represents the "capture" phase.
-    #[inline]
-    pub fn capture(self) -> bool {
-        self == DispatchPhase::Capture
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
-enum InputModality {
-    Mouse,
-    Keyboard,
-}
 
 /// Holds the state for a specific window.
 pub struct Window {
@@ -229,18 +195,6 @@ pub struct Window {
     #[cfg(any(feature = "inspector", debug_assertions))]
     inspector: Option<Entity<Inspector>>,
     pub(crate) a11y: A11y,
-}
-
-#[derive(Clone, Debug, Default)]
-struct ModifierState {
-    modifiers: Modifiers,
-    saw_keystroke: bool,
-}
-
-pub(crate) struct ElementStateBox {
-    pub(crate) inner: Box<dyn Any>,
-    #[cfg(debug_assertions)]
-    pub(crate) type_name: &'static str,
 }
 
 impl Window {
