@@ -1,29 +1,29 @@
 use super::*;
 
 pub struct FakeFs {
-    this: std::sync::Weak<Self>,
+    pub(super) this: std::sync::Weak<Self>,
     // Use an unfair lock to ensure tests are deterministic.
-    state: Arc<Mutex<FakeFsState>>,
-    executor: gpui::BackgroundExecutor,
+    pub(super) state: Arc<Mutex<FakeFsState>>,
+    pub(super) executor: gpui::BackgroundExecutor,
 }
 
 #[cfg(feature = "test-support")]
 pub(super) struct FakeFsState {
-    root: FakeFsEntry,
-    next_inode: u64,
-    next_mtime: SystemTime,
-    git_event_tx: async_channel::Sender<PathBuf>,
-    event_txs: Vec<(PathBuf, async_channel::Sender<Vec<PathEvent>>)>,
-    events_paused: bool,
-    buffered_events: Vec<PathEvent>,
-    metadata_call_count: usize,
-    read_dir_call_count: usize,
-    path_write_counts: std::collections::HashMap<PathBuf, usize>,
-    moves: std::collections::HashMap<u64, PathBuf>,
-    job_event_subscribers: Arc<Mutex<Vec<JobEventSender>>>,
-    trash: Vec<(TrashedEntry, FakeFsEntry)>,
-    file_to_create_before_watch_add: Option<(PathBuf, PathBuf)>,
-    remove_dir_errors: std::collections::HashMap<PathBuf, String>,
+    pub(super) root: FakeFsEntry,
+    pub(super) next_inode: u64,
+    pub(super) next_mtime: SystemTime,
+    pub(super) git_event_tx: async_channel::Sender<PathBuf>,
+    pub(super) event_txs: Vec<(PathBuf, async_channel::Sender<Vec<PathEvent>>)>,
+    pub(super) events_paused: bool,
+    pub(super) buffered_events: Vec<PathEvent>,
+    pub(super) metadata_call_count: usize,
+    pub(super) read_dir_call_count: usize,
+    pub(super) path_write_counts: std::collections::HashMap<PathBuf, usize>,
+    pub(super) moves: std::collections::HashMap<u64, PathBuf>,
+    pub(super) job_event_subscribers: Arc<Mutex<Vec<JobEventSender>>>,
+    pub(super) trash: Vec<(TrashedEntry, FakeFsEntry)>,
+    pub(super) file_to_create_before_watch_add: Option<(PathBuf, PathBuf)>,
+    pub(super) remove_dir_errors: std::collections::HashMap<PathBuf, String>,
 }
 
 #[cfg(feature = "test-support")]
@@ -83,7 +83,7 @@ pub(super) enum FakeFsEntry {
 
 #[cfg(feature = "test-support")]
 impl PartialEq for FakeFsEntry {
-    pub(super) fn eq(&self, other: &Self) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (
                 Self::File {

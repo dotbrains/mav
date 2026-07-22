@@ -32,14 +32,14 @@ impl FakeFsEntry {
 
 #[cfg(feature = "test-support")]
 pub(super) struct FakeWatcher {
-    tx: async_channel::Sender<Vec<PathEvent>>,
-    fs_state: Arc<Mutex<FakeFsState>>,
-    prefixes: Mutex<Vec<PathBuf>>,
+    pub(super) tx: async_channel::Sender<Vec<PathEvent>>,
+    pub(super) fs_state: Arc<Mutex<FakeFsState>>,
+    pub(super) prefixes: Mutex<Vec<PathBuf>>,
 }
 
 #[cfg(feature = "test-support")]
 impl Watcher for FakeWatcher {
-    pub(super) fn add(&self, path: &Path) -> Result<()> {
+    fn add(&self, path: &Path) -> Result<()> {
         let path = normalize_path(path);
         self.fs_state
             .try_lock()
@@ -60,7 +60,7 @@ impl Watcher for FakeWatcher {
         Ok(())
     }
 
-    pub(super) fn remove(&self, path: &Path) -> Result<()> {
+    fn remove(&self, path: &Path) -> Result<()> {
         let path = normalize_path(path);
         self.prefixes.lock().retain(|prefix| prefix != &path);
         self.fs_state
@@ -75,12 +75,12 @@ impl Watcher for FakeWatcher {
 #[cfg(feature = "test-support")]
 #[derive(Debug)]
 pub(super) struct FakeHandle {
-    inode: u64,
+    pub(super) inode: u64,
 }
 
 #[cfg(feature = "test-support")]
 impl FileHandle for FakeHandle {
-    pub(super) fn current_path(&self, fs: &Arc<dyn Fs>) -> Result<PathBuf> {
+    fn current_path(&self, fs: &Arc<dyn Fs>) -> Result<PathBuf> {
         let fs = fs.as_fake();
         let mut state = fs.state.lock();
         let Some(target) = state.moves.get(&self.inode).cloned() else {

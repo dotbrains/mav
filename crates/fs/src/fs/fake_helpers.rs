@@ -3,7 +3,7 @@ use super::*;
 impl FakeFs {
     /// We need to use something large enough for Windows and Unix to consider this a new file.
     /// https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html#platform-specific-behavior
-    const SYSTEMTIME_INTERVAL: Duration = Duration::from_nanos(100);
+    pub(super) const SYSTEMTIME_INTERVAL: Duration = Duration::from_nanos(100);
 
     pub fn new(executor: gpui::BackgroundExecutor) -> Arc<Self> {
         let (tx, rx) = async_channel::bounded::<PathBuf>(10);

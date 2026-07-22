@@ -52,6 +52,12 @@ pub use trash_entry::{TrashRestoreError, TrashedEntry};
 
 pub use copy_recursive::{copy_recursive, read_dir_items};
 #[cfg(feature = "test-support")]
+use fake_handles::{FakeHandle, FakeWatcher};
+#[cfg(feature = "test-support")]
+pub(crate) use fake_types::FakeFsEntry;
+#[cfg(feature = "test-support")]
+use fake_types::FakeFsState;
+#[cfg(feature = "test-support")]
 pub use fake_types::{FS_DOT_GIT, FakeFs};
 use parking_lot::Mutex;
 pub use real::{FileHandle, RealFs};
