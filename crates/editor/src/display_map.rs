@@ -73,6 +73,7 @@ mod block_map;
 mod crease_map;
 mod custom_highlights;
 mod fold_map;
+mod highlights;
 mod inlay_map;
 mod invisibles;
 mod tab_map;
@@ -88,13 +89,17 @@ pub use crease_map::*;
 pub use fold_map::{
     ChunkRenderer, ChunkRendererContext, ChunkRendererId, Fold, FoldId, FoldPlaceholder, FoldPoint,
 };
+pub use highlights::{
+    ChunkReplacement, EditPredictionStyles, HighlightStyleId, HighlightStyleInterner,
+    HighlightStyles, HighlightedChunk, Highlights, SemanticTokenHighlight,
+};
 pub use inlay_map::{InlayOffset, InlayPoint};
 pub use invisibles::{is_invisible, replacement};
 pub use wrap_map::{WrapPoint, WrapRow, WrapSnapshot};
 
-use collections::{HashMap, HashSet, IndexSet};
+use collections::{HashMap, HashSet};
 use gpui::{
-    App, Context, Entity, EntityId, Font, HighlightStyle, Hsla, LineLayout, Pixels, UnderlineStyle,
+    App, Context, Entity, EntityId, Font, HighlightStyle, LineLayout, Pixels, UnderlineStyle,
     WeakEntity,
 };
 use language::{
@@ -107,14 +112,13 @@ use multi_buffer::{
     MultiBufferPoint, MultiBufferRow, MultiBufferSnapshot, RowInfo, ToOffset, ToPoint,
 };
 use project::project_settings::DiagnosticSeverity;
-use project::{InlayId, lsp_store::LspFoldingRange, lsp_store::TokenType};
+use project::{InlayId, lsp_store::LspFoldingRange};
 use serde::Deserialize;
 use settings::Settings;
 use smallvec::SmallVec;
 use sum_tree::{Bias, TreeMap};
 use text::{BufferId, LineIndent, Patch};
-use theme::StatusColors;
-use ui::{SharedString, px};
+use ui::SharedString;
 use unicode_segmentation::UnicodeSegmentation;
 use ztracing::instrument;
 
@@ -124,9 +128,8 @@ use std::{
     any::TypeId,
     borrow::Cow,
     fmt::Debug,
-    iter,
     num::NonZeroU32,
-    ops::{self, Add, Range, Sub},
+    ops::{Add, Range, Sub},
     sync::Arc,
 };
 
@@ -135,6 +138,7 @@ use crate::{
 };
 use block_map::{BlockPointCursor, BlockRow, BlockSnapshot};
 use fold_map::{FoldPointCursor, FoldSnapshot};
+use highlights::diagnostic_style;
 use inlay_map::{BufferOffsetToInlayPointCursor, InlaySnapshot};
 use tab_map::{TabPointCursor, TabSnapshot};
 use wrap_map::{WrapMap, WrapPatch, WrapPointCursor};
@@ -328,38 +332,6 @@ impl Companion {
         };
         excerpt.patch.edit_for_old_position(point).new
     }
-}
-
-#[derive(Default, Debug)]
-pub struct HighlightStyleInterner {
-    styles: IndexSet<HighlightStyle>,
-}
-
-impl HighlightStyleInterner {
-    pub(crate) fn intern(&mut self, style: HighlightStyle) -> HighlightStyleId {
-        HighlightStyleId(self.styles.insert_full(style).0 as u32)
-    }
-}
-
-impl ops::Index<HighlightStyleId> for HighlightStyleInterner {
-    type Output = HighlightStyle;
-
-    fn index(&self, index: HighlightStyleId) -> &Self::Output {
-        &self.styles[index.0 as usize]
-    }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct HighlightStyleId(u32);
-
-/// A `SemanticToken`, but positioned to an offset in a buffer, and stylized.
-#[derive(Debug, Clone)]
-pub struct SemanticTokenHighlight {
-    pub range: Range<Anchor>,
-    pub style: HighlightStyleId,
-    pub token_type: TokenType,
-    pub token_modifiers: u32,
-    pub server_id: lsp::LanguageServerId,
 }
 
 impl DisplayMap {
@@ -1379,141 +1351,6 @@ impl DisplayMap {
     }
 }
 
-#[derive(Debug, Default)]
-pub(crate) struct Highlights<'a> {
-    pub text_highlights: Option<&'a TextHighlights>,
-    pub inlay_highlights: Option<&'a InlayHighlights>,
-    pub semantic_token_highlights: Option<&'a SemanticTokensHighlights>,
-    pub styles: HighlightStyles,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct EditPredictionStyles {
-    pub insertion: HighlightStyle,
-    pub whitespace: HighlightStyle,
-}
-
-#[derive(Default, Debug, Clone, Copy)]
-pub struct HighlightStyles {
-    pub inlay_hint: Option<HighlightStyle>,
-    pub edit_prediction: Option<EditPredictionStyles>,
-}
-
-#[derive(Clone)]
-pub enum ChunkReplacement {
-    Renderer(ChunkRenderer),
-    Str(SharedString),
-}
-
-pub struct HighlightedChunk<'a> {
-    pub text: &'a str,
-    pub style: Option<HighlightStyle>,
-    pub is_tab: bool,
-    pub is_inlay: bool,
-    pub replacement: Option<ChunkReplacement>,
-}
-
-impl<'a> HighlightedChunk<'a> {
-    #[instrument(skip_all)]
-    fn highlight_invisibles(
-        self,
-        editor_style: &'a EditorStyle,
-    ) -> impl Iterator<Item = Self> + 'a {
-        let mut chunks = self.text.graphemes(true).peekable();
-        let mut text = self.text;
-        let style = self.style;
-        let is_tab = self.is_tab;
-        let renderer = self.replacement;
-        let is_inlay = self.is_inlay;
-        iter::from_fn(move || {
-            let mut prefix_len = 0;
-            while let Some(&chunk) = chunks.peek() {
-                let mut chars = chunk.chars();
-                let Some(ch) = chars.next() else { break };
-                if chunk.len() != ch.len_utf8() || !is_invisible(ch) {
-                    prefix_len += chunk.len();
-                    chunks.next();
-                    continue;
-                }
-                if prefix_len > 0 {
-                    let (prefix, suffix) = text.split_at(prefix_len);
-                    text = suffix;
-                    return Some(HighlightedChunk {
-                        text: prefix,
-                        style,
-                        is_tab,
-                        is_inlay,
-                        replacement: renderer.clone(),
-                    });
-                }
-                chunks.next();
-                let (prefix, suffix) = text.split_at(chunk.len());
-                text = suffix;
-                if let Some(replacement) = replacement(ch) {
-                    let invisible_highlight = HighlightStyle {
-                        background_color: Some(editor_style.status.hint_background),
-                        underline: Some(UnderlineStyle {
-                            color: Some(editor_style.status.hint),
-                            thickness: px(1.),
-                            wavy: false,
-                        }),
-                        ..Default::default()
-                    };
-                    let invisible_style = if let Some(style) = style {
-                        style.highlight(invisible_highlight)
-                    } else {
-                        invisible_highlight
-                    };
-                    return Some(HighlightedChunk {
-                        text: prefix,
-                        style: Some(invisible_style),
-                        is_tab: false,
-                        is_inlay,
-                        replacement: Some(ChunkReplacement::Str(replacement.into())),
-                    });
-                } else {
-                    let invisible_highlight = HighlightStyle {
-                        background_color: Some(editor_style.status.hint_background),
-                        underline: Some(UnderlineStyle {
-                            color: Some(editor_style.status.hint),
-                            thickness: px(1.),
-                            wavy: false,
-                        }),
-                        ..Default::default()
-                    };
-                    let invisible_style = if let Some(style) = style {
-                        style.highlight(invisible_highlight)
-                    } else {
-                        invisible_highlight
-                    };
-
-                    return Some(HighlightedChunk {
-                        text: prefix,
-                        style: Some(invisible_style),
-                        is_tab: false,
-                        is_inlay,
-                        replacement: renderer.clone(),
-                    });
-                }
-            }
-
-            if !text.is_empty() {
-                let remainder = text;
-                text = "";
-                Some(HighlightedChunk {
-                    text: remainder,
-                    style,
-                    is_tab,
-                    is_inlay,
-                    replacement: renderer.clone(),
-                })
-            } else {
-                None
-            }
-        })
-    }
-}
-
 #[derive(Clone)]
 pub struct DisplaySnapshot {
     pub display_map_id: EntityId,
@@ -2440,16 +2277,6 @@ impl DisplaySnapshot {
             ),
             Bias::Right,
         )
-    }
-}
-
-fn diagnostic_style(severity: lsp::DiagnosticSeverity, colors: &StatusColors) -> Hsla {
-    match severity {
-        lsp::DiagnosticSeverity::ERROR => colors.error,
-        lsp::DiagnosticSeverity::WARNING => colors.warning,
-        lsp::DiagnosticSeverity::INFORMATION => colors.info,
-        lsp::DiagnosticSeverity::HINT => colors.hint,
-        _ => colors.ignored,
     }
 }
 
