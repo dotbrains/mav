@@ -1,4 +1,17 @@
+use super::rendered_line::RenderedLine;
 use super::*;
+
+pub(super) struct RenderedMarkdown {
+    element: AnyElement,
+    text: RenderedText,
+}
+
+#[derive(Clone)]
+pub(super) struct RenderedText {
+    lines: Rc<[RenderedLine]>,
+    links: Rc<[RenderedLink]>,
+    footnote_refs: Rc<[RenderedFootnoteRef]>,
+}
 
 struct WrappedLineSegment {
     start: usize,
