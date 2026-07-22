@@ -1,4 +1,3 @@
-
 mod selection;
 use std::{ops::Range, time::Duration};
 
