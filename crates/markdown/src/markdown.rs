@@ -3,9 +3,12 @@ pub mod html;
 mod mermaid;
 pub mod parser;
 mod path_range;
+#[path = "markdown/selection.rs"]
+mod selection;
 mod style;
 
 use escaping::MarkdownEscaper;
+use selection::{SelectMode, Selection};
 
 use base64::Engine as _;
 use futures::FutureExt as _;
@@ -708,80 +711,6 @@ impl Markdown {
 impl Focusable for Markdown {
     fn focus_handle(&self, _cx: &App) -> FocusHandle {
         self.focus_handle.clone()
-    }
-}
-
-#[derive(Debug, Default, Clone)]
-enum SelectMode {
-    #[default]
-    Character,
-    Word(Range<usize>),
-    Line(Range<usize>),
-    All,
-}
-
-#[derive(Clone, Default)]
-struct Selection {
-    start: usize,
-    end: usize,
-    reversed: bool,
-    pending: bool,
-    mode: SelectMode,
-}
-
-impl Selection {
-    fn set_head(&mut self, head: usize, rendered_text: &RenderedText) {
-        match &self.mode {
-            SelectMode::Character => {
-                if head < self.tail() {
-                    if !self.reversed {
-                        self.end = self.start;
-                        self.reversed = true;
-                    }
-                    self.start = head;
-                } else {
-                    if self.reversed {
-                        self.start = self.end;
-                        self.reversed = false;
-                    }
-                    self.end = head;
-                }
-            }
-            SelectMode::Word(original_range) | SelectMode::Line(original_range) => {
-                let head_range = if matches!(self.mode, SelectMode::Word(_)) {
-                    rendered_text.surrounding_word_range(head)
-                } else {
-                    rendered_text.surrounding_line_range(head)
-                };
-
-                if head < original_range.start {
-                    self.start = head_range.start;
-                    self.end = original_range.end;
-                    self.reversed = true;
-                } else if head >= original_range.end {
-                    self.start = original_range.start;
-                    self.end = head_range.end;
-                    self.reversed = false;
-                } else {
-                    self.start = original_range.start;
-                    self.end = original_range.end;
-                    self.reversed = false;
-                }
-            }
-            SelectMode::All => {
-                self.start = 0;
-                self.end = rendered_text
-                    .lines
-                    .last()
-                    .map(|line| line.source_end)
-                    .unwrap_or(0);
-                self.reversed = false;
-            }
-        }
-    }
-
-    fn tail(&self) -> usize {
-        if self.reversed { self.end } else { self.start }
     }
 }
 
