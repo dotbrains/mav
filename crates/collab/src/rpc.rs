@@ -1,10 +1,14 @@
 mod connection_pool;
 #[path = "rpc/headers.rs"]
 mod headers;
+#[path = "rpc/responses.rs"]
+mod responses;
 #[path = "rpc/updates.rs"]
 mod updates;
 
 use headers::{AppVersionHeader, ProtocolVersion, ReleaseChannelHeader};
+pub use responses::ConnectionGuard;
+use responses::{Response, StreamResponse};
 use updates::*;
 
 use crate::api::{CloudflareIpCountryHeader, SystemIdHeader};
@@ -51,7 +55,7 @@ use futures::{
 };
 use prometheus::{IntGauge, register_int_gauge};
 use rpc::{
-    Connection, ConnectionId, ErrorCode, ErrorCodeExt, ErrorExt, Peer, Receipt, TypedEnvelope,
+    Connection, ConnectionId, ErrorCode, ErrorCodeExt, ErrorExt, Peer, TypedEnvelope,
     proto::{
         self, Ack, AnyTypedEnvelope, EntityMessage, EnvelopedMessage, LiveKitConnectionInfo,
         RequestMessage, ShareProject, UpdateChannelBufferCollaborators,
@@ -65,10 +69,7 @@ use std::{
     net::SocketAddr,
     ops::{Deref, DerefMut},
     rc::Rc,
-    sync::{
-        Arc, OnceLock,
-        atomic::{AtomicBool, AtomicUsize, Ordering::SeqCst},
-    },
+    sync::{Arc, OnceLock, atomic::AtomicBool},
     time::{Duration, Instant},
 };
 use tokio::sync::{Semaphore, watch};
@@ -85,9 +86,6 @@ pub const RECONNECT_TIMEOUT: Duration = Duration::from_secs(30);
 pub const CLEANUP_TIMEOUT: Duration = Duration::from_secs(15);
 
 const NOTIFICATION_COUNT_PER_PAGE: usize = 50;
-const MAX_CONCURRENT_CONNECTIONS: usize = 512;
-
-static CONCURRENT_CONNECTIONS: AtomicUsize = AtomicUsize::new(0);
 
 const TOTAL_DURATION_MS: &str = "total_duration_ms";
 const PROCESSING_DURATION_MS: &str = "processing_duration_ms";
@@ -96,67 +94,6 @@ const HOST_WAITING_MS: &str = "host_waiting_ms";
 
 type MessageHandler =
     Box<dyn Send + Sync + Fn(Box<dyn AnyTypedEnvelope>, Session, Span) -> BoxFuture<'static, ()>>;
-
-pub struct ConnectionGuard;
-
-impl ConnectionGuard {
-    pub fn try_acquire() -> Result<Self, ()> {
-        let current_connections = CONCURRENT_CONNECTIONS.fetch_add(1, SeqCst);
-        if current_connections >= MAX_CONCURRENT_CONNECTIONS {
-            CONCURRENT_CONNECTIONS.fetch_sub(1, SeqCst);
-            tracing::error!(
-                "too many concurrent connections: {}",
-                current_connections + 1
-            );
-            return Err(());
-        }
-        Ok(ConnectionGuard)
-    }
-}
-
-impl Drop for ConnectionGuard {
-    fn drop(&mut self) {
-        CONCURRENT_CONNECTIONS.fetch_sub(1, SeqCst);
-    }
-}
-
-struct Response<R> {
-    peer: Arc<Peer>,
-    receipt: Receipt<R>,
-    responded: Arc<AtomicBool>,
-}
-
-impl<R: RequestMessage> Response<R> {
-    fn send(self, payload: R::Response) -> Result<()> {
-        self.responded.store(true, SeqCst);
-        self.peer.respond(self.receipt, payload)?;
-        Ok(())
-    }
-}
-
-struct StreamResponse<R> {
-    peer: Arc<Peer>,
-    receipt: Receipt<R>,
-    ended: Arc<AtomicBool>,
-}
-
-impl<R: RequestMessage> StreamResponse<R> {
-    fn send(&self, payload: R::Response) -> Result<()> {
-        self.peer.respond(self.receipt, payload)?;
-        Ok(())
-    }
-
-    fn end(self) -> Result<()> {
-        // Always mark `ended` even if sending `EndStream` on the wire fails, so that
-        // `ended` reflects "the handler intended to end the stream". The caller still
-        // gets the underlying error and routes through the Err arm of the handler,
-        // which sends `respond_with_error` to terminate the client-side stream.
-        let result = self.peer.end_stream(self.receipt);
-        self.ended.store(true, SeqCst);
-        result?;
-        Ok(())
-    }
-}
 
 #[derive(Clone, Debug)]
 pub enum Principal {
@@ -2349,7 +2286,9 @@ where
             .message("request is not allowed for guests".to_string())
             .to_proto(),
     )?;
-    response.responded.store(true, SeqCst);
+    response
+        .responded
+        .store(true, std::sync::atomic::Ordering::SeqCst);
     Ok(())
 }
 
