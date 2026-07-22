@@ -3,6 +3,7 @@ use std::{cmp::Ordering, fmt::Debug};
 use crate::{Bias, ContextLessSummary, Dimension, Edit, Item, KeyedItem, SeekTarget, SumTree};
 
 #[cfg(test)]
+#[path = "tree_map/tests.rs"]
 mod tests;
 
 /// A cheaply-cloneable ordered map based on a [SumTree](crate::SumTree).
