@@ -113,7 +113,6 @@
     2751	crates/gpui/src/elements/list.rs
     2750	crates/editor/src/hover_popover.rs
     2730	crates/mav/src/mav/open_listener.rs
-    2635	crates/settings_json/src/settings_json.rs
     2633	crates/workspace/src/multi_workspace.rs
     2610	crates/edit_prediction_cli/src/split_commit.rs
     2609	crates/settings/src/keymap_file.rs
