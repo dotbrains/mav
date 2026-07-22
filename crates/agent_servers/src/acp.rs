@@ -46,9 +46,11 @@ use crate::{CURSOR_ID, GEMINI_ID};
 pub const GEMINI_TERMINAL_AUTH_METHOD_ID: &str = "spawn-gemini-cli";
 const PARAMETERIMAV_MODEL_PICKER_META_KEY: &str = "parameterizedModelPicker";
 mod debug_log;
+mod foreground_work;
 
 use debug_log::{AcpDebugLog, exited_load_error_with_stderr};
 pub use debug_log::{AcpDebugMessage, AcpDebugMessageContent, AcpDebugMessageDirection};
+use foreground_work::{ClientContext, ForegroundWork, enqueue_notification, enqueue_request};
 
 #[derive(Debug, Error)]
 #[error("Unsupported version")]
@@ -82,125 +84,6 @@ impl<T> FlattenAcpResult<T> for Result<Result<T, acp::Error>, anyhow::Error> {
             Ok(Err(err)) => Err(err),
             Err(err) => Err(err.into()),
         }
-    }
-}
-
-/// Holds state needed by foreground work dispatched from background handler closures.
-struct ClientContext {
-    sessions: Rc<RefCell<HashMap<acp::SessionId, AcpSession>>>,
-    session_list: Rc<RefCell<Option<Rc<AcpSessionList>>>>,
-}
-
-fn dispatch_queue_closed_error() -> acp::Error {
-    acp::Error::internal_error().data("ACP foreground dispatch queue closed")
-}
-
-/// Work items sent from `Send` handler closures to the `!Send` foreground thread.
-trait ForegroundWorkItem: Send {
-    fn run(self: Box<Self>, cx: &mut AsyncApp, ctx: &ClientContext);
-    fn reject(self: Box<Self>);
-}
-
-type ForegroundWork = Box<dyn ForegroundWorkItem>;
-
-struct RequestForegroundWork<Req, Res>
-where
-    Req: Send + 'static,
-    Res: JsonRpcResponse + Send + 'static,
-{
-    request: Req,
-    responder: Responder<Res>,
-    handler: fn(Req, Responder<Res>, &mut AsyncApp, &ClientContext),
-}
-
-impl<Req, Res> ForegroundWorkItem for RequestForegroundWork<Req, Res>
-where
-    Req: Send + 'static,
-    Res: JsonRpcResponse + Send + 'static,
-{
-    fn run(self: Box<Self>, cx: &mut AsyncApp, ctx: &ClientContext) {
-        let Self {
-            request,
-            responder,
-            handler,
-        } = *self;
-        handler(request, responder, cx, ctx);
-    }
-
-    fn reject(self: Box<Self>) {
-        let Self { responder, .. } = *self;
-        log::error!("ACP foreground dispatch queue closed while handling inbound request");
-        responder
-            .respond_with_error(dispatch_queue_closed_error())
-            .log_err();
-    }
-}
-
-struct NotificationForegroundWork<Notif>
-where
-    Notif: Send + 'static,
-{
-    notification: Notif,
-    connection: ConnectionTo<Agent>,
-    handler: fn(Notif, &mut AsyncApp, &ClientContext),
-}
-
-impl<Notif> ForegroundWorkItem for NotificationForegroundWork<Notif>
-where
-    Notif: Send + 'static,
-{
-    fn run(self: Box<Self>, cx: &mut AsyncApp, ctx: &ClientContext) {
-        let Self {
-            notification,
-            handler,
-            ..
-        } = *self;
-        handler(notification, cx, ctx);
-    }
-
-    fn reject(self: Box<Self>) {
-        let Self { connection, .. } = *self;
-        log::error!("ACP foreground dispatch queue closed while handling inbound notification");
-        connection
-            .send_error_notification(dispatch_queue_closed_error())
-            .log_err();
-    }
-}
-
-fn enqueue_request<Req, Res>(
-    dispatch_tx: &mpsc::UnboundedSender<ForegroundWork>,
-    request: Req,
-    responder: Responder<Res>,
-    handler: fn(Req, Responder<Res>, &mut AsyncApp, &ClientContext),
-) where
-    Req: Send + 'static,
-    Res: JsonRpcResponse + Send + 'static,
-{
-    let work: ForegroundWork = Box::new(RequestForegroundWork {
-        request,
-        responder,
-        handler,
-    });
-    if let Err(err) = dispatch_tx.unbounded_send(work) {
-        err.into_inner().reject();
-    }
-}
-
-fn enqueue_notification<Notif>(
-    dispatch_tx: &mpsc::UnboundedSender<ForegroundWork>,
-    notification: Notif,
-    connection: ConnectionTo<Agent>,
-    handler: fn(Notif, &mut AsyncApp, &ClientContext),
-) where
-    Notif: Send + 'static,
-{
-    let work: ForegroundWork = Box::new(NotificationForegroundWork {
-        notification,
-        connection,
-        handler,
-    });
-    if let Err(err) = dispatch_tx.unbounded_send(work) {
-        err.into_inner().reject();
     }
 }
 
