@@ -17,36 +17,36 @@ pub(super) struct CandidateWithRanges {
 #[derive(Clone, Deserialize, JsonSchema, PartialEq, Action)]
 #[action(namespace = vim)]
 #[serde(deny_unknown_fields)]
-struct Parentheses {
+pub(super) struct Parentheses {
     #[serde(default)]
-    opening: bool,
+    pub(super) opening: bool,
 }
 
 /// Operates on text within or around square brackets `[]`.
 #[derive(Clone, Deserialize, JsonSchema, PartialEq, Action)]
 #[action(namespace = vim)]
 #[serde(deny_unknown_fields)]
-struct SquareBrackets {
+pub(super) struct SquareBrackets {
     #[serde(default)]
-    opening: bool,
+    pub(super) opening: bool,
 }
 
 /// Operates on text within or around angle brackets `<>`.
 #[derive(Clone, Deserialize, JsonSchema, PartialEq, Action)]
 #[action(namespace = vim)]
 #[serde(deny_unknown_fields)]
-struct AngleBrackets {
+pub(super) struct AngleBrackets {
     #[serde(default)]
-    opening: bool,
+    pub(super) opening: bool,
 }
 
 /// Operates on text within or around curly brackets `{}`.
 #[derive(Clone, Deserialize, JsonSchema, PartialEq, Action)]
 #[action(namespace = vim)]
 #[serde(deny_unknown_fields)]
-struct CurlyBrackets {
+pub(super) struct CurlyBrackets {
     #[serde(default)]
-    opening: bool,
+    pub(super) opening: bool,
 }
 
 fn cover_or_next<I: Iterator<Item = (Range<MultiBufferOffset>, Range<MultiBufferOffset>)>>(

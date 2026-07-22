@@ -566,7 +566,8 @@ mod tag;
 #[path = "object/word.rs"]
 mod word;
 
-use paragraph_sentence::{paragraph, sentence};
+use delimiters::{AngleBrackets, CurlyBrackets, Parentheses, SquareBrackets};
+use paragraph_sentence::{expand_to_include_whitespace, paragraph, sentence};
 pub use tag::surrounding_html_tag;
 use word::{around_subword, around_word, in_subword, in_word};
 

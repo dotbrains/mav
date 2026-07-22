@@ -53,7 +53,7 @@ pub(super) struct ActionLogMetrics {
 }
 
 impl ActionLogMetrics {
-    fn for_buffer(buffer: &Buffer) -> Self {
+    pub(super) fn for_buffer(buffer: &Buffer) -> Self {
         Self {
             language: buffer.language().map(|l| l.name().0),
             lines_removed: 0,
@@ -61,13 +61,13 @@ impl ActionLogMetrics {
         }
     }
 
-    fn add_edits(&mut self, edits: &[Edit<u32>]) {
+    pub(super) fn add_edits(&mut self, edits: &[Edit<u32>]) {
         for edit in edits {
             self.add_edit(edit);
         }
     }
 
-    fn add_edit(&mut self, edit: &Edit<u32>) {
+    pub(super) fn add_edit(&mut self, edit: &Edit<u32>) {
         self.lines_added += edit.new_len();
         self.lines_removed += edit.old_len();
     }

@@ -1,3 +1,4 @@
+use super::paragraph_sentence::expand_to_include_whitespace;
 use super::*;
 
 pub(super) fn in_word(

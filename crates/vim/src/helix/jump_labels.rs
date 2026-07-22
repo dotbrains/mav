@@ -1,14 +1,15 @@
 use super::*;
 
-const HELIX_JUMP_ALPHABET: &[char; 26] = &[
+pub(super) const HELIX_JUMP_ALPHABET: &[char; 26] = &[
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
     't', 'u', 'v', 'w', 'x', 'y', 'z',
 ];
-const HELIX_JUMP_LABEL_LIMIT: usize = HELIX_JUMP_ALPHABET.len() * HELIX_JUMP_ALPHABET.len();
-const HELIX_JUMP_MONOSPACE_TOLERANCE: Pixels = px(0.5);
-const HELIX_JUMP_MIN_LABEL_SCALE: f32 = 1.0;
+pub(super) const HELIX_JUMP_LABEL_LIMIT: usize =
+    HELIX_JUMP_ALPHABET.len() * HELIX_JUMP_ALPHABET.len();
+pub(super) const HELIX_JUMP_MONOSPACE_TOLERANCE: Pixels = px(0.5);
+pub(super) const HELIX_JUMP_MIN_LABEL_SCALE: f32 = 1.0;
 const HELIX_JUMP_MAX_HIDDEN_CHARS: usize = 16;
-const HELIX_JUMP_MAX_LEFT_WS_CHARS: usize = 32;
+pub(super) const HELIX_JUMP_MAX_LEFT_WS_CHARS: usize = 32;
 
 pub(super) fn is_jump_word_char(ch: char) -> bool {
     ch == '_' || ch.is_alphanumeric()
@@ -42,7 +43,7 @@ pub(super) struct JumpLabelFitBudget {
 pub(super) struct HiddenPrefixFitState {
     text: String,
     pub(super) hide_end_offset: MultiBufferOffset,
-    hidden_width: Pixels,
+    pub(super) hidden_width: Pixels,
     total_char_count: usize,
     word_char_count: usize,
 }

@@ -36,6 +36,7 @@ mod project_support_types;
 mod project_types;
 mod remote_handlers;
 #[cfg(any(test, feature = "test-support"))]
+#[path = "project/test_support.rs"]
 mod test_support;
 use buffer_diff::BufferDiff;
 use context_server_store::ContextServerStore;
