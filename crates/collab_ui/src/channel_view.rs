@@ -1,34 +1,27 @@
 use anyhow::Result;
 use call::ActiveCall;
 use channel::{Channel, ChannelBuffer, ChannelBufferEvent, ChannelStore};
-use client::{
-    ChannelId, Collaborator, ParticipantIndex,
-    proto::{self, PeerId},
-};
-use collections::HashMap;
+use client::ChannelId;
 use editor::{
-    CollaborationHub, DisplayPoint, Editor, EditorEvent, SelectionEffects,
-    display_map::ToDisplayPoint, scroll::Autoscroll,
+    DisplayPoint, Editor, EditorEvent, SelectionEffects, display_map::ToDisplayPoint,
+    scroll::Autoscroll,
 };
 use gpui::{
-    App, ClipboardItem, Context, Entity, EventEmitter, Focusable, Pixels, Point, Render,
-    Subscription, Task, VisualContext as _, WeakEntity, Window, actions,
+    App, ClipboardItem, Context, Entity, EventEmitter, Focusable, Render, Subscription, Task,
+    VisualContext as _, WeakEntity, Window, actions,
 };
 use project::Project;
-use rpc::proto::ChannelVisibility;
-use std::{
-    any::{Any, TypeId},
-    sync::Arc,
-};
+use std::sync::Arc;
 use ui::prelude::*;
 use util::ResultExt;
-use workspace::{CollaboratorId, item::TabContentParams};
-use workspace::{
-    ItemNavHistory, Pane, SaveIntent, Toast, ViewId, Workspace, WorkspaceId,
-    item::{FollowableItem, Item, ItemEvent},
-    searchable::SearchableItemHandle,
-};
-use workspace::{item::Dedup, notifications::NotificationId};
+use workspace::notifications::NotificationId;
+use workspace::{Pane, SaveIntent, Toast, ViewId, Workspace, item::ItemEvent};
+
+use collaboration_hub::ChannelBufferCollaborationHub;
+
+mod collaboration_hub;
+mod followable;
+mod item;
 
 actions!(
     collab,
@@ -433,287 +426,5 @@ impl Render for ChannelView {
 impl Focusable for ChannelView {
     fn focus_handle(&self, cx: &App) -> gpui::FocusHandle {
         self.editor.read(cx).focus_handle(cx)
-    }
-}
-
-impl Item for ChannelView {
-    type Event = EditorEvent;
-
-    fn act_as_type<'a>(
-        &'a self,
-        type_id: TypeId,
-        self_handle: &'a Entity<Self>,
-        _: &'a App,
-    ) -> Option<gpui::AnyEntity> {
-        if type_id == TypeId::of::<Self>() {
-            Some(self_handle.clone().into())
-        } else if type_id == TypeId::of::<Editor>() {
-            Some(self.editor.clone().into())
-        } else {
-            None
-        }
-    }
-
-    fn tab_icon(&self, _: &Window, cx: &App) -> Option<Icon> {
-        let channel = self.channel(cx)?;
-        let icon = match channel.visibility {
-            ChannelVisibility::Public => IconName::Public,
-            ChannelVisibility::Members => IconName::Hash,
-        };
-
-        Some(Icon::new(icon))
-    }
-
-    fn tab_content_text(&self, _detail: usize, cx: &App) -> SharedString {
-        let (name, status) = self.get_channel(cx);
-        if let Some(status) = status {
-            format!("{name} - {status}").into()
-        } else {
-            name
-        }
-    }
-
-    fn tab_content(&self, params: TabContentParams, _: &Window, cx: &App) -> gpui::AnyElement {
-        let (name, status) = self.get_channel(cx);
-        h_flex()
-            .gap_2()
-            .child(
-                Label::new(name)
-                    .color(params.text_color())
-                    .when(params.preview, |this| this.italic()),
-            )
-            .when_some(status, |element, status| {
-                element.child(
-                    Label::new(status)
-                        .size(LabelSize::XSmall)
-                        .color(Color::Muted),
-                )
-            })
-            .into_any_element()
-    }
-
-    fn telemetry_event_text(&self) -> Option<&'static str> {
-        None
-    }
-
-    fn can_split(&self) -> bool {
-        true
-    }
-
-    fn clone_on_split(
-        &self,
-        _: Option<WorkspaceId>,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> Task<Option<Entity<Self>>> {
-        Task::ready(Some(cx.new(|cx| {
-            Self::new(
-                self.project.clone(),
-                self.workspace.clone(),
-                self.channel_store.clone(),
-                self.channel_buffer.clone(),
-                window,
-                cx,
-            )
-        })))
-    }
-
-    fn navigate(
-        &mut self,
-        data: Arc<dyn Any + Send>,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> bool {
-        self.editor
-            .update(cx, |editor, cx| editor.navigate(data, window, cx))
-    }
-
-    fn deactivated(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        self.editor
-            .update(cx, |item, cx| item.deactivated(window, cx))
-    }
-
-    fn set_nav_history(
-        &mut self,
-        history: ItemNavHistory,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.editor.update(cx, |editor, cx| {
-            Item::set_nav_history(editor, history, window, cx)
-        })
-    }
-
-    fn as_searchable(&self, _: &Entity<Self>, _: &App) -> Option<Box<dyn SearchableItemHandle>> {
-        Some(Box::new(self.editor.clone()))
-    }
-
-    fn show_toolbar(&self) -> bool {
-        true
-    }
-
-    fn pixel_position_of_cursor(&self, cx: &App) -> Option<Point<Pixels>> {
-        self.editor.read(cx).pixel_position_of_cursor(cx)
-    }
-
-    fn to_item_events(event: &EditorEvent, f: &mut dyn FnMut(ItemEvent)) {
-        Editor::to_item_events(event, f)
-    }
-}
-
-impl FollowableItem for ChannelView {
-    fn remote_id(&self) -> Option<workspace::ViewId> {
-        self.remote_id
-    }
-
-    fn to_state_proto(&self, window: &mut Window, cx: &mut App) -> Option<proto::view::Variant> {
-        let (is_connected, channel_id) = {
-            let channel_buffer = self.channel_buffer.read(cx);
-            (channel_buffer.is_connected(), channel_buffer.channel_id.0)
-        };
-        if !is_connected {
-            return None;
-        }
-
-        let editor_proto = self
-            .editor
-            .update(cx, |editor, cx| editor.to_state_proto(window, cx));
-        Some(proto::view::Variant::ChannelView(
-            proto::view::ChannelView {
-                channel_id,
-                editor: if let Some(proto::view::Variant::Editor(proto)) = editor_proto {
-                    Some(proto)
-                } else {
-                    None
-                },
-            },
-        ))
-    }
-
-    fn from_state_proto(
-        workspace: Entity<workspace::Workspace>,
-        remote_id: workspace::ViewId,
-        state: &mut Option<proto::view::Variant>,
-        window: &mut Window,
-        cx: &mut App,
-    ) -> Option<gpui::Task<anyhow::Result<Entity<Self>>>> {
-        let Some(proto::view::Variant::ChannelView(_)) = state else {
-            return None;
-        };
-        let Some(proto::view::Variant::ChannelView(state)) = state.take() else {
-            unreachable!()
-        };
-
-        let open = ChannelView::load(ChannelId(state.channel_id), workspace, window, cx);
-
-        Some(window.spawn(cx, async move |cx| {
-            let this = open.await?;
-
-            let task = this.update_in(cx, |this, window, cx| {
-                this.remote_id = Some(remote_id);
-
-                if let Some(state) = state.editor {
-                    Some(this.editor.update(cx, |editor, cx| {
-                        editor.apply_update_proto(
-                            &this.project,
-                            proto::update_view::Variant::Editor(proto::update_view::Editor {
-                                selections: state.selections,
-                                pending_selection: state.pending_selection,
-                                scroll_top_anchor: state.scroll_top_anchor,
-                                scroll_x: state.scroll_x,
-                                scroll_y: state.scroll_y,
-                                ..Default::default()
-                            }),
-                            window,
-                            cx,
-                        )
-                    }))
-                } else {
-                    None
-                }
-            })?;
-
-            if let Some(task) = task {
-                task.await?;
-            }
-
-            Ok(this)
-        }))
-    }
-
-    fn add_event_to_update_proto(
-        &self,
-        event: &EditorEvent,
-        update: &mut Option<proto::update_view::Variant>,
-        window: &mut Window,
-        cx: &mut App,
-    ) -> bool {
-        self.editor.update(cx, |editor, cx| {
-            editor.add_event_to_update_proto(event, update, window, cx)
-        })
-    }
-
-    fn apply_update_proto(
-        &mut self,
-        project: &Entity<Project>,
-        message: proto::update_view::Variant,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> gpui::Task<anyhow::Result<()>> {
-        self.editor.update(cx, |editor, cx| {
-            editor.apply_update_proto(project, message, window, cx)
-        })
-    }
-
-    fn set_leader_id(
-        &mut self,
-        leader_id: Option<CollaboratorId>,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.editor
-            .update(cx, |editor, cx| editor.set_leader_id(leader_id, window, cx))
-    }
-
-    fn is_project_item(&self, _window: &Window, _cx: &App) -> bool {
-        false
-    }
-
-    fn to_follow_event(event: &Self::Event) -> Option<workspace::item::FollowEvent> {
-        Editor::to_follow_event(event)
-    }
-
-    fn dedup(&self, existing: &Self, _: &Window, cx: &App) -> Option<Dedup> {
-        let existing = existing.channel_buffer.read(cx);
-        if self.channel_buffer.read(cx).channel_id == existing.channel_id {
-            if existing.is_connected() {
-                Some(Dedup::KeepExisting)
-            } else {
-                Some(Dedup::ReplaceExisting)
-            }
-        } else {
-            None
-        }
-    }
-}
-
-struct ChannelBufferCollaborationHub(Entity<ChannelBuffer>);
-
-impl CollaborationHub for ChannelBufferCollaborationHub {
-    fn collaborators<'a>(&self, cx: &'a App) -> &'a HashMap<PeerId, Collaborator> {
-        self.0.read(cx).collaborators()
-    }
-
-    fn user_participant_indices<'a>(&self, cx: &'a App) -> &'a HashMap<u64, ParticipantIndex> {
-        self.0.read(cx).user_store().read(cx).participant_indices()
-    }
-
-    fn user_names(&self, cx: &App) -> HashMap<u64, SharedString> {
-        let user_ids = self.collaborators(cx).values().map(|c| c.user_id);
-        self.0
-            .read(cx)
-            .user_store()
-            .read(cx)
-            .participant_names(user_ids, cx)
     }
 }
