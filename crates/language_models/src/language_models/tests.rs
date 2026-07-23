@@ -1,4 +1,3 @@
-
 use super::*;
 use anyhow::Result;
 use clock::FakeSystemClock;
