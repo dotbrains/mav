@@ -1,39 +1,39 @@
 use crate::multibuffer_hint::MultibufferHint;
 use client::{Client, UserStore, mav_urls};
 use cloud_api_types::Plan;
-use db::kvp::KeyValueStore;
-use fs::Fs;
 use gpui::{
-    Action, AnyElement, App, AppContext, AsyncWindowContext, Context, Entity, EventEmitter,
-    FocusHandle, Focusable, Global, IntoElement, KeyContext, Render, ScrollHandle, SharedString,
-    Subscription, Task, WeakEntity, Window, actions,
+    Action, AnyElement, App, AppContext, Context, Entity, EventEmitter, FocusHandle, Focusable,
+    IntoElement, KeyContext, Render, ScrollHandle, SharedString, Subscription, Task, WeakEntity,
+    Window, actions,
 };
-use notifications::status_toast::StatusToast;
 use project::agent_server_store::AllAgentServersSettings;
 use schemars::JsonSchema;
 use serde::Deserialize;
-use settings::{SettingsStore, VsCodeSettingsSource};
-use std::sync::Arc;
+use settings::SettingsStore;
 use ui::{
     Divider, KeyBinding, ParentElement as _, StatefulInteractiveElement, Vector, VectorName,
     WithScrollbar as _, prelude::*, rems_from_px,
 };
 
-use mav_actions::OpenOnboarding;
 pub use workspace::welcome::ShowWelcome;
 use workspace::welcome::WelcomePage;
 use workspace::{
-    AppState, Workspace, WorkspaceId,
-    dock::DockPosition,
+    Workspace, WorkspaceId,
     item::{Item, ItemEvent},
     notifications::NotifyResultExt as _,
-    open_new, register_serializable_item, with_active_or_new_workspace,
+    with_active_or_new_workspace,
 };
 
+mod actions;
 mod base_keymap_picker;
 mod basics_page;
+mod import_settings;
 pub mod multibuffer_hint;
+mod persistence;
 mod theme_preview;
+
+pub use actions::{init, show_onboarding_view};
+pub use import_settings::{SettingsImportState, handle_import_vscode_settings};
 
 /// Imports settings from Visual Studio Code.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Deserialize, JsonSchema, Action)]
@@ -68,142 +68,6 @@ actions!(
         ResetHints
     ]
 );
-
-pub fn init(cx: &mut App) {
-    cx.observe_new(|workspace: &mut Workspace, _, _cx| {
-        workspace
-            .register_action(|_workspace, _: &ResetHints, _, cx| MultibufferHint::set_count(0, cx));
-    })
-    .detach();
-
-    cx.on_action(|_: &OpenOnboarding, cx| {
-        with_active_or_new_workspace(cx, |workspace, window, cx| {
-            workspace
-                .with_local_workspace(window, cx, |workspace, window, cx| {
-                    let existing = workspace
-                        .active_pane()
-                        .read(cx)
-                        .items()
-                        .find_map(|item| item.downcast::<Onboarding>());
-
-                    if let Some(existing) = existing {
-                        workspace.activate_item(&existing, true, true, window, cx);
-                    } else {
-                        let settings_page = Onboarding::new(workspace, cx);
-                        workspace.add_item_to_active_pane(
-                            Box::new(settings_page),
-                            None,
-                            true,
-                            window,
-                            cx,
-                        )
-                    }
-                })
-                .detach();
-        });
-    });
-
-    cx.on_action(|_: &ShowWelcome, cx| {
-        with_active_or_new_workspace(cx, |workspace, window, cx| {
-            workspace
-                .with_local_workspace(window, cx, |workspace, window, cx| {
-                    let existing = workspace
-                        .active_pane()
-                        .read(cx)
-                        .items()
-                        .find_map(|item| item.downcast::<WelcomePage>());
-
-                    if let Some(existing) = existing {
-                        workspace.activate_item(&existing, true, true, window, cx);
-                    } else {
-                        let settings_page = cx
-                            .new(|cx| WelcomePage::new(workspace.weak_handle(), false, window, cx));
-                        workspace.add_item_to_active_pane(
-                            Box::new(settings_page),
-                            None,
-                            true,
-                            window,
-                            cx,
-                        )
-                    }
-                })
-                .detach();
-        });
-    });
-
-    cx.observe_new(|workspace: &mut Workspace, _window, _cx| {
-        workspace.register_action(|_workspace, action: &ImportVsCodeSettings, window, cx| {
-            let fs = <dyn Fs>::global(cx);
-            let action = *action;
-
-            let workspace = cx.weak_entity();
-
-            window
-                .spawn(cx, async move |cx: &mut AsyncWindowContext| {
-                    handle_import_vscode_settings(
-                        workspace,
-                        VsCodeSettingsSource::VsCode,
-                        action.skip_prompt,
-                        fs,
-                        cx,
-                    )
-                    .await
-                })
-                .detach();
-        });
-
-        workspace.register_action(|_workspace, action: &ImportCursorSettings, window, cx| {
-            let fs = <dyn Fs>::global(cx);
-            let action = *action;
-
-            let workspace = cx.weak_entity();
-
-            window
-                .spawn(cx, async move |cx: &mut AsyncWindowContext| {
-                    handle_import_vscode_settings(
-                        workspace,
-                        VsCodeSettingsSource::Cursor,
-                        action.skip_prompt,
-                        fs,
-                        cx,
-                    )
-                    .await
-                })
-                .detach();
-        });
-    })
-    .detach();
-
-    base_keymap_picker::init(cx);
-
-    register_serializable_item::<Onboarding>(cx);
-    register_serializable_item::<WelcomePage>(cx);
-}
-
-pub fn show_onboarding_view(app_state: Arc<AppState>, cx: &mut App) -> Task<anyhow::Result<()>> {
-    telemetry::event!("Onboarding Page Opened");
-    open_new(
-        Default::default(),
-        app_state,
-        cx,
-        |workspace, window, cx| {
-            {
-                workspace.toggle_dock(DockPosition::Left, window, cx);
-                let onboarding_page = Onboarding::new(workspace, cx);
-                workspace.add_item_to_center(Box::new(onboarding_page.clone()), window, cx);
-
-                window.focus(&onboarding_page.focus_handle(cx), cx);
-
-                cx.notify();
-            };
-            let kvp = KeyValueStore::global(cx);
-            db::write_and_log(cx, move || async move {
-                kvp.write_kvp(FIRST_OPEN.to_string(), "false".to_string())
-                    .await
-            });
-        },
-    )
-}
 
 struct Onboarding {
     workspace: WeakEntity<Workspace>,
@@ -468,125 +332,6 @@ fn go_to_welcome_page(cx: &mut App) {
     });
 }
 
-pub async fn handle_import_vscode_settings(
-    workspace: WeakEntity<Workspace>,
-    source: VsCodeSettingsSource,
-    skip_prompt: bool,
-    fs: Arc<dyn Fs>,
-    cx: &mut AsyncWindowContext,
-) {
-    use util::truncate_and_remove_front;
-
-    let vscode_settings =
-        match settings::VsCodeSettings::load_user_settings(source, fs.clone()).await {
-            Ok(vscode_settings) => vscode_settings,
-            Err(err) => {
-                zlog::error!("{err:?}");
-                let _ = cx.prompt(
-                    gpui::PromptLevel::Info,
-                    &format!("Could not find or load a {source} settings file"),
-                    None,
-                    &["OK"],
-                );
-                return;
-            }
-        };
-
-    if !skip_prompt {
-        let prompt = cx.prompt(
-            gpui::PromptLevel::Warning,
-            &format!(
-                "Importing {} settings may overwrite your existing settings. \
-                Will import settings from {}",
-                vscode_settings.source,
-                truncate_and_remove_front(&vscode_settings.path.to_string_lossy(), 128),
-            ),
-            None,
-            &["Import", "Cancel"],
-        );
-        let result = cx.spawn(async move |_| prompt.await.ok()).await;
-        if result != Some(0) {
-            return;
-        }
-    };
-
-    let Ok(result_channel) = cx.update(|_, cx| {
-        let source = vscode_settings.source;
-        let path = vscode_settings.path.clone();
-        let result_channel = cx
-            .global::<SettingsStore>()
-            .import_vscode_settings(fs, vscode_settings);
-        zlog::info!("Imported {source} settings from {}", path.display());
-        result_channel
-    }) else {
-        return;
-    };
-
-    let result = result_channel.await;
-    workspace
-        .update_in(cx, |workspace, _, cx| match result {
-            Ok(_) => {
-                let confirmation_toast = StatusToast::new(
-                    format!("Your {} settings were successfully imported.", source),
-                    cx,
-                    |this, _| {
-                        this.icon(
-                            Icon::new(IconName::Check)
-                                .size(IconSize::Small)
-                                .color(Color::Success),
-                        )
-                        .dismiss_button(true)
-                    },
-                );
-                SettingsImportState::update(cx, |state, _| match source {
-                    VsCodeSettingsSource::VsCode => {
-                        state.vscode = true;
-                    }
-                    VsCodeSettingsSource::Cursor => {
-                        state.cursor = true;
-                    }
-                });
-                workspace.toggle_status_toast(confirmation_toast, cx);
-            }
-            Err(_) => {
-                let error_toast = StatusToast::new(
-                    "Failed to import settings. See log for details",
-                    cx,
-                    |this, _| {
-                        this.icon(
-                            Icon::new(IconName::Close)
-                                .size(IconSize::Small)
-                                .color(Color::Error),
-                        )
-                        .action("Open Log", |window, cx| {
-                            window.dispatch_action(workspace::OpenLog.boxed_clone(), cx)
-                        })
-                        .dismiss_button(true)
-                    },
-                );
-                workspace.toggle_status_toast(error_toast, cx);
-            }
-        })
-        .ok();
-}
-
-#[derive(Default, Copy, Clone)]
-pub struct SettingsImportState {
-    pub cursor: bool,
-    pub vscode: bool,
-}
-
-impl Global for SettingsImportState {}
-
-impl SettingsImportState {
-    pub fn global(cx: &App) -> Self {
-        cx.try_global().cloned().unwrap_or_default()
-    }
-    pub fn update<R>(cx: &mut App, f: impl FnOnce(&mut Self, &mut App) -> R) -> R {
-        cx.update_default_global(f)
-    }
-}
-
 impl workspace::SerializableItem for Onboarding {
     fn serialized_item_kind() -> &'static str {
         "OnboardingPage"
@@ -645,72 +390,5 @@ impl workspace::SerializableItem for Onboarding {
 
     fn should_serialize(&self, event: &Self::Event) -> bool {
         event == &ItemEvent::UpdateTab
-    }
-}
-
-mod persistence {
-    use db::{
-        query,
-        sqlez::{domain::Domain, thread_safe_connection::ThreadSafeConnection},
-        sqlez_macros::sql,
-    };
-    use workspace::WorkspaceDb;
-
-    pub struct OnboardingPagesDb(ThreadSafeConnection);
-
-    impl Domain for OnboardingPagesDb {
-        const NAME: &str = stringify!(OnboardingPagesDb);
-
-        const MIGRATIONS: &[&str] = &[
-            sql!(
-                        CREATE TABLE onboarding_pages (
-                            workspace_id INTEGER,
-                            item_id INTEGER UNIQUE,
-                            page_number INTEGER,
-
-                            PRIMARY KEY(workspace_id, item_id),
-                            FOREIGN KEY(workspace_id) REFERENCES workspaces(workspace_id)
-                            ON DELETE CASCADE
-                        ) STRICT;
-            ),
-            sql!(
-                        CREATE TABLE onboarding_pages_2 (
-                            workspace_id INTEGER,
-                            item_id INTEGER UNIQUE,
-
-                            PRIMARY KEY(workspace_id, item_id),
-                            FOREIGN KEY(workspace_id) REFERENCES workspaces(workspace_id)
-                            ON DELETE CASCADE
-                        ) STRICT;
-                        INSERT INTO onboarding_pages_2 SELECT workspace_id, item_id FROM onboarding_pages;
-                        DROP TABLE onboarding_pages;
-                        ALTER TABLE onboarding_pages_2 RENAME TO onboarding_pages;
-            ),
-        ];
-    }
-
-    db::static_connection!(OnboardingPagesDb, [WorkspaceDb]);
-
-    impl OnboardingPagesDb {
-        query! {
-            pub async fn save_onboarding_page(
-                item_id: workspace::ItemId,
-                workspace_id: workspace::WorkspaceId
-            ) -> Result<()> {
-                INSERT OR REPLACE INTO onboarding_pages(item_id, workspace_id)
-                VALUES (?, ?)
-            }
-        }
-
-        query! {
-            pub fn get_onboarding_page(
-                item_id: workspace::ItemId,
-                workspace_id: workspace::WorkspaceId
-            ) -> Result<Option<workspace::ItemId>> {
-                SELECT item_id
-                FROM onboarding_pages
-                WHERE item_id = ? AND workspace_id = ?
-            }
-        }
     }
 }
