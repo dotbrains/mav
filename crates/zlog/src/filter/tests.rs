@@ -1,4 +1,3 @@
-
 use log::LevelFilter;
 
 use crate::Scope;
