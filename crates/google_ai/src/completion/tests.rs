@@ -1,4 +1,3 @@
-
 use super::*;
 use crate::{
     Content, FunctionCall, FunctionCallPart, GenerateContentCandidate, GenerateContentResponse,
