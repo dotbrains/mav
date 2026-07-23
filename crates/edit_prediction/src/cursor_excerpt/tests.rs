@@ -1,4 +1,3 @@
-
 use super::*;
 use gpui::{App, AppContext as _};
 use indoc::indoc;
