@@ -33,11 +33,11 @@ pub(super) fn resolve_split_point_value(split_point: SplitPointValue, num_edits:
 }
 
 #[derive(Debug, Clone)]
-struct GeneratedSplitCommit {
-    split: usize,
-    split_commit: SplitCommit,
-    cursor: CursorPosition,
-    cursor_from_human_edit: bool,
+pub(super) struct GeneratedSplitCommit {
+    pub(super) split: usize,
+    pub(super) split_commit: SplitCommit,
+    pub(super) cursor: CursorPosition,
+    pub(super) cursor_from_human_edit: bool,
 }
 
 pub(super) fn generate_split_commit_at_split(

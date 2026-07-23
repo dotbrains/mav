@@ -1,3 +1,14 @@
+use gpui::{App, HighlightStyle, SharedString, Subscription};
+use language::{BufferSnapshot, EditPreview, HighlightedText};
+use multi_buffer::{Anchor, MultiBufferSnapshot};
+use project::InlayId;
+use std::{ops::Range, sync::Arc, time::Instant};
+use theme::ActiveTheme;
+
+use crate::{
+    EditPredictionDelegateHandle, display_map::EditPredictionStyles, scroll::SharedScrollAnchor,
+};
+
 pub fn make_suggestion_styles(cx: &App) -> EditPredictionStyles {
     EditPredictionStyles {
         insertion: HighlightStyle {
@@ -11,13 +22,13 @@ pub fn make_suggestion_styles(cx: &App) -> EditPredictionStyles {
     }
 }
 
-pub(super) enum EditDisplayMode {
+pub(crate) enum EditDisplayMode {
     TabAccept,
     DiffPopover,
     Inline,
 }
 
-pub(super) enum EditPrediction {
+pub(crate) enum EditPrediction {
     Edit {
         // TODO could be a language::Anchor?
         edits: Vec<(Range<Anchor>, Arc<str>)>,
@@ -41,14 +52,14 @@ pub(super) enum EditPrediction {
     },
 }
 
-pub(super) struct EditPredictionState {
-    pub(super) inlay_ids: Vec<InlayId>,
-    pub(super) completion: EditPrediction,
-    pub(super) completion_id: Option<SharedString>,
-    pub(super) invalidation_range: Option<Range<Anchor>>,
+pub(crate) struct EditPredictionState {
+    pub(crate) inlay_ids: Vec<InlayId>,
+    pub(crate) completion: EditPrediction,
+    pub(crate) completion_id: Option<SharedString>,
+    pub(crate) invalidation_range: Option<Range<Anchor>>,
 }
 
-pub(super) enum EditPredictionSettings {
+pub(crate) enum EditPredictionSettings {
     Disabled,
     Enabled {
         show_in_menu: bool,
@@ -56,13 +67,13 @@ pub(super) enum EditPredictionSettings {
     },
 }
 
-pub(super) enum MenuEditPredictionsPolicy {
+pub(crate) enum MenuEditPredictionsPolicy {
     #[cfg(test)]
     Never,
     ByProvider,
 }
 
-pub(super) enum EditPredictionPreview {
+pub(crate) enum EditPredictionPreview {
     /// Modifier is not pressed
     Inactive { released_too_fast: bool },
     /// Modifier pressed
@@ -73,38 +84,38 @@ pub(super) enum EditPredictionPreview {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub(super) enum EditPredictionKeybindSurface {
+pub(crate) enum EditPredictionKeybindSurface {
     Inline,
     CursorPopoverCompact,
     CursorPopoverExpanded,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
-pub(super) enum EditPredictionKeybindAction {
+pub(crate) enum EditPredictionKeybindAction {
     Accept,
     Preview,
 }
 
-pub(super) struct EditPredictionKeybindDisplay {
+pub(crate) struct EditPredictionKeybindDisplay {
     #[cfg(test)]
-    pub(super) accept_keystroke: Option<gpui::KeybindingKeystroke>,
+    pub(crate) accept_keystroke: Option<gpui::KeybindingKeystroke>,
     #[cfg(test)]
-    pub(super) preview_keystroke: Option<gpui::KeybindingKeystroke>,
-    pub(super) displayed_keystroke: Option<gpui::KeybindingKeystroke>,
-    pub(super) action: EditPredictionKeybindAction,
-    pub(super) missing_accept_keystroke: bool,
-    pub(super) show_hold_label: bool,
+    pub(crate) preview_keystroke: Option<gpui::KeybindingKeystroke>,
+    pub(crate) displayed_keystroke: Option<gpui::KeybindingKeystroke>,
+    pub(crate) action: EditPredictionKeybindAction,
+    pub(crate) missing_accept_keystroke: bool,
+    pub(crate) show_hold_label: bool,
 }
 
 impl EditPredictionPreview {
-    pub(super) fn released_too_fast(&self) -> bool {
+    pub(crate) fn released_too_fast(&self) -> bool {
         match self {
             EditPredictionPreview::Inactive { released_too_fast } => *released_too_fast,
             EditPredictionPreview::Active { .. } => false,
         }
     }
 
-    pub(super) fn set_previous_scroll_position(
+    pub(crate) fn set_previous_scroll_position(
         &mut self,
         scroll_position: Option<SharedScrollAnchor>,
     ) {
@@ -118,12 +129,12 @@ impl EditPredictionPreview {
     }
 }
 
-pub(super) struct RegisteredEditPredictionDelegate {
-    pub(super) provider: Arc<dyn EditPredictionDelegateHandle>,
-    _subscription: Subscription,
+pub(crate) struct RegisteredEditPredictionDelegate {
+    pub(crate) provider: Arc<dyn EditPredictionDelegateHandle>,
+    pub(crate) _subscription: Subscription,
 }
 
-pub(super) fn edit_prediction_edit_text(
+pub(crate) fn edit_prediction_edit_text(
     current_snapshot: &BufferSnapshot,
     edits: &[(Range<Anchor>, impl AsRef<str>)],
     edit_preview: &EditPreview,

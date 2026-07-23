@@ -1,8 +1,8 @@
 use super::*;
 
 pub struct InlayPointCursor<'transforms> {
-    cursor: Cursor<'transforms, 'static, Transform, Dimensions<Point, InlayPoint>>,
-    transforms: &'transforms SumTree<Transform>,
+    pub(crate) cursor: Cursor<'transforms, 'static, Transform, Dimensions<Point, InlayPoint>>,
+    pub(crate) transforms: &'transforms SumTree<Transform>,
 }
 
 impl InlayPointCursor<'_> {
@@ -55,8 +55,8 @@ impl InlayPointCursor<'_> {
 /// [`InlaySnapshot::to_point`]. Because the cursor only seeks forward, callers
 /// must provide ranges with non-decreasing offsets.
 pub struct BufferOffsetToInlayPointCursor<'a> {
-    snapshot: &'a InlaySnapshot,
-    cursor: Cursor<'a, 'static, Transform, Dimensions<MultiBufferOffset, InlayPoint>>,
+    pub(crate) snapshot: &'a InlaySnapshot,
+    pub(crate) cursor: Cursor<'a, 'static, Transform, Dimensions<MultiBufferOffset, InlayPoint>>,
 }
 
 impl BufferOffsetToInlayPointCursor<'_> {

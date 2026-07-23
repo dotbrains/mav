@@ -16,7 +16,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn create_minimap(
+    pub(crate) fn create_minimap(
         &self,
         minimap_settings: MinimapSettings,
         window: &mut Window,
@@ -26,14 +26,14 @@ impl Editor {
             .then(|| self.initialize_new_minimap(minimap_settings, window, cx))
     }
 
-    fn initialize_new_minimap(
+    pub(crate) fn initialize_new_minimap(
         &self,
         minimap_settings: MinimapSettings,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Entity<Self> {
-        const MINIMAP_FONT_WEIGHT: gpui::FontWeight = gpui::FontWeight::BLACK;
-        const MINIMAP_FONT_FAMILY: SharedString = SharedString::new_static(".MavMono");
+        pub(crate) const MINIMAP_FONT_WEIGHT: gpui::FontWeight = gpui::FontWeight::BLACK;
+        pub(crate) const MINIMAP_FONT_FAMILY: SharedString = SharedString::new_static(".MavMono");
 
         let mut minimap = Editor::new_internal(
             EditorMode::Minimap {
@@ -63,7 +63,7 @@ impl Editor {
         cx.new(|_| minimap)
     }
 
-    pub(super) fn update_minimap_configuration(
+    pub(crate) fn update_minimap_configuration(
         &mut self,
         minimap_settings: MinimapSettings,
         cx: &App,

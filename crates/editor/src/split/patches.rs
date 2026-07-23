@@ -135,7 +135,7 @@ pub(super) fn translate_lhs_hunks_to_rhs(
     translated
 }
 
-fn patches_for_range<F>(
+pub(crate) fn patches_for_range<F>(
     source_snapshot: &MultiBufferSnapshot,
     target_snapshot: &MultiBufferSnapshot,
     source_bounds: Range<MultiBufferPoint>,
@@ -255,7 +255,7 @@ where
     result
 }
 
-fn patch_for_excerpt(
+pub(crate) fn patch_for_excerpt(
     source_snapshot: &MultiBufferSnapshot,
     target_snapshot: &MultiBufferSnapshot,
     source_buffer_snapshot: &language::BufferSnapshot,

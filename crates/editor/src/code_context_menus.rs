@@ -272,6 +272,16 @@ pub struct CompletionsMenu {
     snippet_sort_order: SnippetSortOrder,
 }
 
+impl CompletionsMenu {
+    pub fn visible(&self) -> bool {
+        !self.entries.borrow().is_empty()
+    }
+
+    pub fn origin(&self) -> ContextMenuOrigin {
+        ContextMenuOrigin::Cursor
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 enum MarkdownCacheKey {
     ForCandidate {

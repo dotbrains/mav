@@ -459,7 +459,7 @@ impl WrapSnapshot {
     }
 
     #[ztracing::instrument(skip_all)]
-    async fn update(
+    pub(crate) async fn update(
         &mut self,
         new_tab_snapshot: TabSnapshot,
         tab_edits: &[TabEdit],
@@ -1379,7 +1379,7 @@ mod tests {
     use theme::LoadThemes;
 
     #[gpui::test]
-    async fn test_prev_row_boundary(cx: &mut gpui::TestAppContext) {
+    pub(crate) async fn test_prev_row_boundary(cx: &mut gpui::TestAppContext) {
         init_test(cx);
 
         fn test_wrap_snapshot(
@@ -1444,7 +1444,7 @@ mod tests {
     }
 
     #[gpui::test(iterations = 100)]
-    async fn test_random_wraps(cx: &mut gpui::TestAppContext, mut rng: StdRng) {
+    pub(crate) async fn test_random_wraps(cx: &mut gpui::TestAppContext, mut rng: StdRng) {
         // todo this test is flaky
         init_test(cx);
 

@@ -3,9 +3,9 @@ use super::*;
 #[derive(Clone)]
 pub struct FoldSnapshot {
     pub inlay_snapshot: InlaySnapshot,
-    transforms: SumTree<Transform>,
-    folds: SumTree<Fold>,
-    fold_metadata_by_id: TreeMap<FoldId, FoldMetadata>,
+    pub(crate) transforms: SumTree<Transform>,
+    pub(crate) folds: SumTree<Fold>,
+    pub(crate) fold_metadata_by_id: TreeMap<FoldId, FoldMetadata>,
     pub version: usize,
 }
 
@@ -23,7 +23,7 @@ impl FoldSnapshot {
     }
 
     #[ztracing::instrument(skip_all)]
-    fn fold_width(&self, fold_id: &FoldId) -> Option<Pixels> {
+    pub(crate) fn fold_width(&self, fold_id: &FoldId) -> Option<Pixels> {
         self.fold_metadata_by_id.get(fold_id)?.width
     }
 

@@ -20,7 +20,7 @@ use crate::{
     test::editor_lsp_test_context::EditorLspTestContext,
 };
 
-pub(super) fn code_lens_assertion_text(editor: &Editor, cx: &ui::App) -> String {
+pub(crate) fn code_lens_assertion_text(editor: &Editor, cx: &ui::App) -> String {
     let snapshot = editor.buffer().read(cx).snapshot(cx);
     let mut blocks = editor
         .code_lens

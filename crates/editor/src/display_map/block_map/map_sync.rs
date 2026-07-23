@@ -2,7 +2,7 @@ use super::*;
 
 impl BlockMap {
     #[ztracing::instrument(skip_all, fields(edits = ?edits))]
-    fn sync(
+    pub(crate) fn sync(
         &self,
         wrap_snapshot: &WrapSnapshot,
         mut edits: WrapPatch,

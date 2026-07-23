@@ -1,6 +1,6 @@
 use super::*;
 
-pub(super) fn process_completion_for_edit(
+pub(crate) fn process_completion_for_edit(
     completion: &Completion,
     intent: CompletionIntent,
     buffer: &Entity<Buffer>,
@@ -141,8 +141,8 @@ pub(super) fn process_completion_for_edit(
     }
 }
 
-pub(super) struct CompletionEdit {
-    pub(super) new_text: String,
-    pub(super) replace_range: Range<text::Anchor>,
-    pub(super) snippet: Option<Snippet>,
+pub(crate) struct CompletionEdit {
+    pub(crate) new_text: String,
+    pub(crate) replace_range: Range<text::Anchor>,
+    pub(crate) snippet: Option<Snippet>,
 }

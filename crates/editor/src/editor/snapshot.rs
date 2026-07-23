@@ -3,24 +3,24 @@ use super::*;
 #[derive(Clone)]
 pub struct EditorSnapshot {
     pub mode: EditorMode,
-    pub(super) show_gutter: bool,
-    pub(super) offset_content: bool,
-    pub(super) show_line_numbers: Option<bool>,
-    pub(super) number_deleted_lines: bool,
-    pub(super) show_git_diff_gutter: Option<bool>,
-    pub(super) show_code_actions: Option<bool>,
-    pub(super) show_runnables: Option<bool>,
-    pub(super) show_breakpoints: Option<bool>,
-    pub(super) show_bookmarks: Option<bool>,
-    pub(super) git_blame_gutter_max_author_length: Option<usize>,
+    pub(crate) show_gutter: bool,
+    pub(crate) offset_content: bool,
+    pub(crate) show_line_numbers: Option<bool>,
+    pub(crate) number_deleted_lines: bool,
+    pub(crate) show_git_diff_gutter: Option<bool>,
+    pub(crate) show_code_actions: Option<bool>,
+    pub(crate) show_runnables: Option<bool>,
+    pub(crate) show_breakpoints: Option<bool>,
+    pub(crate) show_bookmarks: Option<bool>,
+    pub(crate) git_blame_gutter_max_author_length: Option<usize>,
     pub display_snapshot: DisplaySnapshot,
     pub placeholder_display_snapshot: Option<DisplaySnapshot>,
-    pub(super) is_focused: bool,
-    pub(super) scroll_anchor: SharedScrollAnchor,
-    pub(super) ongoing_scroll: OngoingScroll,
-    pub(super) current_line_highlight: CurrentLineHighlight,
-    pub(super) gutter_hovered: bool,
-    pub(super) semantic_tokens_enabled: bool,
+    pub(crate) is_focused: bool,
+    pub(crate) scroll_anchor: SharedScrollAnchor,
+    pub(crate) ongoing_scroll: OngoingScroll,
+    pub(crate) current_line_highlight: CurrentLineHighlight,
+    pub(crate) gutter_hovered: bool,
+    pub(crate) semantic_tokens_enabled: bool,
 }
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -33,14 +33,14 @@ pub struct GutterDimensions {
 }
 
 impl GutterDimensions {
-    fn default_with_margin(font_id: FontId, font_size: Pixels, cx: &App) -> Self {
+    pub(crate) fn default_with_margin(font_id: FontId, font_size: Pixels, cx: &App) -> Self {
         Self {
             margin: Self::default_gutter_margin(font_id, font_size, cx),
             ..Default::default()
         }
     }
 
-    fn default_gutter_margin(font_id: FontId, font_size: Pixels, cx: &App) -> Pixels {
+    pub(crate) fn default_gutter_margin(font_id: FontId, font_size: Pixels, cx: &App) -> Pixels {
         -cx.text_system().descent(font_id, font_size)
     }
 
@@ -164,10 +164,10 @@ impl EditorSnapshot {
                 self.git_blame_gutter_max_author_length
                     .map(|max_author_length| {
                         let renderer = cx.global::<GlobalBlameRenderer>().0.clone();
-                        const MAX_RELATIVE_TIMESTAMP: &str = "2 years, 11 months ago";
+                        pub(crate) const MAX_RELATIVE_TIMESTAMP: &str = "2 years, 11 months ago";
 
                         /// The number of characters to dedicate to gaps and margins.
-                        const SPACING_WIDTH: usize = 4;
+                        pub(crate) const SPACING_WIDTH: usize = 4;
 
                         let max_char_count = max_author_length.min(renderer.max_author_length())
                             + ::git::SHORT_SHA_LENGTH

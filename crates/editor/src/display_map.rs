@@ -101,6 +101,7 @@ pub use block_map::{
 };
 pub(crate) use companion::{Companion, CompanionExcerptPatch};
 pub use crease_map::*;
+pub use display_points::{DisplayPoint, DisplayPointConverter, DisplayRow};
 pub use fold_map::{
     ChunkRenderer, ChunkRendererContext, ChunkRendererId, Fold, FoldId, FoldPlaceholder, FoldPoint,
 };

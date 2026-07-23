@@ -17,7 +17,7 @@ pub fn prepare_task_for_spawn(
     }
 }
 
-fn is_enabled_in_workspace(workspace: &Workspace, cx: &App) -> bool {
+pub(crate) fn is_enabled_in_workspace(workspace: &Workspace, cx: &App) -> bool {
     workspace.project().read(cx).supports_terminal(cx)
 }
 
@@ -95,7 +95,7 @@ pub fn new_terminal_pane(
     pane
 }
 
-async fn wait_for_terminals_tasks(
+pub(crate) async fn wait_for_terminals_tasks(
     terminals_for_task: Vec<(usize, Entity<Pane>, Entity<TerminalView>)>,
     cx: &mut AsyncApp,
 ) {

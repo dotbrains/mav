@@ -131,8 +131,16 @@ mod spawn;
 #[path = "terminal_view/working_directory.rs"]
 mod working_directory;
 
+pub(crate) use events::{
+    TerminalScrollbarSettingsWrapper, regex_search_for_query, subscribe_for_terminal_events,
+    terminal_rerun_override,
+};
 use failed_to_spawn::FailedToSpawnTerminal;
-use spawn::{new_terminal, open_terminal};
+pub use spawn::init;
+pub(crate) use spawn::{
+    add_terminal_to_active_pane, add_terminal_to_workspace, is_enabled_in_workspace, new_terminal,
+    open_terminal, select_terminal_target_pane,
+};
 pub use working_directory::default_working_directory;
 
 pub struct BlockProperties {

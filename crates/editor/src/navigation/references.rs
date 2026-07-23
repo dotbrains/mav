@@ -277,7 +277,7 @@ impl Editor {
         }))
     }
 
-    pub(super) fn navigation_entry(
+    pub(crate) fn navigation_entry(
         &self,
         cursor_anchor: Anchor,
         cx: &mut Context<Self>,
@@ -289,7 +289,7 @@ impl Editor {
         Some(history.navigation_entry(Some(Arc::new(data) as Arc<dyn Any + Send + Sync>)))
     }
 
-    pub(super) fn push_to_nav_history(
+    pub(crate) fn push_to_nav_history(
         &mut self,
         cursor_anchor: Anchor,
         new_position: Option<Point>,
@@ -315,7 +315,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn expand_excerpt(
+    pub(crate) fn expand_excerpt(
         &mut self,
         excerpt_anchor: Anchor,
         direction: ExpandExcerptDirection,
@@ -374,7 +374,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn go_to_next_change(
+    pub(crate) fn go_to_next_change(
         &mut self,
         _: &GoToNextChange,
         window: &mut Window,
@@ -395,7 +395,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn go_to_previous_change(
+    pub(crate) fn go_to_previous_change(
         &mut self,
         _: &GoToPreviousChange,
         window: &mut Window,
@@ -416,7 +416,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn go_to_line<T: 'static>(
+    pub(crate) fn go_to_line<T: 'static>(
         &mut self,
         position: Anchor,
         highlight_color: fn(&App) -> Hsla,

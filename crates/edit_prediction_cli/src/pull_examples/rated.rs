@@ -1,6 +1,6 @@
 use super::*;
 
-fn rated_examples_from_response<'a>(
+pub(crate) fn rated_examples_from_response<'a>(
     response: &'a SnowflakeStatementResponse,
     column_indices: &'a std::collections::HashMap<String, usize>,
 ) -> Result<Box<dyn Iterator<Item = Example> + 'a>> {

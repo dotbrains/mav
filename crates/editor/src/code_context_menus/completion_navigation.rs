@@ -73,7 +73,7 @@ impl CompletionsMenu {
         self.update_selection_index(index, provider, window, cx);
     }
 
-    fn update_selection_index(
+    pub(crate) fn update_selection_index(
         &mut self,
         match_index: usize,
         provider: Option<&dyn CompletionProvider>,
@@ -86,7 +86,7 @@ impl CompletionsMenu {
         }
     }
 
-    fn prev_match_index(&self) -> usize {
+    pub(crate) fn prev_match_index(&self) -> usize {
         let entries = self.entries.borrow();
         let len = entries.len();
         if len == 0 {
@@ -109,7 +109,7 @@ impl CompletionsMenu {
         }
     }
 
-    fn next_match_index(&self) -> usize {
+    pub(crate) fn next_match_index(&self) -> usize {
         let entries = self.entries.borrow();
         let len = entries.len();
         if len == 0 {
@@ -132,7 +132,7 @@ impl CompletionsMenu {
         }
     }
 
-    fn find_selectable_entry(&self, start: usize, forward: bool) -> Option<usize> {
+    pub(crate) fn find_selectable_entry(&self, start: usize, forward: bool) -> Option<usize> {
         let entries = self.entries.borrow();
         let len = entries.len();
         if len == 0 {

@@ -20,7 +20,7 @@ pub fn is_blank(cell: &Cell) -> bool {
     true
 }
 
-fn terminal_content_reaches_bottom(content: &Content) -> bool {
+pub(crate) fn terminal_content_reaches_bottom(content: &Content) -> bool {
     let Some(last_line) = content.terminal_bounds.num_lines().checked_sub(1) else {
         return false;
     };
@@ -37,7 +37,7 @@ fn terminal_content_reaches_bottom(content: &Content) -> bool {
     })
 }
 
-fn to_highlighted_range_lines(
+pub(crate) fn to_highlighted_range_lines(
     range: &Range,
     layout: &LayoutState,
     origin: GpuiPoint<Pixels>,

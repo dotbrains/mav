@@ -2,7 +2,7 @@ use super::*;
 use snippet::Snippet;
 
 impl Editor {
-    fn show_snippet_choices(
+    pub(crate) fn show_snippet_choices(
         &mut self,
         choices: &Vec<String>,
         selection: Range<Anchor>,

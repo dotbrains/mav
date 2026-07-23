@@ -1,7 +1,11 @@
 use super::*;
 
 impl Editor {
-    fn navigation_data(&self, cursor_anchor: Anchor, cx: &mut Context<Self>) -> NavigationData {
+    pub(crate) fn navigation_data(
+        &self,
+        cursor_anchor: Anchor,
+        cx: &mut Context<Self>,
+    ) -> NavigationData {
         let display_snapshot = self.display_map.update(cx, |map, cx| map.snapshot(cx));
         let buffer = self.buffer.read(cx).read(cx);
         let cursor_position = cursor_anchor.to_point(&buffer);
@@ -17,7 +21,7 @@ impl Editor {
         }
     }
 
-    fn expand_excerpts_for_direction(
+    pub(crate) fn expand_excerpts_for_direction(
         &mut self,
         lines: u32,
         direction: ExpandExcerptDirection,
@@ -58,7 +62,7 @@ impl Editor {
         })
     }
 
-    fn go_to_definition_of_kind(
+    pub(crate) fn go_to_definition_of_kind(
         &mut self,
         kind: GotoDefinitionKind,
         split: bool,
@@ -110,7 +114,7 @@ impl Editor {
         })
     }
 
-    fn compute_target_location(
+    pub(crate) fn compute_target_location(
         &self,
         lsp_location: lsp::Location,
         server_id: LanguageServerId,
@@ -146,7 +150,7 @@ impl Editor {
         })
     }
 
-    fn go_to_singleton_buffer_range_impl(
+    pub(crate) fn go_to_singleton_buffer_range_impl(
         &mut self,
         range: Range<Point>,
         record_nav_history: bool,
@@ -170,7 +174,7 @@ impl Editor {
         );
     }
 
-    fn go_to_document_highlight_before_or_after_position(
+    pub(crate) fn go_to_document_highlight_before_or_after_position(
         &mut self,
         direction: Direction,
         window: &mut Window,

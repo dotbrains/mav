@@ -10,7 +10,7 @@ impl std::ops::Deref for DisplaySnapshot {
 
 /// A zero-indexed point in a text buffer consisting of a row and column adjusted for inserted blocks.
 #[derive(Copy, Clone, Default, Eq, Ord, PartialOrd, PartialEq)]
-pub struct DisplayPoint(BlockPoint);
+pub struct DisplayPoint(pub(crate) BlockPoint);
 
 impl Debug for DisplayPoint {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -161,12 +161,12 @@ impl ToDisplayPoint for Anchor {
 /// seek), which keeps the converter robust to overlapping inputs such as the
 /// base and buffer word diffs of an inline modified hunk.
 pub struct DisplayPointConverter<'a> {
-    inlay_cursor: BufferOffsetToInlayPointCursor<'a>,
-    fold_point_cursor: FoldPointCursor<'a>,
-    tab_point_cursor: TabPointCursor<'a>,
-    wrap_point_cursor: WrapPointCursor<'a>,
-    block_point_cursor: BlockPointCursor<'a>,
-    prev_end: Option<MultiBufferOffset>,
+    pub(crate) inlay_cursor: BufferOffsetToInlayPointCursor<'a>,
+    pub(crate) fold_point_cursor: FoldPointCursor<'a>,
+    pub(crate) tab_point_cursor: TabPointCursor<'a>,
+    pub(crate) wrap_point_cursor: WrapPointCursor<'a>,
+    pub(crate) block_point_cursor: BlockPointCursor<'a>,
+    pub(crate) prev_end: Option<MultiBufferOffset>,
 }
 
 impl DisplayPointConverter<'_> {
@@ -193,7 +193,7 @@ impl DisplayPointConverter<'_> {
             .collect()
     }
 
-    fn inlay_point_to_display_point(&mut self, inlay_point: InlayPoint) -> DisplayPoint {
+    pub(crate) fn inlay_point_to_display_point(&mut self, inlay_point: InlayPoint) -> DisplayPoint {
         let fold_point = self.fold_point_cursor.map(inlay_point, Bias::Left);
         let tab_point = self.tab_point_cursor.map(fold_point);
         let wrap_point = self.wrap_point_cursor.map(tab_point);

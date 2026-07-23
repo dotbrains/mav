@@ -116,7 +116,7 @@ impl EditPredictionStore {
             .unwrap_or_default()
     }
 
-    fn is_file_open_source(
+    pub(crate) fn is_file_open_source(
         &self,
         project: &Entity<Project>,
         file: &Arc<dyn File>,
@@ -157,7 +157,7 @@ impl EditPredictionStore {
         }
     }
 
-    fn load_legacy_data_collection_enabled(cx: &App) -> bool {
+    pub(crate) fn load_legacy_data_collection_enabled(cx: &App) -> bool {
         KeyValueStore::global(cx)
             .read_kvp(MAV_PREDICT_DATA_COLLECTION_CHOICE)
             .log_err()

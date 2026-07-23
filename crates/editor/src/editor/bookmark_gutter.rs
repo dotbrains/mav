@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn active_bookmarks(
+    pub(crate) fn active_bookmarks(
         &self,
         range: Range<DisplayRow>,
         window: &mut Window,
@@ -58,7 +58,7 @@ impl Editor {
         bookmark_display_points
     }
 
-    pub(super) fn render_bookmark(&self, row: DisplayRow, cx: &mut Context<Self>) -> IconButton {
+    pub(crate) fn render_bookmark(&self, row: DisplayRow, cx: &mut Context<Self>) -> IconButton {
         let focus_handle = self.focus_handle.clone();
         IconButton::new(("bookmark indicator", row.0 as usize), IconName::Bookmark)
             .icon_size(IconSize::XSmall)

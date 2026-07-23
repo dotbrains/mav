@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn update_visible_edit_prediction(
+    pub(crate) fn update_visible_edit_prediction(
         &mut self,
         _window: &mut Window,
         cx: &mut Context<Self>,

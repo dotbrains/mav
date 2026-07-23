@@ -1,7 +1,7 @@
 use super::*;
 
 impl EditPredictionStore {
-    async fn handle_rejected_predictions(
+    pub(crate) async fn handle_rejected_predictions(
         rx: UnboundedReceiver<EditPredictionRejectionPayload>,
         client: Arc<Client>,
         llm_token: LlmApiToken,
@@ -64,7 +64,7 @@ impl EditPredictionStore {
         }
     }
 
-    async fn run_settled_predictions_worker(
+    pub(crate) async fn run_settled_predictions_worker(
         this: WeakEntity<Self>,
         mut rx: UnboundedReceiver<Instant>,
         client: Arc<Client>,
@@ -303,7 +303,7 @@ impl EditPredictionStore {
         this.settled_predictions_tx.unbounded_send(now).ok();
     }
 
-    fn reject_current_prediction(
+    pub(crate) fn reject_current_prediction(
         &mut self,
         reason: EditPredictionRejectReason,
         project: &Entity<Project>,
@@ -325,7 +325,7 @@ impl EditPredictionStore {
         };
     }
 
-    fn did_show_current_prediction(
+    pub(crate) fn did_show_current_prediction(
         &mut self,
         project: &Entity<Project>,
         display_type: edit_prediction_types::SuggestionDisplayType,
@@ -362,7 +362,7 @@ impl EditPredictionStore {
         }
     }
 
-    fn reject_prediction(
+    pub(crate) fn reject_prediction(
         &mut self,
         prediction_id: EditPredictionId,
         reason: EditPredictionRejectReason,
@@ -412,7 +412,7 @@ impl EditPredictionStore {
         }
     }
 
-    fn is_refreshing(&self, project: &Entity<Project>) -> bool {
+    pub(crate) fn is_refreshing(&self, project: &Entity<Project>) -> bool {
         self.projects
             .get(&project.entity_id())
             .is_some_and(|project_state| !project_state.pending_predictions.is_empty())

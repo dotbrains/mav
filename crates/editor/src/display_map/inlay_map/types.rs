@@ -1,12 +1,19 @@
+use super::*;
+use crate::inlays::Inlay;
+use language::Edit;
+use multi_buffer::{MBTextSummary, MultiBufferOffset, MultiBufferSnapshot};
+use std::ops::{Add, AddAssign, Range, Sub, SubAssign};
+use sum_tree::SumTree;
+
 pub struct InlayMap {
-    snapshot: InlaySnapshot,
-    inlays: Vec<Inlay>,
+    pub(crate) snapshot: InlaySnapshot,
+    pub(crate) inlays: Vec<Inlay>,
 }
 
 #[derive(Clone)]
 pub struct InlaySnapshot {
     pub buffer: MultiBufferSnapshot,
-    transforms: SumTree<Transform>,
+    pub(crate) transforms: SumTree<Transform>,
     pub version: usize,
 }
 
@@ -19,7 +26,7 @@ impl std::ops::Deref for InlaySnapshot {
 }
 
 #[derive(Clone, Debug)]
-enum Transform {
+pub(crate) enum Transform {
     Isomorphic(MBTextSummary),
     Inlay(Inlay),
 }
@@ -43,15 +50,15 @@ impl sum_tree::Item for Transform {
 }
 
 #[derive(Clone, Debug, Default)]
-struct TransformSummary {
+pub(crate) struct TransformSummary {
     /// Summary of the text before inlays have been applied.
-    input: MBTextSummary,
+    pub(crate) input: MBTextSummary,
     /// Summary of the text after inlays have been applied.
-    output: MBTextSummary,
+    pub(crate) output: MBTextSummary,
 }
 
 impl TransformSummary {
-    fn has_inlays(&self) -> bool {
+    pub(crate) fn has_inlays(&self) -> bool {
         self.input.len != self.output.len
     }
 }
@@ -184,24 +191,25 @@ impl<'a> sum_tree::Dimension<'a, TransformSummary> for Point {
 
 #[derive(Clone)]
 pub struct InlayBufferRows<'a> {
-    transforms: Cursor<'a, 'static, Transform, Dimensions<InlayPoint, Point>>,
-    buffer_rows: MultiBufferRows<'a>,
-    inlay_row: u32,
-    max_buffer_row: MultiBufferRow,
+    pub(crate) transforms: Cursor<'a, 'static, Transform, Dimensions<InlayPoint, Point>>,
+    pub(crate) buffer_rows: MultiBufferRows<'a>,
+    pub(crate) inlay_row: u32,
+    pub(crate) max_buffer_row: MultiBufferRow,
 }
 
 pub struct InlayChunks<'a> {
-    transforms: Cursor<'a, 'static, Transform, Dimensions<InlayOffset, MultiBufferOffset>>,
-    buffer_chunks: CustomHighlightsChunks<'a>,
-    buffer_chunk: Option<Chunk<'a>>,
-    inlay_chunks: Option<text::ChunkWithBitmaps<'a>>,
+    pub(crate) transforms:
+        Cursor<'a, 'static, Transform, Dimensions<InlayOffset, MultiBufferOffset>>,
+    pub(crate) buffer_chunks: CustomHighlightsChunks<'a>,
+    pub(crate) buffer_chunk: Option<Chunk<'a>>,
+    pub(crate) inlay_chunks: Option<text::ChunkWithBitmaps<'a>>,
     /// text, char bitmap, tabs bitmap
-    inlay_chunk: Option<ChunkBitmaps<'a>>,
-    output_offset: InlayOffset,
-    max_output_offset: InlayOffset,
-    highlight_styles: HighlightStyles,
-    highlights: Highlights<'a>,
-    snapshot: &'a InlaySnapshot,
+    pub(crate) inlay_chunk: Option<ChunkBitmaps<'a>>,
+    pub(crate) output_offset: InlayOffset,
+    pub(crate) max_output_offset: InlayOffset,
+    pub(crate) highlight_styles: HighlightStyles,
+    pub(crate) highlights: Highlights<'a>,
+    pub(crate) snapshot: &'a InlaySnapshot,
 }
 
 #[derive(Clone)]

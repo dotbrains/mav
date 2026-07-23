@@ -1,6 +1,6 @@
 use super::*;
 
-fn push_isomorphic(sum_tree: &mut SumTree<Transform>, summary: MBTextSummary) {
+pub(crate) fn push_isomorphic(sum_tree: &mut SumTree<Transform>, summary: MBTextSummary) {
     if summary.len == MultiBufferOffset(0) {
         return;
     }

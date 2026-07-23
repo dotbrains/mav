@@ -19,21 +19,21 @@ pub(crate) struct SnowflakeStatementResponse {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct SnowflakeResultSetMetaData {
     #[serde(default, rename = "rowType")]
-    row_type: Vec<SnowflakeColumnMeta>,
+    pub(crate) row_type: Vec<SnowflakeColumnMeta>,
     #[serde(default)]
-    num_rows: Option<i64>,
+    pub(crate) num_rows: Option<i64>,
     #[serde(default)]
-    partition_info: Vec<SnowflakePartitionInfo>,
+    pub(crate) partition_info: Vec<SnowflakePartitionInfo>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct SnowflakePartitionInfo {}
+pub(crate) struct SnowflakePartitionInfo {}
 
 #[derive(Debug, Clone, Deserialize)]
-struct SnowflakeColumnMeta {
+pub(crate) struct SnowflakeColumnMeta {
     #[serde(default)]
-    name: String,
+    pub(crate) name: String,
 }
 
 async fn run_sql_with_polling(
@@ -84,13 +84,13 @@ struct SnowflakeConfig {
 }
 
 #[derive(Clone)]
-struct QueryRetryState {
-    resume_after: String,
-    remaining_limit: Option<usize>,
-    offset: usize,
+pub(crate) struct QueryRetryState {
+    pub(crate) resume_after: String,
+    pub(crate) remaining_limit: Option<usize>,
+    pub(crate) offset: usize,
 }
 
-async fn fetch_examples_with_query<MakeBindings>(
+pub(crate) async fn fetch_examples_with_query<MakeBindings>(
     http_client: Arc<dyn HttpClient>,
     step_progress: &crate::progress::StepProgress,
     background_executor: BackgroundExecutor,

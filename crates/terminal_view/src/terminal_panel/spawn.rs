@@ -131,7 +131,7 @@ impl TerminalPanel {
     }
 
     /// Create a new Terminal in the current working directory or the user's home directory
-    pub(super) fn new_terminal(
+    pub(crate) fn new_terminal(
         workspace: &mut Workspace,
         action: &workspace::NewTerminal,
         window: &mut Window,

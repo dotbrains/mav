@@ -53,7 +53,7 @@ impl SplittableEditor {
         result
     }
 
-    fn expand_excerpts(
+    pub(crate) fn expand_excerpts(
         &mut self,
         excerpt_anchors: impl Iterator<Item = Anchor> + Clone,
         lines: u32,
@@ -99,18 +99,18 @@ impl SplittableEditor {
         }
     }
 
-    fn search_token(&self) -> SearchToken {
+    pub(crate) fn search_token(&self) -> SearchToken {
         SearchToken::new(self.focused_side() as u64)
     }
 
-    fn editor_for_token(&self, token: SearchToken) -> Option<&Entity<Editor>> {
+    pub(crate) fn editor_for_token(&self, token: SearchToken) -> Option<&Entity<Editor>> {
         if token.value() == SplitSide::Left as u64 {
             return self.lhs.as_ref().map(|lhs| &lhs.editor);
         }
         Some(&self.rhs_editor)
     }
 
-    fn sync_lhs_for_paths(
+    pub(crate) fn sync_lhs_for_paths(
         &self,
         paths: Vec<(PathKey, Entity<BufferDiff>)>,
         cx: &mut Context<Self>,
@@ -200,7 +200,12 @@ impl SplittableEditor {
         });
     }
 
-    fn width_changed(&mut self, width: Pixels, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn width_changed(
+        &mut self,
+        width: Pixels,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         self.last_width = Some(width);
 
         let min_ems = EditorSettings::get_global(cx).minimum_split_diff_width;

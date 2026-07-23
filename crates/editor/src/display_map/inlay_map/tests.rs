@@ -1,4 +1,3 @@
-
 use super::*;
 use crate::{
     MultiBuffer,
@@ -22,14 +21,14 @@ mod padding;
 mod random;
 mod utf8;
 
-fn init_test(cx: &mut App) {
+pub(crate) fn init_test(cx: &mut App) {
     let store = SettingsStore::test(cx);
     cx.set_global(store);
     theme_settings::init(theme::LoadThemes::JustBase, cx);
 }
 
 /// Helper to create test highlights for an inlay
-fn create_inlay_highlights(
+pub(crate) fn create_inlay_highlights(
     inlay_id: InlayId,
     highlight_range: Range<usize>,
     position: Anchor,

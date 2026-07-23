@@ -2,7 +2,7 @@ use super::*;
 
 impl Editor {
     /// Opens a multibuffer with the given project locations in it.
-    pub(super) fn open_locations_in_multibuffer(
+    pub(crate) fn open_locations_in_multibuffer(
         workspace: &mut Workspace,
         locations: std::collections::HashMap<Entity<Buffer>, Vec<Range<Point>>>,
         title: String,

@@ -25,7 +25,7 @@ use multi_buffer::MultiBufferOffset;
 mod basic;
 mod random;
 
-async fn init_test(
+pub(crate) async fn init_test(
     cx: &mut gpui::TestAppContext,
     soft_wrap: SoftWrap,
     style: DiffViewStyle,
@@ -68,7 +68,7 @@ async fn init_test(
     (editor, cx)
 }
 
-fn buffer_with_diff(
+pub(crate) fn buffer_with_diff(
     base_text: &str,
     current_text: &str,
     cx: &mut VisualTestContext,
@@ -80,7 +80,7 @@ fn buffer_with_diff(
 }
 
 #[track_caller]
-fn assert_split_content(
+pub(crate) fn assert_split_content(
     editor: &Entity<SplittableEditor>,
     expected_rhs: String,
     expected_lhs: String,
@@ -97,7 +97,7 @@ fn assert_split_content(
 }
 
 #[track_caller]
-fn assert_split_content_with_widths(
+pub(crate) fn assert_split_content_with_widths(
     editor: &Entity<SplittableEditor>,
     rhs_width: Pixels,
     lhs_width: Pixels,

@@ -2,7 +2,7 @@ use super::*;
 
 impl TerminalView {
     ///Attempt to paste the clipboard into the terminal
-    fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
         self.terminal.update(cx, |term, _| term.copy(None));
         cx.notify();
     }
@@ -10,7 +10,7 @@ impl TerminalView {
     /// Specific handler for the [`editor::actions::Copy`] action in order for
     /// the `Edit > Copy` menu item to not be disabled, as the app expects a
     /// handler for this action in order to enable/disable the menu item.
-    fn editor_copy(
+    pub(crate) fn editor_copy(
         &mut self,
         _: &editor::actions::Copy,
         window: &mut Window,
@@ -20,7 +20,7 @@ impl TerminalView {
     }
 
     ///Attempt to paste the clipboard into the terminal
-    fn paste(&mut self, _: &Paste, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn paste(&mut self, _: &Paste, window: &mut Window, cx: &mut Context<Self>) {
         let Some(clipboard) = cx.read_from_clipboard() else {
             return;
         };
@@ -44,7 +44,7 @@ impl TerminalView {
     /// Specific handler for the [`editor::actions::Paste`] action in order for
     /// the `Edit > Paste` menu item to not be disabled, as the app expects a
     /// handler for this action in order to enable/disable the menu item.
-    fn editor_paste(
+    pub(crate) fn editor_paste(
         &mut self,
         _: &editor::actions::Paste,
         window: &mut Window,
@@ -54,7 +54,7 @@ impl TerminalView {
     }
 
     ///Attempt to paste the clipboard text into the terminal
-    fn paste_text(&mut self, _: &PasteText, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn paste_text(&mut self, _: &PasteText, _: &mut Window, cx: &mut Context<Self>) {
         let Some(clipboard) = cx.read_from_clipboard() else {
             return;
         };
@@ -85,7 +85,7 @@ impl TerminalView {
         });
     }
 
-    fn send_text(&mut self, text: &SendText, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn send_text(&mut self, text: &SendText, _: &mut Window, cx: &mut Context<Self>) {
         self.clear_bell(cx);
         self.blink_manager.update(cx, BlinkManager::pause_blinking);
         self.terminal.update(cx, |term, _| {
@@ -93,7 +93,12 @@ impl TerminalView {
         });
     }
 
-    fn send_keystroke(&mut self, text: &SendKeystroke, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn send_keystroke(
+        &mut self,
+        text: &SendKeystroke,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if let Some(keystroke) = Keystroke::parse(&text.0).log_err() {
             self.clear_bell(cx);
             self.blink_manager.update(cx, BlinkManager::pause_blinking);
@@ -101,7 +106,7 @@ impl TerminalView {
         }
     }
 
-    fn dispatch_context(&self, cx: &App) -> KeyContext {
+    pub(crate) fn dispatch_context(&self, cx: &App) -> KeyContext {
         let mut dispatch_context = KeyContext::new_with_defaults();
         dispatch_context.add("Terminal");
 
@@ -185,7 +190,7 @@ impl TerminalView {
         dispatch_context
     }
 
-    fn set_terminal(
+    pub(crate) fn set_terminal(
         &mut self,
         terminal: Entity<Terminal>,
         window: &mut Window,
@@ -196,7 +201,7 @@ impl TerminalView {
         self.terminal = terminal;
     }
 
-    fn rerun_button(task: &TaskState) -> Option<IconButton> {
+    pub(crate) fn rerun_button(task: &TaskState) -> Option<IconButton> {
         if !task.spawned_task.show_rerun {
             return None;
         }

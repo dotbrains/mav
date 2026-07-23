@@ -186,6 +186,6 @@ pub async fn fetch_accepted_examples_after(
     Ok(all_examples)
 }
 
-fn format_limit(limit: Option<usize>) -> String {
+pub(crate) fn format_limit(limit: Option<usize>) -> String {
     return limit.map(|l| l.to_string()).unwrap_or("NULL".to_string());
 }

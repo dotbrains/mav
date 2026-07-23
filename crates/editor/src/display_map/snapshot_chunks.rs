@@ -124,7 +124,7 @@ impl DisplaySnapshot {
     /// Returns combined highlight styles (tree-sitter syntax + semantic tokens)
     /// for a byte range within the specified buffer.
     /// Returned ranges are 0-based relative to `buffer_range.start`.
-    pub(super) fn combined_highlights(
+    pub(crate) fn combined_highlights(
         &self,
         multibuffer_range: Range<MultiBufferOffset>,
         syntax_theme: &theme::SyntaxTheme,

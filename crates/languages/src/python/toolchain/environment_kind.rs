@@ -1,6 +1,6 @@
 use super::*;
 
-fn is_python_env_global(k: &PythonEnvironmentKind) -> bool {
+pub(super) fn is_python_env_global(k: &PythonEnvironmentKind) -> bool {
     matches!(
         k,
         PythonEnvironmentKind::Homebrew
@@ -15,7 +15,7 @@ fn is_python_env_global(k: &PythonEnvironmentKind) -> bool {
     )
 }
 
-fn python_env_kind_display(k: &PythonEnvironmentKind) -> &'static str {
+pub(super) fn python_env_kind_display(k: &PythonEnvironmentKind) -> &'static str {
     match k {
         PythonEnvironmentKind::Conda => "Conda",
         PythonEnvironmentKind::Pixi => "pixi",

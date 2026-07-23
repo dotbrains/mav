@@ -1,7 +1,7 @@
 use super::*;
 
 impl BlockMapWriterCompanion<'_> {
-    fn companion_view(&self) -> CompanionView<'_> {
+    pub(crate) fn companion_view(&self) -> CompanionView<'_> {
         static EMPTY_PATCH: Patch<WrapRow> = Patch::empty();
         CompanionView {
             display_map_id: self.display_map_id,
@@ -304,7 +304,7 @@ impl BlockMapWriter<'_> {
     }
 
     #[ztracing::instrument(skip_all)]
-    fn fold_or_unfold_buffers(
+    pub(crate) fn fold_or_unfold_buffers(
         &mut self,
         fold: bool,
         buffer_ids: impl IntoIterator<Item = BufferId>,
@@ -371,7 +371,7 @@ impl BlockMapWriter<'_> {
     }
 
     #[ztracing::instrument(skip_all)]
-    fn blocks_intersecting_buffer_range(
+    pub(crate) fn blocks_intersecting_buffer_range(
         &self,
         range: Range<MultiBufferOffset>,
         inclusive: bool,

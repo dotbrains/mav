@@ -7,7 +7,7 @@ pub struct InfoPopover {
     pub keyboard_grace: Rc<RefCell<bool>>,
     pub anchor: Option<Anchor>,
     pub last_bounds: Rc<Cell<Option<Bounds<Pixels>>>>,
-    _subscription: Option<Subscription>,
+    pub(crate) _subscription: Option<Subscription>,
 }
 
 impl InfoPopover {
@@ -65,9 +65,10 @@ impl InfoPopover {
                         .child(
                             MarkdownElement::new(markdown, hover_markdown_style(window, cx))
                                 .scroll_handle(self.scroll_handle.clone())
-                                .code_block_renderer(markdown::CodeBlockRenderer::Default {
+                                .code_block_renderer(::markdown::CodeBlockRenderer::Default {
                                     copy_button_visibility: CopyButtonVisibility::Hidden,
-                                    wrap_button_visibility: markdown::WrapButtonVisibility::Hidden,
+                                    wrap_button_visibility:
+                                        ::markdown::WrapButtonVisibility::Hidden,
                                     border: false,
                                 })
                                 .on_url_click(move |link, window, cx| {
@@ -107,13 +108,13 @@ impl InfoPopover {
 
 pub struct DiagnosticPopover {
     pub(crate) local_diagnostic: DiagnosticEntry<Anchor>,
-    markdown: Entity<Markdown>,
-    border_color: Hsla,
-    background_color: Hsla,
+    pub(crate) markdown: Entity<Markdown>,
+    pub(crate) border_color: Hsla,
+    pub(crate) background_color: Hsla,
     pub keyboard_grace: Rc<RefCell<bool>>,
     pub anchor: Anchor,
     pub last_bounds: Rc<Cell<Option<Bounds<Pixels>>>>,
-    _subscription: Subscription,
+    pub(crate) _subscription: Subscription,
     pub scroll_handle: ScrollHandle,
 }
 
@@ -190,9 +191,10 @@ impl DiagnosticPopover {
                                     self.markdown.clone(),
                                     diagnostics_markdown_style(window, cx),
                                 )
-                                .code_block_renderer(markdown::CodeBlockRenderer::Default {
+                                .code_block_renderer(::markdown::CodeBlockRenderer::Default {
                                     copy_button_visibility: CopyButtonVisibility::Hidden,
-                                    wrap_button_visibility: markdown::WrapButtonVisibility::Hidden,
+                                    wrap_button_visibility:
+                                        ::markdown::WrapButtonVisibility::Hidden,
                                     border: false,
                                 })
                                 .on_url_click(

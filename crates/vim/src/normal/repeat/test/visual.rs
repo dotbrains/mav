@@ -1,4 +1,3 @@
-
 use editor::test::editor_lsp_test_context::EditorLspTestContext;
 use futures::StreamExt;
 use indoc::indoc;

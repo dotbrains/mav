@@ -1,10 +1,10 @@
 use super::*;
 
-struct TerminalInputHandler {
-    terminal: Entity<Terminal>,
-    terminal_view: Entity<TerminalView>,
-    workspace: WeakEntity<Workspace>,
-    cursor_bounds: Option<Bounds<Pixels>>,
+pub(crate) struct TerminalInputHandler {
+    pub(crate) terminal: Entity<Terminal>,
+    pub(crate) terminal_view: Entity<TerminalView>,
+    pub(crate) workspace: WeakEntity<Workspace>,
+    pub(crate) cursor_bounds: Option<Bounds<Pixels>>,
 }
 
 impl InputHandler for TerminalInputHandler {

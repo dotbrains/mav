@@ -1,6 +1,6 @@
 use super::*;
 
-fn lines_between_ranges(left: &Range<Point>, right: &Range<Point>) -> u32 {
+pub(crate) fn lines_between_ranges(left: &Range<Point>, right: &Range<Point>) -> u32 {
     if left.start > right.end {
         return left.start.row - right.end.row;
     }
@@ -10,7 +10,7 @@ fn lines_between_ranges(left: &Range<Point>, right: &Range<Point>) -> u32 {
     0
 }
 
-fn push_recent_file(files: &mut VecDeque<RecentFile>, mut file: RecentFile) {
+pub(crate) fn push_recent_file(files: &mut VecDeque<RecentFile>, mut file: RecentFile) {
     if let Some(ix) = files.iter().position(|probe| probe.path == file.path)
         && let Some(previous) = files.remove(ix)
         && file.cursor_position.is_none()

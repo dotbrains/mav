@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn calculate_overlay_height(
+    pub(crate) fn calculate_overlay_height(
         &self,
         hunk_key: &DiffHunkKey,
         comments_expanded: bool,

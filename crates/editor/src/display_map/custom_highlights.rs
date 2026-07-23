@@ -70,7 +70,7 @@ impl<'a> CustomHighlightsChunks<'a> {
     }
 }
 
-fn create_highlight_endpoints(
+pub(crate) fn create_highlight_endpoints(
     range: &Range<MultiBufferOffset>,
     text_highlights: Option<&TextHighlights>,
     semantic_token_highlights: Option<&SemanticTokensHighlights>,
@@ -285,7 +285,7 @@ mod tests {
     use util::RandomCharIter;
 
     #[gpui::test(iterations = 100)]
-    fn test_random_chunk_bitmaps(cx: &mut App, mut rng: StdRng) {
+    pub(crate) fn test_random_chunk_bitmaps(cx: &mut App, mut rng: StdRng) {
         // Generate random buffer using existing test infrastructure
         let len = rng.random_range(10..10000);
         let buffer = if rng.random() {

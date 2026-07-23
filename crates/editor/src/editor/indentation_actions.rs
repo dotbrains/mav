@@ -179,7 +179,7 @@ impl Editor {
         });
     }
 
-    fn indent_selection(
+    pub(crate) fn indent_selection(
         buffer: &MultiBuffer,
         snapshot: &MultiBufferSnapshot,
         selection: &mut Selection<Point>,

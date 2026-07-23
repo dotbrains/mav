@@ -10,7 +10,7 @@ impl Editor {
         self.show_cursor_names(window, cx);
     }
 
-    pub(super) fn show_cursor_names(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn show_cursor_names(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.show_cursor_names = true;
         cx.notify();
         cx.spawn_in(window, async move |this, cx| {
@@ -24,7 +24,7 @@ impl Editor {
         .detach();
     }
 
-    pub(super) fn handle_modifiers_changed(
+    pub(crate) fn handle_modifiers_changed(
         &mut self,
         modifiers: Modifiers,
         position_map: &PositionMap,
@@ -63,21 +63,21 @@ impl Editor {
         )
     }
 
-    pub(super) fn is_cmd_or_ctrl_pressed(modifiers: &Modifiers, cx: &mut Context<Self>) -> bool {
+    pub(crate) fn is_cmd_or_ctrl_pressed(modifiers: &Modifiers, cx: &mut Context<Self>) -> bool {
         match EditorSettings::get_global(cx).multi_cursor_modifier {
             MultiCursorModifier::Alt => modifiers.secondary(),
             MultiCursorModifier::CmdOrCtrl => modifiers.alt,
         }
     }
 
-    pub(super) fn is_alt_pressed(modifiers: &Modifiers, cx: &mut Context<Self>) -> bool {
+    pub(crate) fn is_alt_pressed(modifiers: &Modifiers, cx: &mut Context<Self>) -> bool {
         match EditorSettings::get_global(cx).multi_cursor_modifier {
             MultiCursorModifier::Alt => modifiers.alt,
             MultiCursorModifier::CmdOrCtrl => modifiers.secondary(),
         }
     }
 
-    pub(super) fn columnar_selection_mode(
+    pub(crate) fn columnar_selection_mode(
         modifiers: &Modifiers,
         cx: &mut Context<Self>,
     ) -> Option<ColumnarMode> {
@@ -94,7 +94,7 @@ impl Editor {
         }
     }
 
-    fn update_selection_mode(
+    pub(crate) fn update_selection_mode(
         &mut self,
         modifiers: &Modifiers,
         position_map: &PositionMap,

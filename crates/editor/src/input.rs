@@ -22,4 +22,8 @@ mod test_support;
 mod text_input;
 #[path = "input/unwrap_actions.rs"]
 mod unwrap_actions;
+pub(crate) use newline_helpers::{
+    NewlineConfig, comment_delimiter_for_newline, documentation_delimiter_for_newline,
+    is_list_prefix_row, list_delimiter_for_newline,
+};
 const ORDERED_LIST_MAX_MARKER_LEN: usize = 16;

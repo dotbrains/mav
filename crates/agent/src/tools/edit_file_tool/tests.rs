@@ -1,4 +1,3 @@
-
 use super::*;
 use crate::{ContextServerRegistry, Templates, ToolInputSender};
 use fs::Fs as _;

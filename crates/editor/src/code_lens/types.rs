@@ -1,28 +1,28 @@
 use super::*;
 
 #[derive(Clone, Debug)]
-pub(super) struct CodeLensLine {
-    pub(super) position: Anchor,
-    pub(super) indent_column: u32,
-    pub(super) items: Vec<CodeLensItem>,
+pub(crate) struct CodeLensLine {
+    pub(crate) position: Anchor,
+    pub(crate) indent_column: u32,
+    pub(crate) items: Vec<CodeLensItem>,
 }
 
 #[derive(Clone, Debug)]
-pub(super) struct CodeLensItem {
-    pub(super) title: Option<SharedString>,
-    pub(super) action: CodeAction,
+pub(crate) struct CodeLensItem {
+    pub(crate) title: Option<SharedString>,
+    pub(crate) action: CodeAction,
 }
 
-pub(super) struct CodeLensBlock {
-    pub(super) block_id: CustomBlockId,
-    pub(super) anchor: Anchor,
-    pub(super) line: CodeLensLine,
+pub(crate) struct CodeLensBlock {
+    pub(crate) block_id: CustomBlockId,
+    pub(crate) anchor: Anchor,
+    pub(crate) line: CodeLensLine,
 }
 
 pub(crate) struct CodeLensState {
-    pub(super) blocks: HashMap<BufferId, Vec<CodeLensBlock>>,
-    pub(super) actions: HashMap<BufferId, CodeLensActions>,
-    pub(super) resolve_task: Task<()>,
+    pub(crate) blocks: HashMap<BufferId, Vec<CodeLensBlock>>,
+    pub(crate) actions: HashMap<BufferId, CodeLensActions>,
+    pub(crate) resolve_task: Task<()>,
 }
 
 impl Default for CodeLensState {

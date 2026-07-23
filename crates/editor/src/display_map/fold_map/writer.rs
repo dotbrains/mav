@@ -96,7 +96,7 @@ impl FoldMapWriter<'_> {
     /// Removes any folds that intersect the given ranges and for which the given predicate
     /// returns true.
     #[ztracing::instrument(skip_all)]
-    fn remove_folds_with<T: ToOffset>(
+    pub(crate) fn remove_folds_with<T: ToOffset>(
         &mut self,
         ranges: impl IntoIterator<Item = Range<T>>,
         should_unfold: impl Fn(&Fold) -> bool,

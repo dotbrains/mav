@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    fn manipulate_lines<M>(
+    pub(crate) fn manipulate_lines<M>(
         &mut self,
         window: &mut Window,
         cx: &mut Context<Self>,

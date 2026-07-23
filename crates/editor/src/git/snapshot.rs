@@ -1,7 +1,7 @@
 use super::*;
 
 impl EditorSnapshot {
-    pub(super) fn display_diff_hunks_for_rows<'a>(
+    pub(crate) fn display_diff_hunks_for_rows<'a>(
         &'a self,
         display_rows: Range<DisplayRow>,
         folded_buffers: &'a HashSet<BufferId>,
@@ -56,7 +56,7 @@ impl EditorSnapshot {
             })
     }
 
-    fn hunks_for_ranges(
+    pub(crate) fn hunks_for_ranges(
         &self,
         ranges: impl IntoIterator<Item = Range<Point>>,
     ) -> Vec<MultiBufferDiffHunk> {

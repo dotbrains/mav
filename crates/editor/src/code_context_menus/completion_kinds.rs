@@ -36,7 +36,7 @@ pub(super) fn render_completion_kind_letter(
         .into_any_element()
 }
 
-fn completion_kind_name(kind: CompletionItemKind) -> &'static str {
+pub(crate) fn completion_kind_name(kind: CompletionItemKind) -> &'static str {
     match kind {
         CompletionItemKind::TEXT => "Text",
         CompletionItemKind::METHOD => "Method",
@@ -67,7 +67,7 @@ fn completion_kind_name(kind: CompletionItemKind) -> &'static str {
     }
 }
 
-fn completion_kind_letter(kind: CompletionItemKind) -> Option<&'static str> {
+pub(crate) fn completion_kind_letter(kind: CompletionItemKind) -> Option<&'static str> {
     Some(match kind {
         CompletionItemKind::TEXT => "t",
         CompletionItemKind::METHOD => "m",
@@ -98,7 +98,7 @@ fn completion_kind_letter(kind: CompletionItemKind) -> Option<&'static str> {
     })
 }
 
-fn completion_kind_highlight_name(kind: CompletionItemKind) -> Option<&'static str> {
+pub(crate) fn completion_kind_highlight_name(kind: CompletionItemKind) -> Option<&'static str> {
     Some(match kind {
         CompletionItemKind::CLASS => "type",
         CompletionItemKind::CONSTANT => "constant",

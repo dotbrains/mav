@@ -33,7 +33,7 @@ impl Editor {
     }
 
     #[cfg(test)]
-    pub(super) fn set_auto_replace_emoji_shortcode(&mut self, auto_replace: bool) {
+    pub(crate) fn set_auto_replace_emoji_shortcode(&mut self, auto_replace: bool) {
         self.auto_replace_emoji_shortcode = auto_replace;
     }
 }

@@ -3,7 +3,7 @@ use super::*;
 static EMPTY_LENS_FALLBACK_TITLE: SharedString = SharedString::new_static("0 references");
 pub(crate) const CODE_LENS_SEPARATOR: &str = " | ";
 
-pub(super) fn rendered_text_matches(a: &CodeLensLine, b: &CodeLensLine) -> bool {
+pub(crate) fn rendered_text_matches(a: &CodeLensLine, b: &CodeLensLine) -> bool {
     a.indent_column == b.indent_column
         && a.items.len() == b.items.len()
         && a.items
@@ -20,7 +20,7 @@ pub(crate) fn displayed_title(item: &CodeLensItem) -> Option<&SharedString> {
         .or_else(|| item.action.resolved.then_some(&EMPTY_LENS_FALLBACK_TITLE))
 }
 
-pub(super) fn group_lenses_by_row(
+pub(crate) fn group_lenses_by_row(
     lenses: Vec<(Anchor, CodeLensItem)>,
     snapshot: &MultiBufferSnapshot,
 ) -> impl Iterator<Item = CodeLensLine> {
@@ -44,7 +44,7 @@ pub(super) fn group_lenses_by_row(
         })
 }
 
-pub(super) fn build_code_lens_renderer(
+pub(crate) fn build_code_lens_renderer(
     line: CodeLensLine,
     editor: WeakEntity<Editor>,
 ) -> RenderBlock {

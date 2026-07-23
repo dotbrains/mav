@@ -65,7 +65,7 @@ impl BlockSnapshot {
     }
 
     #[ztracing::instrument(skip_all)]
-    pub(super) fn row_infos(&self, start_row: BlockRow) -> BlockRows<'_> {
+    pub(crate) fn row_infos(&self, start_row: BlockRow) -> BlockRows<'_> {
         let mut cursor = self.transforms.cursor::<Dimensions<BlockRow, WrapRow>>(());
         cursor.seek(&start_row, Bias::Right);
         let Dimensions(output_start, input_start, _) = cursor.start();
@@ -252,7 +252,7 @@ impl BlockSnapshot {
     }
 
     #[ztracing::instrument(skip_all)]
-    pub(super) fn line_len(&self, row: BlockRow) -> u32 {
+    pub(crate) fn line_len(&self, row: BlockRow) -> u32 {
         let (start, _, item) =
             self.transforms
                 .find::<Dimensions<BlockRow, WrapRow>, _>((), &row, Bias::Right);
@@ -272,13 +272,13 @@ impl BlockSnapshot {
     }
 
     #[ztracing::instrument(skip_all)]
-    pub(super) fn is_block_line(&self, row: BlockRow) -> bool {
+    pub(crate) fn is_block_line(&self, row: BlockRow) -> bool {
         let (_, _, item) = self.transforms.find::<BlockRow, _>((), &row, Bias::Right);
         item.is_some_and(|t| t.block.is_some())
     }
 
     #[ztracing::instrument(skip_all)]
-    pub(super) fn is_folded_buffer_header(&self, row: BlockRow) -> bool {
+    pub(crate) fn is_folded_buffer_header(&self, row: BlockRow) -> bool {
         let (_, _, item) = self.transforms.find::<BlockRow, _>((), &row, Bias::Right);
         let Some(transform) = item else {
             return false;
@@ -287,7 +287,7 @@ impl BlockSnapshot {
     }
 
     #[ztracing::instrument(skip_all)]
-    pub(super) fn is_line_replaced(&self, row: MultiBufferRow) -> bool {
+    pub(crate) fn is_line_replaced(&self, row: MultiBufferRow) -> bool {
         let wrap_point = self
             .wrap_snapshot
             .make_wrap_point(Point::new(row.0, 0), Bias::Left);

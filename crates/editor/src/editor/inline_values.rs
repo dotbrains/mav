@@ -1,11 +1,11 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn on_buffer_changed(&mut self, _: Entity<MultiBuffer>, cx: &mut Context<Self>) {
+    pub(crate) fn on_buffer_changed(&mut self, _: Entity<MultiBuffer>, cx: &mut Context<Self>) {
         cx.notify();
     }
 
-    pub(super) fn on_debug_session_event(
+    pub(crate) fn on_debug_session_event(
         &mut self,
         _session: Entity<Session>,
         event: &SessionEvent,
@@ -101,7 +101,7 @@ impl Editor {
         });
     }
 
-    pub(super) fn on_display_map_changed(
+    pub(crate) fn on_display_map_changed(
         &mut self,
         _: Entity<DisplayMap>,
         _: &mut Window,

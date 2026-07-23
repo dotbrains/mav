@@ -2,7 +2,7 @@ use super::*;
 
 #[cfg(test)]
 impl SplittableEditor {
-    fn debug_print(&self, cx: &mut App) {
+    pub(crate) fn debug_print(&self, cx: &mut App) {
         use crate::DisplayRow;
         use crate::display_map::Block;
         use buffer_diff::DiffHunkStatusKind;
@@ -39,7 +39,7 @@ impl SplittableEditor {
         // Build a map from display row -> block type string
         // Each row of a multi-row block gets an entry with the same block type
         // For spacers, the ID is included in brackets
-        fn build_block_map(
+        pub(crate) fn build_block_map(
             snapshot: &crate::DisplaySnapshot,
             max_row: u32,
         ) -> std::collections::HashMap<u32, String> {
@@ -72,11 +72,11 @@ impl SplittableEditor {
         let lhs_blocks = build_block_map(&lhs_snapshot, lhs_max_row);
         let rhs_blocks = build_block_map(&rhs_snapshot, rhs_max_row);
 
-        fn display_width(s: &str) -> usize {
+        pub(crate) fn display_width(s: &str) -> usize {
             unicode_width::UnicodeWidthStr::width(s)
         }
 
-        fn truncate_line(line: &str, max_width: usize) -> String {
+        pub(crate) fn truncate_line(line: &str, max_width: usize) -> String {
             let line_width = display_width(line);
             if line_width <= max_width {
                 return line.to_string();
@@ -125,7 +125,7 @@ impl SplittableEditor {
             format!("{}{}{}", prefix, ellipsis, suffix)
         }
 
-        fn pad_to_width(s: &str, target_width: usize) -> String {
+        pub(crate) fn pad_to_width(s: &str, target_width: usize) -> String {
             let current_width = display_width(s);
             if current_width >= target_width {
                 s.to_string()
@@ -137,7 +137,7 @@ impl SplittableEditor {
         // Helper to format a single row for one side
         // Format: "ln# diff bytes(cumul) text" or block info
         // Line numbers come from buffer_row in RowInfo (1-indexed for display)
-        fn format_row(
+        pub(crate) fn format_row(
             row: u32,
             max_row: u32,
             snapshot: &crate::DisplaySnapshot,

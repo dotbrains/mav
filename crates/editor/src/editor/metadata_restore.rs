@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn read_metadata_from_db(
+    pub(crate) fn read_metadata_from_db(
         &mut self,
         item_id: u64,
         workspace_id: WorkspaceId,

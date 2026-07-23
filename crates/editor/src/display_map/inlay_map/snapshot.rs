@@ -444,7 +444,7 @@ impl InlaySnapshot {
     }
 
     #[ztracing::instrument(skip_all)]
-    fn check_invariants(&self) {
+    pub(crate) fn check_invariants(&self) {
         #[cfg(any(debug_assertions, feature = "test-support"))]
         {
             assert_eq!(self.transforms.summary().input, self.buffer.text_summary());

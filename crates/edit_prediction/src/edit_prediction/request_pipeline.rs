@@ -18,7 +18,7 @@ impl EditPredictionStore {
         )
     }
 
-    fn request_prediction_internal(
+    pub(crate) fn request_prediction_internal(
         &mut self,
         project: Entity<Project>,
         active_buffer: Entity<Buffer>,
@@ -185,7 +185,7 @@ impl EditPredictionStore {
         task
     }
 
-    async fn send_raw_llm_request(
+    pub(crate) async fn send_raw_llm_request(
         request: RawCompletionRequest,
         client: Arc<Client>,
         custom_url: Option<Arc<Url>>,
@@ -266,7 +266,7 @@ impl EditPredictionStore {
         .await
     }
 
-    async fn send_predict_edits_request<Req, Res>(
+    pub(crate) async fn send_predict_edits_request<Req, Res>(
         path: &str,
         request: Req,
         preferred_experiment: Option<String>,
@@ -311,7 +311,7 @@ impl EditPredictionStore {
         .await
     }
 
-    async fn send_api_request<Res>(
+    pub(crate) async fn send_api_request<Res>(
         build: impl Fn(http_client::http::request::Builder) -> Result<http_client::Request<AsyncBody>>,
         client: Arc<Client>,
         llm_token: LlmApiToken,
@@ -339,7 +339,7 @@ impl EditPredictionStore {
         Self::process_api_response(response, &app_version).await
     }
 
-    async fn process_api_response<Res>(
+    pub(crate) async fn process_api_response<Res>(
         mut response: http_client::Response<AsyncBody>,
         app_version: &Version,
     ) -> Result<(Res, Option<EditPredictionUsage>)>

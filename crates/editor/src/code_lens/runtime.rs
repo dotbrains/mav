@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn refresh_code_lenses(
+    pub(crate) fn refresh_code_lenses(
         &mut self,
         for_buffer: Option<BufferId>,
         _window: &Window,
@@ -242,7 +242,7 @@ impl Editor {
         self.toggle_code_lens(!currently_enabled, window, cx);
     }
 
-    pub(super) fn toggle_code_lens(
+    pub(crate) fn toggle_code_lens(
         &mut self,
         enabled: bool,
         window: &mut Window,
@@ -256,7 +256,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn resolve_visible_code_lenses(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn resolve_visible_code_lenses(&mut self, cx: &mut Context<Self>) {
         if !self.lsp_data_enabled() || self.code_lens.is_none() {
             return;
         }
@@ -333,7 +333,7 @@ impl Editor {
         });
     }
 
-    pub(super) fn clear_code_lenses(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn clear_code_lenses(&mut self, cx: &mut Context<Self>) {
         if let Some(code_lens) = self.code_lens.take() {
             let all_blocks = code_lens
                 .blocks

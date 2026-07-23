@@ -127,7 +127,7 @@ impl EditPredictionStore {
         Self::register_buffer_impl(project_state, buffer, project, cx);
     }
 
-    fn ensure_git_changed_file_sets_loading(
+    pub(crate) fn ensure_git_changed_file_sets_loading(
         file_context: &Entity<StoredFileContext>,
         project: &Entity<Project>,
         project_path: &ProjectPath,
@@ -182,7 +182,7 @@ impl EditPredictionStore {
         });
     }
 
-    fn get_or_init_project(
+    pub(crate) fn get_or_init_project(
         &mut self,
         project: &Entity<Project>,
         cx: &mut Context<Self>,
@@ -230,7 +230,7 @@ impl EditPredictionStore {
         self.projects.remove(&project.entity_id());
     }
 
-    fn handle_excerpt_store_event(
+    pub(crate) fn handle_excerpt_store_event(
         &mut self,
         project_entity_id: EntityId,
         event: &RelatedExcerptStoreEvent,
@@ -301,7 +301,7 @@ impl EditPredictionStore {
         debug_watch_rx
     }
 
-    fn handle_project_event(
+    pub(crate) fn handle_project_event(
         &mut self,
         project: Entity<Project>,
         event: &project::Event,
@@ -361,7 +361,7 @@ impl EditPredictionStore {
         }
     }
 
-    fn register_buffer_impl<'a>(
+    pub(crate) fn register_buffer_impl<'a>(
         project_state: &'a mut ProjectState,
         buffer: &Entity<Buffer>,
         project: &Entity<Project>,

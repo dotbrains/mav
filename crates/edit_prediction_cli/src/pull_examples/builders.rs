@@ -1,6 +1,6 @@
 use super::*;
 
-fn build_example_from_snowflake(
+pub(crate) fn build_example_from_snowflake(
     request_id: String,
     device_id: String,
     time: String,
@@ -67,7 +67,7 @@ fn build_cursor_position(excerpt: &str, cursor_offset: usize) -> String {
     format!("{}[CURSOR_POSITION]{}", before, after)
 }
 
-fn build_output_patch(
+pub(crate) fn build_output_patch(
     cursor_path: &std::path::Path,
     cursor_excerpt: &str,
     editable_range: &std::ops::Range<usize>,

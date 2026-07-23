@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn initial_display_map(
+    pub(crate) fn initial_display_map(
         multi_buffer: &Entity<MultiBuffer>,
         display_map: Option<Entity<DisplayMap>>,
         diagnostics_max_severity: DiagnosticSeverity,

@@ -282,3 +282,9 @@ pub(crate) use pyright::PyrightLspAdapter;
 pub(crate) use ruff::RuffLspAdapter;
 pub(crate) use toolchain::PythonToolchainProvider;
 pub use ty::TyLspAdapter;
+
+const BINARY_DIR: &str = if cfg!(target_os = "windows") {
+    "Scripts"
+} else {
+    "bin"
+};

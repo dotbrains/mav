@@ -84,7 +84,7 @@ mod threads_modules_memory;
 mod types;
 mod watchers_eval;
 use request_types::*;
-pub use request_types::{CompletionsQuery, SessionStateEvent};
+pub use request_types::{CompletionsQuery, SessionEvent, SessionStateEvent};
 pub use running_mode::{RunningMode, SessionQuirks};
 use types::*;
 pub use types::{ThreadId, ThreadStatus};

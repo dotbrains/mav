@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn refresh_document_highlights(&mut self, cx: &mut Context<Self>) -> Option<()> {
+    pub(crate) fn refresh_document_highlights(&mut self, cx: &mut Context<Self>) -> Option<()> {
         if self.pending_rename.is_some() {
             return None;
         }
@@ -98,7 +98,7 @@ impl Editor {
         None
     }
 
-    fn prepare_highlight_query_from_selection(
+    pub(crate) fn prepare_highlight_query_from_selection(
         &mut self,
         snapshot: &DisplaySnapshot,
         cx: &mut Context<Editor>,
@@ -135,7 +135,7 @@ impl Editor {
     }
 
     #[ztracing::instrument(skip_all)]
-    fn update_selection_occurrence_highlights(
+    pub(crate) fn update_selection_occurrence_highlights(
         &mut self,
         multi_buffer_snapshot: MultiBufferSnapshot,
         query_text: String,
@@ -218,7 +218,7 @@ impl Editor {
     }
 
     #[ztracing::instrument(skip_all)]
-    pub(super) fn refresh_selected_text_highlights(
+    pub(crate) fn refresh_selected_text_highlights(
         &mut self,
         snapshot: &DisplaySnapshot,
         on_buffer_edit: bool,

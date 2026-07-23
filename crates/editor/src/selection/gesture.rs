@@ -51,7 +51,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn select(
+    pub(crate) fn select(
         &mut self,
         phase: SelectPhase,
         window: &mut Window,
@@ -84,7 +84,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn extend_selection(
+    pub(crate) fn extend_selection(
         &mut self,
         position: DisplayPoint,
         click_count: usize,
@@ -150,7 +150,7 @@ impl Editor {
         });
     }
 
-    pub(super) fn begin_selection(
+    pub(crate) fn begin_selection(
         &mut self,
         position: DisplayPoint,
         add: bool,
@@ -254,7 +254,7 @@ impl Editor {
         });
     }
 
-    pub(super) fn update_selection(
+    pub(crate) fn update_selection(
         &mut self,
         position: DisplayPoint,
         goal_column: u32,
@@ -352,7 +352,7 @@ impl Editor {
         cx.notify();
     }
 
-    pub(super) fn end_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn end_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.columnar_selection_state.take();
         if let Some(pending_mode) = self.selections.pending_mode() {
             let selections = self

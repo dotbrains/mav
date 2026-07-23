@@ -1,7 +1,7 @@
 use super::*;
 
 pub struct FoldPointCursor<'transforms> {
-    cursor: Cursor<'transforms, 'static, Transform, Dimensions<InlayPoint, FoldPoint>>,
+    pub(crate) cursor: Cursor<'transforms, 'static, Transform, Dimensions<InlayPoint, FoldPoint>>,
 }
 
 impl FoldPointCursor<'_> {

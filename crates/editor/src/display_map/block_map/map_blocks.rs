@@ -12,7 +12,7 @@ impl BlockMap {
 
     /// Guarantees that `wrap_row_for` is called with points in increasing order.
     #[ztracing::instrument(skip_all)]
-    fn header_and_footer_blocks<'a, R, T>(
+    pub(crate) fn header_and_footer_blocks<'a, R, T>(
         &'a self,
         buffer: &'a multi_buffer::MultiBufferSnapshot,
         range: R,
@@ -99,7 +99,7 @@ impl BlockMap {
         })
     }
 
-    fn spacer_blocks(
+    pub(crate) fn spacer_blocks(
         &self,
         bounds: (Bound<MultiBufferPoint>, Bound<MultiBufferPoint>),
         wrap_snapshot: &WrapSnapshot,
@@ -151,7 +151,7 @@ impl BlockMap {
             let tab_point = companion_snapshot.fold_point_to_tab_point(fold_point);
             companion_snapshot.tab_point_to_wrap_point(tab_point).row()
         };
-        fn determine_spacer(
+        pub(crate) fn determine_spacer(
             our_wrapper: &mut dyn FnMut(Point, Bias) -> WrapRow,
             companion_wrapper: &mut dyn FnMut(Point, Bias) -> WrapRow,
             our_point: Point,
@@ -371,7 +371,7 @@ impl BlockMap {
     }
 
     #[ztracing::instrument(skip_all)]
-    fn sort_blocks(blocks: &mut Vec<(BlockPlacement<WrapRow>, Block)>) {
+    pub(crate) fn sort_blocks(blocks: &mut Vec<(BlockPlacement<WrapRow>, Block)>) {
         blocks.sort_unstable_by(|(placement_a, block_a), (placement_b, block_b)| {
             placement_a
                 .start()

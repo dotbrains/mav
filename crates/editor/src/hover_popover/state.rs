@@ -1,5 +1,6 @@
 use super::*;
 
+#[derive(Default)]
 pub struct HoverState {
     pub info_popovers: Vec<InfoPopover>,
     pub diagnostic_popover: Option<DiagnosticPopover>,

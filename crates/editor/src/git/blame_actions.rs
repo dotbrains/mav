@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn blame_hover(
+    pub(crate) fn blame_hover(
         &mut self,
         _: &BlameHover,
         window: &mut Window,

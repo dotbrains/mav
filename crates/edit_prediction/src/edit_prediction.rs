@@ -132,14 +132,26 @@ use crate::edit_ranges::{
     compute_diff_between_snapshots_in_range, compute_total_edit_range_between_snapshots,
     merge_anchor_ranges,
 };
+pub(crate) use crate::event_helpers::{lines_between_ranges, push_recent_file};
 use crate::example_spec::RecentFile;
 use crate::license_detection::LicenseDetectionWatcher;
 use crate::mercury::Mercury;
 pub use crate::metrics::{KeptRateResult, compute_kept_rate};
 use crate::onboarding_modal::MavPredictModal;
+pub(crate) use crate::path_helpers::{
+    buffer_path_with_id_fallback, predict_edits_request_trigger_from_editor_trigger,
+};
 use crate::prediction::EditPredictionResult;
 pub use crate::prediction::{EditPrediction, EditPredictionId, EditPredictionInputs};
 use crate::prediction_state::*;
+pub(crate) use crate::settled_helpers::{
+    currently_following, is_ep_store_provider, send_settled_batches,
+};
+pub(crate) use crate::store_helpers::{
+    CloudRequestTimeoutError, MavPredictUpsell, MavUpdateRequiredError,
+    collaborator_edit_overlaps_locality_region, is_mav_industries_repo,
+    merge_trailing_events_if_needed,
+};
 pub use language_model::ApiKeyState;
 pub use mav_edit_prediction_delegate::MavEditPredictionDelegate;
 pub use telemetry_events::EditPredictionRating;

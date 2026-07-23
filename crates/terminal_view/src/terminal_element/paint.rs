@@ -51,6 +51,7 @@ impl TerminalElement {
             let original_cursor = layout.cursor.take();
             let hyperlink_tooltip = layout.hyperlink_tooltip.take();
             let block_below_cursor_element = layout.block_below_cursor_element.take();
+            let paint_start = Instant::now();
             self.interactivity.paint(
                 global_id,
                 inspector_id,

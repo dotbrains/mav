@@ -6,7 +6,7 @@ struct ChangeLocation {
 }
 
 impl ChangeLocation {
-    fn locations(&self) -> &[Anchor] {
+    pub(crate) fn locations(&self) -> &[Anchor] {
         self.current.as_ref().unwrap_or(&self.original)
     }
 }

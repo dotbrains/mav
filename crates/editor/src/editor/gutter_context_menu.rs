@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn gutter_context_menu(
+    pub(crate) fn gutter_context_menu(
         &self,
         anchor: Anchor,
         window: &mut Window,

@@ -1,7 +1,7 @@
 use super::*;
 
 impl TerminalElement {
-    fn cursor_position(
+    pub(crate) fn cursor_position(
         cursor_point: DisplayCursor,
         size: TerminalBounds,
     ) -> Option<GpuiPoint<Pixels>> {
@@ -52,7 +52,7 @@ impl TerminalElement {
     }
 
     /// Converts terminal cell styles to GPUI text styles and background color.
-    fn cell_style(
+    pub(crate) fn cell_style(
         point: Point,
         cell: &Cell,
         fg: Color,

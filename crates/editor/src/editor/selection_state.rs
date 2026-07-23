@@ -237,7 +237,10 @@ pub(crate) fn consume_contiguous_rows(
     (start_row, end_row)
 }
 
-fn starting_row(selection: &Selection<Point>, display_map: &DisplaySnapshot) -> MultiBufferRow {
+pub(crate) fn starting_row(
+    selection: &Selection<Point>,
+    display_map: &DisplaySnapshot,
+) -> MultiBufferRow {
     if selection.start.column > 0 {
         MultiBufferRow(display_map.prev_line_boundary(selection.start).0.row)
     } else {
@@ -245,7 +248,10 @@ fn starting_row(selection: &Selection<Point>, display_map: &DisplaySnapshot) -> 
     }
 }
 
-fn ending_row(next_selection: &Selection<Point>, display_map: &DisplaySnapshot) -> MultiBufferRow {
+pub(crate) fn ending_row(
+    next_selection: &Selection<Point>,
+    display_map: &DisplaySnapshot,
+) -> MultiBufferRow {
     if next_selection.end.column > 0 || next_selection.is_empty() {
         MultiBufferRow(display_map.next_line_boundary(next_selection.end).0.row + 1)
     } else {

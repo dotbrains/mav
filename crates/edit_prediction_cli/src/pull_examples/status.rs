@@ -1,6 +1,6 @@
 use super::*;
 
-fn is_timeout_response(response: &SnowflakeStatementResponse) -> bool {
+pub(crate) fn is_timeout_response(response: &SnowflakeStatementResponse) -> bool {
     response.code.as_deref() == Some(SNOWFLAKE_TIMEOUT_CODE)
         && response
             .message
@@ -9,13 +9,13 @@ fn is_timeout_response(response: &SnowflakeStatementResponse) -> bool {
             .unwrap_or(false)
 }
 
-fn is_snowflake_timeout_error(error: &anyhow::Error) -> bool {
+pub(crate) fn is_snowflake_timeout_error(error: &anyhow::Error) -> bool {
     error
         .chain()
         .any(|cause| cause.to_string().contains(SNOWFLAKE_TIMEOUT_CODE))
 }
 
-fn last_continuation_timestamp_from_response(
+pub(crate) fn last_continuation_timestamp_from_response(
     response: &SnowflakeStatementResponse,
     column_indices: &HashMap<String, usize>,
 ) -> Option<String> {

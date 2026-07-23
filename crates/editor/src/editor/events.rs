@@ -91,7 +91,7 @@ pub(crate) enum ReportEditorEvent {
 }
 
 impl ReportEditorEvent {
-    pub(super) fn event_type(&self) -> &'static str {
+    pub(crate) fn event_type(&self) -> &'static str {
         match self {
             Self::Saved { .. } => "Editor Saved",
             Self::EditorOpened => "Editor Opened",

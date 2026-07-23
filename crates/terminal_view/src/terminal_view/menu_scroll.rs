@@ -71,7 +71,7 @@ impl TerminalView {
         self.context_menu = Some((context_menu, position, subscription));
     }
 
-    fn settings_changed(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn settings_changed(&mut self, cx: &mut Context<Self>) {
         let settings = TerminalSettings::get_global(cx);
         let breadcrumb_visibility_changed = self.show_breadcrumbs != settings.toolbar.breadcrumbs;
         self.show_breadcrumbs = settings.toolbar.breadcrumbs;
@@ -105,7 +105,7 @@ impl TerminalView {
         cx.notify();
     }
 
-    fn show_character_palette(
+    pub(crate) fn show_character_palette(
         &mut self,
         _: &ShowCharacterPalette,
         window: &mut Window,
@@ -129,12 +129,17 @@ impl TerminalView {
         }
     }
 
-    fn select_all(&mut self, _: &SelectAll, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn select_all(&mut self, _: &SelectAll, _: &mut Window, cx: &mut Context<Self>) {
         self.terminal.update(cx, |term, _| term.select_all());
         cx.notify();
     }
 
-    fn rerun_task(&mut self, _: &RerunTask, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn rerun_task(
+        &mut self,
+        _: &RerunTask,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let task = self
             .terminal
             .read(cx)
@@ -144,7 +149,7 @@ impl TerminalView {
         window.dispatch_action(Box::new(task), cx);
     }
 
-    fn clear(&mut self, _: &Clear, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn clear(&mut self, _: &Clear, _: &mut Window, cx: &mut Context<Self>) {
         self.scroll_top = px(0.);
         self.terminal.update(cx, |term, _| term.clear());
         cx.notify();
@@ -170,7 +175,7 @@ impl TerminalView {
         max_scroll_top_in_lines as f32 * line_height
     }
 
-    fn scroll_wheel(&mut self, event: &ScrollWheelEvent, cx: &mut Context<Self>) {
+    pub(crate) fn scroll_wheel(&mut self, event: &ScrollWheelEvent, cx: &mut Context<Self>) {
         let terminal_content = self.terminal.read(cx).last_content();
 
         if self.block_below_cursor.is_some() && terminal_content.display_offset == 0 {
@@ -201,7 +206,12 @@ impl TerminalView {
             .contains(Modes::ALT_SCREEN)
     }
 
-    fn scroll_line_up(&mut self, _: &ScrollLineUp, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn scroll_line_up(
+        &mut self,
+        _: &ScrollLineUp,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.is_alt_screen(cx) {
             cx.propagate();
             return;
@@ -221,7 +231,12 @@ impl TerminalView {
         cx.notify();
     }
 
-    fn scroll_line_down(&mut self, _: &ScrollLineDown, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn scroll_line_down(
+        &mut self,
+        _: &ScrollLineDown,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.is_alt_screen(cx) {
             cx.propagate();
             return;
@@ -241,7 +256,12 @@ impl TerminalView {
         cx.notify();
     }
 
-    fn scroll_page_up(&mut self, _: &ScrollPageUp, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn scroll_page_up(
+        &mut self,
+        _: &ScrollPageUp,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.is_alt_screen(cx) {
             cx.propagate();
             return;
@@ -271,7 +291,12 @@ impl TerminalView {
         cx.notify();
     }
 
-    fn scroll_page_down(&mut self, _: &ScrollPageDown, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn scroll_page_down(
+        &mut self,
+        _: &ScrollPageDown,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.is_alt_screen(cx) {
             cx.propagate();
             return;
@@ -285,7 +310,12 @@ impl TerminalView {
         cx.notify();
     }
 
-    fn scroll_to_top(&mut self, _: &ScrollToTop, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn scroll_to_top(
+        &mut self,
+        _: &ScrollToTop,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.is_alt_screen(cx) {
             cx.propagate();
             return;
@@ -295,7 +325,12 @@ impl TerminalView {
         cx.notify();
     }
 
-    fn scroll_to_bottom(&mut self, _: &ScrollToBottom, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn scroll_to_bottom(
+        &mut self,
+        _: &ScrollToBottom,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.is_alt_screen(cx) {
             cx.propagate();
             return;
@@ -308,7 +343,12 @@ impl TerminalView {
         cx.notify();
     }
 
-    fn toggle_vi_mode(&mut self, _: &ToggleViMode, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn toggle_vi_mode(
+        &mut self,
+        _: &ToggleViMode,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         self.terminal.update(cx, |term, _| term.toggle_vi_mode());
         cx.notify();
     }

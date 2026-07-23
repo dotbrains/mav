@@ -82,7 +82,7 @@ impl SelectionHistory {
         }
     }
 
-    fn push_undo(&mut self, entry: SelectionHistoryEntry) {
+    pub(crate) fn push_undo(&mut self, entry: SelectionHistoryEntry) {
         if self
             .undo_stack
             .back()
@@ -95,7 +95,7 @@ impl SelectionHistory {
         }
     }
 
-    fn push_redo(&mut self, entry: SelectionHistoryEntry) {
+    pub(crate) fn push_redo(&mut self, entry: SelectionHistoryEntry) {
         if self
             .redo_stack
             .back()

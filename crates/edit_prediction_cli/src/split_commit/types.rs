@@ -5,7 +5,7 @@ use super::*;
 /// rather than treated as failures.
 #[derive(Debug)]
 pub struct NoMatchingSplitPointError {
-    kind: SplitPointKind,
+    pub(super) kind: SplitPointKind,
 }
 
 impl std::fmt::Display for NoMatchingSplitPointError {

@@ -53,7 +53,7 @@ impl SplittableEditor {
         });
     }
 
-    fn focused_side(&self) -> SplitSide {
+    pub(crate) fn focused_side(&self) -> SplitSide {
         if let Some(lhs) = &self.lhs
             && lhs.was_last_focused
         {

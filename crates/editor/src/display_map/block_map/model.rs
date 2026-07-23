@@ -4,9 +4,9 @@ pub struct CustomBlock {
     pub id: CustomBlockId,
     pub placement: BlockPlacement<Anchor>,
     pub height: Option<u32>,
-    pub(super) style: BlockStyle,
-    pub(super) render: Arc<Mutex<RenderBlock>>,
-    pub(super) priority: usize,
+    pub(crate) style: BlockStyle,
+    pub(crate) render: Arc<Mutex<RenderBlock>>,
+    pub(crate) priority: usize,
 }
 
 #[derive(Clone)]
@@ -67,11 +67,11 @@ pub struct BlockContext<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-pub(super) struct Transform {
-    pub(super) summary: TransformSummary,
+pub(crate) struct Transform {
+    pub(crate) summary: TransformSummary,
     /// When `block` is `None`, the transform is isomorphic and passes input
     /// wrap rows through as normal text.
-    pub(super) block: Option<Block>,
+    pub(crate) block: Option<Block>,
 }
 
 #[derive(Clone)]
@@ -97,38 +97,38 @@ pub enum Block {
 }
 
 #[derive(Clone, Debug, Default)]
-pub(super) struct TransformSummary {
-    pub(super) input_rows: WrapRow,
-    pub(super) output_rows: BlockRow,
-    pub(super) longest_row: BlockRow,
-    pub(super) longest_row_chars: u32,
-    pub(super) has_replacement_blocks: bool,
+pub(crate) struct TransformSummary {
+    pub(crate) input_rows: WrapRow,
+    pub(crate) output_rows: BlockRow,
+    pub(crate) longest_row: BlockRow,
+    pub(crate) longest_row_chars: u32,
+    pub(crate) has_replacement_blocks: bool,
 }
 
 pub struct BlockChunks<'a> {
-    pub(super) transforms: sum_tree::Cursor<'a, 'static, Transform, Dimensions<BlockRow, WrapRow>>,
-    pub(super) input_chunks: wrap_map::WrapChunks<'a>,
-    pub(super) input_chunk: Chunk<'a>,
-    pub(super) output_row: BlockRow,
-    pub(super) max_output_row: BlockRow,
-    pub(super) line_count_overflow: RowDelta,
-    pub(super) masked: bool,
+    pub(crate) transforms: sum_tree::Cursor<'a, 'static, Transform, Dimensions<BlockRow, WrapRow>>,
+    pub(crate) input_chunks: wrap_map::WrapChunks<'a>,
+    pub(crate) input_chunk: Chunk<'a>,
+    pub(crate) output_row: BlockRow,
+    pub(crate) max_output_row: BlockRow,
+    pub(crate) line_count_overflow: RowDelta,
+    pub(crate) masked: bool,
 }
 
 #[derive(Clone)]
 pub struct BlockRows<'a> {
-    pub(super) transforms: sum_tree::Cursor<'a, 'static, Transform, Dimensions<BlockRow, WrapRow>>,
-    pub(super) input_rows: wrap_map::WrapRows<'a>,
-    pub(super) output_row: BlockRow,
-    pub(super) started: bool,
+    pub(crate) transforms: sum_tree::Cursor<'a, 'static, Transform, Dimensions<BlockRow, WrapRow>>,
+    pub(crate) input_rows: wrap_map::WrapRows<'a>,
+    pub(crate) output_row: BlockRow,
+    pub(crate) started: bool,
 }
 
 #[derive(Clone, Copy)]
 pub struct CompanionView<'a> {
-    pub(super) display_map_id: EntityId,
-    pub(super) companion_wrap_snapshot: &'a WrapSnapshot,
-    pub(super) companion_wrap_edits: &'a WrapPatch,
-    pub(super) companion: &'a Companion,
+    pub(crate) display_map_id: EntityId,
+    pub(crate) companion_wrap_snapshot: &'a WrapSnapshot,
+    pub(crate) companion_wrap_edits: &'a WrapPatch,
+    pub(crate) companion: &'a Companion,
 }
 
 impl<'a> CompanionView<'a> {
@@ -170,13 +170,13 @@ impl<'a> From<&'a CompanionViewMut<'a>> for CompanionView<'a> {
 }
 
 pub struct CompanionViewMut<'a> {
-    pub(super) display_map_id: EntityId,
-    pub(super) companion_display_map_id: EntityId,
-    pub(super) companion_wrap_snapshot: &'a WrapSnapshot,
-    pub(super) companion_wrap_edits: &'a WrapPatch,
-    pub(super) companion_multibuffer: &'a MultiBuffer,
-    pub(super) companion_block_map: &'a mut BlockMap,
-    pub(super) companion: &'a Companion,
+    pub(crate) display_map_id: EntityId,
+    pub(crate) companion_display_map_id: EntityId,
+    pub(crate) companion_wrap_snapshot: &'a WrapSnapshot,
+    pub(crate) companion_wrap_edits: &'a WrapPatch,
+    pub(crate) companion_multibuffer: &'a MultiBuffer,
+    pub(crate) companion_block_map: &'a mut BlockMap,
+    pub(crate) companion: &'a Companion,
 }
 
 impl<'a> CompanionViewMut<'a> {

@@ -1,4 +1,3 @@
-
 use indoc::indoc;
 
 use crate::state::Mode;

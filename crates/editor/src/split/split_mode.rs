@@ -234,7 +234,7 @@ impl SplittableEditor {
         cx.notify();
     }
 
-    fn diff_paths(&self, cx: &App) -> Vec<(PathKey, Entity<BufferDiff>)> {
+    pub(crate) fn diff_paths(&self, cx: &App) -> Vec<(PathKey, Entity<BufferDiff>)> {
         let rhs_multibuffer = self.rhs_multibuffer.read(cx);
         let rhs_multibuffer_snapshot = rhs_multibuffer.snapshot(cx);
         rhs_multibuffer_snapshot
@@ -246,7 +246,7 @@ impl SplittableEditor {
             .collect()
     }
 
-    fn activate_pane_left(
+    pub(crate) fn activate_pane_left(
         &mut self,
         _: &ActivatePaneLeft,
         window: &mut Window,
@@ -266,7 +266,7 @@ impl SplittableEditor {
         }
     }
 
-    fn activate_pane_right(
+    pub(crate) fn activate_pane_right(
         &mut self,
         _: &ActivatePaneRight,
         window: &mut Window,
@@ -286,7 +286,7 @@ impl SplittableEditor {
         }
     }
 
-    fn sync_cursor_to_other_side(
+    pub(crate) fn sync_cursor_to_other_side(
         &mut self,
         from_rhs: bool,
         source_point: Point,

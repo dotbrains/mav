@@ -1,6 +1,6 @@
 use super::*;
 
-pub(super) fn build_blame_entry_sum_tree(
+pub(crate) fn build_blame_entry_sum_tree(
     entries: Vec<BlameEntry>,
     max_row: u32,
 ) -> SumTree<GitBlameEntry> {

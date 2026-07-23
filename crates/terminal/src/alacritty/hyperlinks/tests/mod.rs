@@ -1,4 +1,3 @@
-
 use crate::terminal_settings::TerminalSettings;
 
 use super::*;

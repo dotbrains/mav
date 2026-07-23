@@ -1,6 +1,6 @@
 use super::*;
 
-fn requested_examples_from_response<'a>(
+pub(crate) fn requested_examples_from_response<'a>(
     response: &'a SnowflakeStatementResponse,
     column_indices: &'a std::collections::HashMap<String, usize>,
 ) -> Result<Box<dyn Iterator<Item = Example> + 'a>> {
@@ -75,7 +75,7 @@ fn requested_examples_from_response<'a>(
     Ok(Box::new(iter))
 }
 
-fn settled_examples_from_response<'a>(
+pub(crate) fn settled_examples_from_response<'a>(
     response: &'a SnowflakeStatementResponse,
     column_indices: &'a std::collections::HashMap<String, usize>,
 ) -> Result<Box<dyn Iterator<Item = Example> + 'a>> {
@@ -196,7 +196,7 @@ fn settled_examples_from_response<'a>(
     Ok(Box::new(iter))
 }
 
-fn captured_examples_from_response<'a>(
+pub(crate) fn captured_examples_from_response<'a>(
     response: &'a SnowflakeStatementResponse,
     column_indices: &'a std::collections::HashMap<String, usize>,
 ) -> Result<Box<dyn Iterator<Item = Example> + 'a>> {
@@ -323,7 +323,7 @@ fn captured_examples_from_response<'a>(
     Ok(Box::new(iter))
 }
 
-fn build_settled_example(
+pub(crate) fn build_settled_example(
     request_id: String,
     device_id: String,
     time: String,
@@ -379,7 +379,7 @@ fn build_settled_example(
     example
 }
 
-fn build_captured_example(
+pub(crate) fn build_captured_example(
     request_id: String,
     device_id: String,
     time: String,

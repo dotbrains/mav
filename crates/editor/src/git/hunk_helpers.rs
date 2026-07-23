@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn hunk_after_position(
+    pub(crate) fn hunk_after_position(
         &mut self,
         snapshot: &EditorSnapshot,
         position: Point,
@@ -23,7 +23,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn hunk_before_position(
+    pub(crate) fn hunk_before_position(
         &mut self,
         snapshot: &EditorSnapshot,
         position: Point,

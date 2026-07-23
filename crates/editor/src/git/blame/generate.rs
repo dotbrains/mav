@@ -1,5 +1,7 @@
 use super::*;
 
+const REGENERATE_ON_EDIT_DEBOUNCE_INTERVAL: Duration = Duration::from_millis(500);
+
 impl GitBlame {
     #[ztracing::instrument(skip_all)]
     pub(super) fn generate(&mut self, cx: &mut Context<Self>) {

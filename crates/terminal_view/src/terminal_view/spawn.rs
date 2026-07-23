@@ -31,7 +31,7 @@ pub fn init(cx: &mut App) {
     .detach();
 }
 
-fn new_terminal(
+pub(crate) fn new_terminal(
     workspace: &mut Workspace,
     action: &NewTerminal,
     window: &mut Window,
@@ -49,7 +49,7 @@ fn new_terminal(
     .detach_and_log_err(cx);
 }
 
-fn open_terminal(
+pub(crate) fn open_terminal(
     workspace: &mut Workspace,
     action: &OpenTerminal,
     window: &mut Window,
@@ -67,7 +67,7 @@ fn open_terminal(
     .detach_and_log_err(cx);
 }
 
-fn add_terminal_to_active_pane<F>(
+pub(crate) fn add_terminal_to_active_pane<F>(
     workspace: &mut Workspace,
     window: &mut Window,
     cx: &mut Context<Workspace>,
@@ -105,7 +105,7 @@ where
     })
 }
 
-fn add_terminal_to_workspace(
+pub(crate) fn add_terminal_to_workspace(
     workspace: &mut Workspace,
     pane: Entity<Pane>,
     terminal: Entity<Terminal>,
@@ -126,7 +126,7 @@ fn add_terminal_to_workspace(
     workspace.add_item(pane, terminal_view, None, focus, focus, window, cx);
 }
 
-fn select_terminal_target_pane(workspace: &Workspace, cx: &App) -> Entity<Pane> {
+pub(crate) fn select_terminal_target_pane(workspace: &Workspace, cx: &App) -> Entity<Pane> {
     let active_pane = workspace.active_pane().clone();
     if pane_contains_terminal(&active_pane, cx) {
         return active_pane;
@@ -146,6 +146,6 @@ fn pane_contains_terminal(pane: &Entity<Pane>, cx: &App) -> bool {
         .any(|item| item.act_as::<TerminalView>(cx).is_some())
 }
 
-fn is_enabled_in_workspace(workspace: &Workspace, cx: &App) -> bool {
+pub(crate) fn is_enabled_in_workspace(workspace: &Workspace, cx: &App) -> bool {
     workspace.project().read(cx).supports_terminal(cx)
 }

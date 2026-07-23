@@ -348,7 +348,7 @@ impl DisplayMap {
     }
 
     #[instrument(skip_all)]
-    fn tab_size(buffer: &Entity<MultiBuffer>, cx: &App) -> NonZeroU32 {
+    pub(crate) fn tab_size(buffer: &Entity<MultiBuffer>, cx: &App) -> NonZeroU32 {
         if let Some(buffer) = buffer.read(cx).as_singleton().map(|buffer| buffer.read(cx)) {
             LanguageSettings::for_buffer(buffer, cx).tab_size
         } else {

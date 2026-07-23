@@ -96,7 +96,7 @@ impl DisplaySnapshot {
     }
 
     /// Returns the indent length of `row` if it starts with a closing bracket.
-    fn closing_bracket_indent_len(&self, row: u32) -> Option<u32> {
+    pub(crate) fn closing_bracket_indent_len(&self, row: u32) -> Option<u32> {
         let snapshot = self.buffer_snapshot();
         let indent_len = self
             .line_indent_for_buffer_row(MultiBufferRow(row))

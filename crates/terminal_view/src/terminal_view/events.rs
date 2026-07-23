@@ -1,6 +1,6 @@
 use super::*;
 
-fn terminal_rerun_override(task: &TaskId) -> mav_actions::Rerun {
+pub(crate) fn terminal_rerun_override(task: &TaskId) -> mav_actions::Rerun {
     mav_actions::Rerun {
         task_id: Some(task.0.clone()),
         allow_concurrent_runs: Some(true),
@@ -9,7 +9,7 @@ fn terminal_rerun_override(task: &TaskId) -> mav_actions::Rerun {
     }
 }
 
-fn subscribe_for_terminal_events(
+pub(crate) fn subscribe_for_terminal_events(
     terminal: &Entity<Terminal>,
     workspace: WeakEntity<Workspace>,
     window: &mut Window,
@@ -133,7 +133,7 @@ fn subscribe_for_terminal_events(
     vec![terminal_subscription, terminal_events_subscription]
 }
 
-fn regex_search_for_query(query: &SearchQuery) -> Option<Search> {
+pub(crate) fn regex_search_for_query(query: &SearchQuery) -> Option<Search> {
     let str = query.as_str();
     if query.is_regex() {
         if str == "." {
@@ -146,7 +146,7 @@ fn regex_search_for_query(query: &SearchQuery) -> Option<Search> {
 }
 
 #[derive(Default)]
-struct TerminalScrollbarSettingsWrapper;
+pub(crate) struct TerminalScrollbarSettingsWrapper;
 
 impl ScrollbarVisibility for TerminalScrollbarSettingsWrapper {
     fn visibility(&self, cx: &App) -> scrollbars::ShowScrollbar {

@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn active_run_indicators(
+    pub(crate) fn active_run_indicators(
         &mut self,
         range: Range<DisplayRow>,
         window: &mut Window,

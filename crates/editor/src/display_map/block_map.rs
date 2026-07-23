@@ -35,7 +35,9 @@ mod block;
 mod model;
 #[path = "block_map/types.rs"]
 mod types;
+pub use iterators::StickyHeaderExcerpt;
 pub use model::*;
+pub(crate) use reader::balancing_block;
 pub use types::*;
 #[path = "block_map/custom_block.rs"]
 mod custom_block;
@@ -56,8 +58,8 @@ mod summaries;
 #[path = "block_map/writer.rs"]
 mod writer;
 
-const NEWLINES: &[u8; rope::Chunk::MASK_BITS] = &[b'\n'; _];
-const BULLETS: &[u8; rope::Chunk::MASK_BITS] = &[b'*'; _];
+pub(crate) const NEWLINES: &[u8; rope::Chunk::MASK_BITS] = &[b'\n'; _];
+pub(crate) const BULLETS: &[u8; rope::Chunk::MASK_BITS] = &[b'*'; _];
 
 /// Tracks custom blocks such as diagnostics that should be displayed within buffer.
 ///
@@ -178,7 +180,7 @@ impl<T> BlockPlacement<T> {
         }
     }
 
-    fn end(&self) -> &T {
+    pub(crate) fn end(&self) -> &T {
         match self {
             BlockPlacement::Above(position) => position,
             BlockPlacement::Below(position) => position,
@@ -208,7 +210,7 @@ impl<T> BlockPlacement<T> {
         }
     }
 
-    fn tie_break(&self) -> u8 {
+    pub(crate) fn tie_break(&self) -> u8 {
         match self {
             BlockPlacement::Replace(_) => 0,
             BlockPlacement::Above(_) => 1,
@@ -220,7 +222,7 @@ impl<T> BlockPlacement<T> {
 
 impl BlockPlacement<Anchor> {
     #[ztracing::instrument(skip_all)]
-    fn cmp(&self, other: &Self, buffer: &MultiBufferSnapshot) -> Ordering {
+    pub(crate) fn cmp(&self, other: &Self, buffer: &MultiBufferSnapshot) -> Ordering {
         self.start()
             .cmp(other.start(), buffer)
             .then_with(|| other.end().cmp(self.end(), buffer))
@@ -228,7 +230,10 @@ impl BlockPlacement<Anchor> {
     }
 
     #[ztracing::instrument(skip_all)]
-    fn to_wrap_row(&self, wrap_snapshot: &WrapSnapshot) -> Option<BlockPlacement<WrapRow>> {
+    pub(crate) fn to_wrap_row(
+        &self,
+        wrap_snapshot: &WrapSnapshot,
+    ) -> Option<BlockPlacement<WrapRow>> {
         let buffer_snapshot = wrap_snapshot.buffer_snapshot();
         match self {
             BlockPlacement::Above(position) => {
@@ -267,7 +272,11 @@ impl BlockPlacement<Anchor> {
 }
 
 #[ztracing::instrument(skip(tree, wrap_snapshot))]
-fn push_isomorphic(tree: &mut SumTree<Transform>, rows: RowDelta, wrap_snapshot: &WrapSnapshot) {
+pub(crate) fn push_isomorphic(
+    tree: &mut SumTree<Transform>,
+    rows: RowDelta,
+    wrap_snapshot: &WrapSnapshot,
+) {
     if rows == RowDelta(0) {
         return;
     }
@@ -305,7 +314,7 @@ fn push_isomorphic(tree: &mut SumTree<Transform>, rows: RowDelta, wrap_snapshot:
 
 // Count the number of bytes prior to a target point. If the string doesn't contain the target
 // point, return its total extent. Otherwise return the target point itself.
-fn offset_for_row(s: &str, target: RowDelta) -> (RowDelta, usize) {
+pub(crate) fn offset_for_row(s: &str, target: RowDelta) -> (RowDelta, usize) {
     let mut row = 0;
     let mut offset = 0;
     for (ix, line) in s.split('\n').enumerate() {
@@ -348,7 +357,7 @@ mod tests {
     mod random_tests;
     mod replacement_tests;
 
-    fn init_test(cx: &mut gpui::App) {
+    pub(crate) fn init_test(cx: &mut gpui::App) {
         let settings = SettingsStore::test(cx);
         cx.set_global(settings);
         theme_settings::init(theme::LoadThemes::JustBase, cx);
@@ -356,7 +365,7 @@ mod tests {
     }
 
     impl Block {
-        fn as_custom(&self) -> Option<&CustomBlock> {
+        pub(crate) fn as_custom(&self) -> Option<&CustomBlock> {
             match self {
                 Block::Custom(block) => Some(block),
                 _ => None,
@@ -365,7 +374,7 @@ mod tests {
     }
 
     impl BlockSnapshot {
-        fn to_point(&self, point: BlockPoint, bias: Bias) -> Point {
+        pub(crate) fn to_point(&self, point: BlockPoint, bias: Bias) -> Point {
             self.wrap_snapshot
                 .to_point(self.to_wrap_point(point, bias), bias)
         }

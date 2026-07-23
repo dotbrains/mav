@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn stage_or_unstage_diff_hunks(
+    pub(crate) fn stage_or_unstage_diff_hunks(
         &mut self,
         stage: bool,
         ranges: Vec<Range<Anchor>>,
@@ -30,7 +30,7 @@ impl Editor {
         })
         .detach_and_log_err(cx);
     }
-    pub(super) fn toggle_diff_hunks_in_ranges(
+    pub(crate) fn toggle_diff_hunks_in_ranges(
         &mut self,
         ranges: Vec<Range<Anchor>>,
         cx: &mut Context<Editor>,
@@ -41,7 +41,7 @@ impl Editor {
         })
     }
 
-    fn start_git_blame(
+    pub(crate) fn start_git_blame(
         &mut self,
         user_triggered: bool,
         window: &mut Window,
@@ -65,7 +65,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn restore_hunks_in_ranges(
+    pub(crate) fn restore_hunks_in_ranges(
         &mut self,
         ranges: Vec<Range<Point>>,
         window: &mut Window,
@@ -90,7 +90,7 @@ impl Editor {
         });
     }
 
-    pub(super) fn has_stageable_diff_hunks_in_ranges(
+    pub(crate) fn has_stageable_diff_hunks_in_ranges(
         &self,
         ranges: &[Range<Anchor>],
         snapshot: &MultiBufferSnapshot,
@@ -99,7 +99,7 @@ impl Editor {
         hunks.any(|hunk| hunk.status().has_secondary_hunk())
     }
 
-    pub(super) fn prepare_restore_change(
+    pub(crate) fn prepare_restore_change(
         &self,
         revert_changes: &mut HashMap<BufferId, Vec<(Range<text::Anchor>, Rope)>>,
         hunk: &MultiBufferDiffHunk,
@@ -133,7 +133,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn save_buffers_for_ranges_if_needed(
+    pub(crate) fn save_buffers_for_ranges_if_needed(
         &mut self,
         ranges: &[Range<Anchor>],
         cx: &mut Context<Editor>,
@@ -164,7 +164,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn do_stage_or_unstage_and_next(
+    pub(crate) fn do_stage_or_unstage_and_next(
         &mut self,
         stage: bool,
         window: &mut Window,

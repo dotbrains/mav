@@ -1,31 +1,31 @@
 use super::*;
 
 pub struct LayoutState {
-    hitbox: Hitbox,
-    batched_text_runs: Vec<BatchedTextRun>,
-    rects: Vec<LayoutRect>,
-    relative_highlighted_ranges: Vec<(Range, Hsla)>,
-    cursor: Option<CursorLayout>,
-    ime_cursor_bounds: Option<Bounds<Pixels>>,
-    background_color: Hsla,
-    dimensions: TerminalBounds,
-    mode: Modes,
-    display_offset: usize,
-    hyperlink_tooltip: Option<AnyElement>,
-    block_below_cursor_element: Option<AnyElement>,
-    base_text_style: TextStyle,
-    content_mode: ContentMode,
+    pub(crate) hitbox: Hitbox,
+    pub(crate) batched_text_runs: Vec<BatchedTextRun>,
+    pub(crate) rects: Vec<LayoutRect>,
+    pub(crate) relative_highlighted_ranges: Vec<(Range, Hsla)>,
+    pub(crate) cursor: Option<CursorLayout>,
+    pub(crate) ime_cursor_bounds: Option<Bounds<Pixels>>,
+    pub(crate) background_color: Hsla,
+    pub(crate) dimensions: TerminalBounds,
+    pub(crate) mode: Modes,
+    pub(crate) display_offset: usize,
+    pub(crate) hyperlink_tooltip: Option<AnyElement>,
+    pub(crate) block_below_cursor_element: Option<AnyElement>,
+    pub(crate) base_text_style: TextStyle,
+    pub(crate) content_mode: ContentMode,
 }
 
 /// Helper struct for converting terminal cursor points to displayed cursor points.
 #[derive(Copy, Clone)]
-struct DisplayCursor {
-    line: i32,
-    col: usize,
+pub(crate) struct DisplayCursor {
+    pub(crate) line: i32,
+    pub(crate) col: usize,
 }
 
 impl DisplayCursor {
-    fn from(cursor_point: Point, display_offset: usize) -> Self {
+    pub(crate) fn from(cursor_point: Point, display_offset: usize) -> Self {
         Self {
             line: cursor_point.line + display_offset as i32,
             col: cursor_point.column,
@@ -43,12 +43,12 @@ impl DisplayCursor {
 
 #[derive(Copy, Clone, Debug, Default)]
 pub struct LayoutPoint {
-    line: i32,
-    column: i32,
+    pub(crate) line: i32,
+    pub(crate) column: i32,
 }
 
 impl LayoutPoint {
-    fn new(line: i32, column: i32) -> Self {
+    pub(crate) fn new(line: i32, column: i32) -> Self {
         Self { line, column }
     }
 
@@ -155,7 +155,7 @@ pub struct LayoutRect {
 }
 
 impl LayoutRect {
-    fn new(point: LayoutPoint, num_of_cells: usize, color: Hsla) -> LayoutRect {
+    pub(crate) fn new(point: LayoutPoint, num_of_cells: usize, color: Hsla) -> LayoutRect {
         LayoutRect {
             point,
             num_of_cells,
@@ -188,16 +188,16 @@ impl LayoutRect {
 
 /// Represents a rectangular region with a specific background color
 #[derive(Debug, Clone)]
-pub(super) struct BackgroundRegion {
-    pub(super) start_line: i32,
-    pub(super) start_col: i32,
-    pub(super) end_line: i32,
-    pub(super) end_col: i32,
-    pub(super) color: Hsla,
+pub(crate) struct BackgroundRegion {
+    pub(crate) start_line: i32,
+    pub(crate) start_col: i32,
+    pub(crate) end_line: i32,
+    pub(crate) end_col: i32,
+    pub(crate) color: Hsla,
 }
 
 impl BackgroundRegion {
-    pub(super) fn new(line: i32, col: i32, color: Hsla) -> Self {
+    pub(crate) fn new(line: i32, col: i32, color: Hsla) -> Self {
         BackgroundRegion {
             start_line: line,
             start_col: col,
@@ -208,7 +208,7 @@ impl BackgroundRegion {
     }
 
     /// Check if this region can be merged with another region
-    pub(super) fn can_merge_with(&self, other: &BackgroundRegion) -> bool {
+    pub(crate) fn can_merge_with(&self, other: &BackgroundRegion) -> bool {
         if self.color != other.color {
             return false;
         }
@@ -227,7 +227,7 @@ impl BackgroundRegion {
     }
 
     /// Merge this region with another region
-    pub(super) fn merge_with(&mut self, other: &BackgroundRegion) {
+    pub(crate) fn merge_with(&mut self, other: &BackgroundRegion) {
         self.start_line = self.start_line.min(other.start_line);
         self.start_col = self.start_col.min(other.start_col);
         self.end_line = self.end_line.max(other.end_line);
@@ -261,7 +261,7 @@ impl TerminalLayoutCell for &IndexedCell {
 }
 
 /// Merge background regions to minimize the number of rectangles
-pub(super) fn merge_background_regions(regions: Vec<BackgroundRegion>) -> Vec<BackgroundRegion> {
+pub(crate) fn merge_background_regions(regions: Vec<BackgroundRegion>) -> Vec<BackgroundRegion> {
     if regions.is_empty() {
         return regions;
     }

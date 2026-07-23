@@ -11,5 +11,9 @@ mod setup;
 mod types;
 mod visible;
 
-pub(super) use helpers::{all_edits_insertions_or_deletions, edit_prediction_fallback_text};
-pub(super) use types::*;
+pub(crate) use helpers::{
+    MissingEditPredictionKeybindingTooltip, all_edits_insertions_or_deletions,
+    edit_prediction_fallback_text,
+};
+pub use types::make_suggestion_styles;
+pub(crate) use types::*;

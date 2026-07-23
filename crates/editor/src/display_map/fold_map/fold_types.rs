@@ -1,7 +1,7 @@
 use super::*;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Default, Ord, PartialOrd, Hash)]
-pub struct FoldId(pub(super) usize);
+pub struct FoldId(pub(crate) usize);
 
 impl From<FoldId> for ElementId {
     fn from(val: FoldId) -> Self {
@@ -61,11 +61,11 @@ impl sum_tree::Item for Fold {
 
 #[derive(Clone, Debug)]
 pub struct FoldSummary {
-    start: Anchor,
-    end: Anchor,
-    min_start: Anchor,
-    max_end: Anchor,
-    count: usize,
+    pub(crate) start: Anchor,
+    pub(crate) end: Anchor,
+    pub(crate) min_start: Anchor,
+    pub(crate) max_end: Anchor,
+    pub(crate) count: usize,
 }
 
 impl Default for FoldSummary {

@@ -33,7 +33,7 @@ impl CodeActionContents {
         self.tasks.as_deref()
     }
 
-    fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         let tasks_len = self.tasks.as_ref().map_or(0, |tasks| tasks.templates.len());
         let code_actions_len = self.actions.as_ref().map_or(0, |actions| actions.len());
         tasks_len + code_actions_len + self.debug_scenarios.len()
@@ -43,7 +43,7 @@ impl CodeActionContents {
         self.len() == 0
     }
 
-    fn iter(&self) -> impl Iterator<Item = CodeActionsItem> + '_ {
+    pub(crate) fn iter(&self) -> impl Iterator<Item = CodeActionsItem> + '_ {
         self.tasks
             .iter()
             .flat_map(|tasks| {
@@ -129,7 +129,7 @@ pub struct CodeActionsMenu {
 }
 
 impl CodeActionsMenu {
-    fn select_first(&mut self, cx: &mut Context<Editor>) {
+    pub(crate) fn select_first(&mut self, cx: &mut Context<Editor>) {
         self.selected_item = if self.scroll_handle.y_flipped() {
             self.actions.len() - 1
         } else {
@@ -140,7 +140,7 @@ impl CodeActionsMenu {
         cx.notify()
     }
 
-    fn select_last(&mut self, cx: &mut Context<Editor>) {
+    pub(crate) fn select_last(&mut self, cx: &mut Context<Editor>) {
         self.selected_item = if self.scroll_handle.y_flipped() {
             0
         } else {
@@ -151,7 +151,7 @@ impl CodeActionsMenu {
         cx.notify()
     }
 
-    fn select_prev(&mut self, cx: &mut Context<Editor>) {
+    pub(crate) fn select_prev(&mut self, cx: &mut Context<Editor>) {
         self.selected_item = if self.scroll_handle.y_flipped() {
             self.next_match_index()
         } else {
@@ -162,7 +162,7 @@ impl CodeActionsMenu {
         cx.notify();
     }
 
-    fn select_next(&mut self, cx: &mut Context<Editor>) {
+    pub(crate) fn select_next(&mut self, cx: &mut Context<Editor>) {
         self.selected_item = if self.scroll_handle.y_flipped() {
             self.prev_match_index()
         } else {
@@ -173,7 +173,7 @@ impl CodeActionsMenu {
         cx.notify();
     }
 
-    fn prev_match_index(&self) -> usize {
+    pub(crate) fn prev_match_index(&self) -> usize {
         if self.selected_item > 0 {
             self.selected_item - 1
         } else {
@@ -181,7 +181,7 @@ impl CodeActionsMenu {
         }
     }
 
-    fn next_match_index(&self) -> usize {
+    pub(crate) fn next_match_index(&self) -> usize {
         if self.selected_item + 1 < self.actions.len() {
             self.selected_item + 1
         } else {
@@ -193,7 +193,7 @@ impl CodeActionsMenu {
         !self.actions.is_empty()
     }
 
-    fn origin(&self) -> ContextMenuOrigin {
+    pub(crate) fn origin(&self) -> ContextMenuOrigin {
         match &self.deployed_from {
             Some(CodeActionSource::Indicator(row)) | Some(CodeActionSource::RunMenu(row)) => {
                 ContextMenuOrigin::GutterIndicator(*row)
@@ -203,7 +203,7 @@ impl CodeActionsMenu {
         }
     }
 
-    fn render(
+    pub(crate) fn render(
         &self,
         _style: &EditorStyle,
         max_height_in_lines: u32,
@@ -281,7 +281,7 @@ impl CodeActionsMenu {
         Popover::new().child(list).into_any_element()
     }
 
-    fn render_aside(
+    pub(crate) fn render_aside(
         &mut self,
         max_size: Size<Pixels>,
         window: &mut Window,

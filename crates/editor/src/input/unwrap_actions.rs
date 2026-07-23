@@ -80,7 +80,7 @@ impl Editor {
         });
     }
 
-    pub(super) fn observe_pending_input(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn observe_pending_input(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let mut pending: String = window
             .pending_input_keystrokes()
             .into_iter()
@@ -164,7 +164,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn linked_editing_ranges_for(
+    pub(crate) fn linked_editing_ranges_for(
         &self,
         query_range: Range<text::Anchor>,
         cx: &App,
@@ -232,7 +232,7 @@ impl Editor {
         Some(linked_edits)
     }
 
-    pub(super) fn marked_text_ranges(
+    pub(crate) fn marked_text_ranges(
         &self,
         cx: &App,
     ) -> Option<Vec<Range<MultiBufferOffsetUtf16>>> {
@@ -253,7 +253,7 @@ impl Editor {
     ///
     /// Early returns if the editor is in read-only mode, without applying any
     /// edits.
-    pub(super) fn replace_selections(
+    pub(crate) fn replace_selections(
         &mut self,
         text: &str,
         autoindent_mode: Option<AutoindentMode>,
@@ -311,7 +311,7 @@ impl Editor {
 
     /// If any empty selections is touching the start of its innermost containing autoclose
     /// region, expand it to select the brackets.
-    pub(super) fn select_autoclose_pair(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn select_autoclose_pair(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let selections = self
             .selections
             .all::<MultiBufferOffset>(&self.display_snapshot(cx));
@@ -379,7 +379,7 @@ impl Editor {
     }
 
     /// Remove any autoclose regions that no longer contain their selection or have invalid anchors in ranges.
-    pub(super) fn invalidate_autoclose_regions(
+    pub(crate) fn invalidate_autoclose_regions(
         &mut self,
         mut selections: &[Selection<Anchor>],
         buffer: &MultiBufferSnapshot,

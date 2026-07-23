@@ -88,6 +88,12 @@ mod task_pane;
 #[cfg(test)]
 mod tests;
 
+use failed_spawn::FailedToSpawnTerminal;
+use provider::{InlineAssistTabBarButton, TerminalProvider};
+pub(crate) use task_pane::{
+    is_enabled_in_workspace, new_terminal_pane, prepare_task_for_spawn, wait_for_terminals_tasks,
+};
+
 pub struct TerminalPanel {
     pub(crate) active_pane: Entity<Pane>,
     pub(crate) center: PaneGroup,

@@ -1,5 +1,3 @@
-pub(super) mod blame;
-
 use super::*;
 use ::git::{Restore, blame::BlameEntry, commit::ParsedCommitMessage, status::FileStatus};
 use buffer_diff::DiffHunkStatus;
@@ -29,7 +27,8 @@ mod stage_helpers;
 mod tests;
 mod types;
 
-pub(super) use diff_update::*;
+pub(crate) use diff_update::*;
 pub use renderer::set_blame_renderer;
-pub(super) use renderer::*;
-pub(super) use types::*;
+pub(crate) use renderer::*;
+pub use types::RenderDiffHunkControlsFn;
+pub(crate) use types::*;

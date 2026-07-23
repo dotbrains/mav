@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn go_to_next_reference(
+    pub(crate) fn go_to_next_reference(
         &mut self,
         _: &GoToNextReference,
         window: &mut Window,
@@ -13,7 +13,7 @@ impl Editor {
         };
     }
 
-    pub(super) fn go_to_prev_reference(
+    pub(crate) fn go_to_prev_reference(
         &mut self,
         _: &GoToPreviousReference,
         window: &mut Window,
@@ -25,7 +25,7 @@ impl Editor {
         };
     }
 
-    pub(super) fn go_to_symbol_by_offset(
+    pub(crate) fn go_to_symbol_by_offset(
         &mut self,
         window: &mut Window,
         cx: &mut Context<Self>,
@@ -115,7 +115,7 @@ impl Editor {
         })
     }
 
-    pub(super) fn go_to_next_symbol(
+    pub(crate) fn go_to_next_symbol(
         &mut self,
         _: &GoToNextSymbol,
         window: &mut Window,
@@ -124,7 +124,7 @@ impl Editor {
         self.go_to_symbol_by_offset(window, cx, 1).detach();
     }
 
-    pub(super) fn go_to_previous_symbol(
+    pub(crate) fn go_to_previous_symbol(
         &mut self,
         _: &GoToPreviousSymbol,
         window: &mut Window,

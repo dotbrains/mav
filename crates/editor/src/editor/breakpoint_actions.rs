@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn add_edit_block(
+    pub(crate) fn add_edit_block(
         &mut self,
         anchor: Anchor,
         base_text: &str,
@@ -51,7 +51,7 @@ impl Editor {
         });
     }
 
-    pub(super) fn add_edit_breakpoint_block(
+    pub(crate) fn add_edit_breakpoint_block(
         &mut self,
         anchor: Anchor,
         breakpoint: &Breakpoint,
@@ -342,7 +342,7 @@ impl Editor {
         self.breakpoint_store.clone()
     }
 
-    pub(super) fn go_to_active_debug_line(
+    pub(crate) fn go_to_active_debug_line(
         &mut self,
         window: &mut Window,
         cx: &mut Context<Self>,

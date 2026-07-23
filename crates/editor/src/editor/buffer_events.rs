@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn on_buffer_event(
+    pub(crate) fn on_buffer_event(
         &mut self,
         multibuffer: &Entity<MultiBuffer>,
         event: &multi_buffer::Event,

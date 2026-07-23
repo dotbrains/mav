@@ -192,7 +192,7 @@ impl DisplayMap {
         self.companion.as_ref().map(|(_, c)| c)
     }
 
-    fn sync_through_wrap(&mut self, cx: &mut App) -> (WrapSnapshot, WrapPatch) {
+    pub(crate) fn sync_through_wrap(&mut self, cx: &mut App) -> (WrapSnapshot, WrapPatch) {
         let tab_size = Self::tab_size(&self.buffer, cx);
         let buffer_snapshot = self.buffer.read(cx).snapshot(cx);
         let edits = self.buffer_subscription.consume().into_inner();
@@ -204,7 +204,7 @@ impl DisplayMap {
             .update(cx, |map, cx| map.sync(snapshot, edits, cx))
     }
 
-    fn with_synced_companion_mut<R>(
+    pub(crate) fn with_synced_companion_mut<R>(
         display_map_id: EntityId,
         companion: &Option<(WeakEntity<DisplayMap>, Entity<Companion>)>,
         cx: &mut App,
@@ -304,7 +304,7 @@ impl DisplayMap {
         }
     }
 
-    fn snapshot_simple(&mut self, cx: &mut Context<Self>) -> DisplaySnapshot {
+    pub(crate) fn snapshot_simple(&mut self, cx: &mut Context<Self>) -> DisplaySnapshot {
         let (wrap_snapshot, wrap_edits) = self.sync_through_wrap(cx);
 
         let block_snapshot = self

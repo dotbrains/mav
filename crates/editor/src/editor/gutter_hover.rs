@@ -7,28 +7,28 @@ enum GutterHoverIntent {
 }
 
 impl GutterHoverIntent {
-    fn as_str(&self) -> &'static str {
+    pub(crate) fn as_str(&self) -> &'static str {
         match self {
             GutterHoverIntent::SetBookmark => "Set bookmark",
             GutterHoverIntent::SetBreakpoint => "Set breakpoint",
         }
     }
 
-    fn icon(&self) -> ui::IconName {
+    pub(crate) fn icon(&self) -> ui::IconName {
         match self {
             GutterHoverIntent::SetBookmark => ui::IconName::Bookmark,
             GutterHoverIntent::SetBreakpoint => ui::IconName::DebugBreakpoint,
         }
     }
 
-    fn color(&self) -> Color {
+    pub(crate) fn color(&self) -> Color {
         match self {
             GutterHoverIntent::SetBookmark => Color::Info,
             GutterHoverIntent::SetBreakpoint => Color::Hint,
         }
     }
 
-    fn secondary_and_options(&self) -> String {
+    pub(crate) fn secondary_and_options(&self) -> String {
         let alt_as_text = gpui::Keystroke {
             modifiers: Modifiers::secondary_key(),
             ..Default::default()
@@ -45,7 +45,7 @@ impl GutterHoverIntent {
 }
 
 impl Editor {
-    pub(super) fn render_gutter_hover_button(
+    pub(crate) fn render_gutter_hover_button(
         &self,
         position: Anchor,
         row: DisplayRow,

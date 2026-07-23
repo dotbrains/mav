@@ -2,12 +2,12 @@ use super::*;
 
 #[cfg(test)]
 impl Editor {
-    pub(super) fn set_menu_edit_predictions_policy(&mut self, value: MenuEditPredictionsPolicy) {
+    pub(crate) fn set_menu_edit_predictions_policy(&mut self, value: MenuEditPredictionsPolicy) {
         self.menu_edit_predictions_policy = value;
     }
 }
 
-struct MissingEditPredictionKeybindingTooltip;
+pub(crate) struct MissingEditPredictionKeybindingTooltip;
 
 impl Render for MissingEditPredictionKeybindingTooltip {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -41,7 +41,10 @@ impl Render for MissingEditPredictionKeybindingTooltip {
     }
 }
 
-fn edit_prediction_fallback_text(edits: &[(Range<Anchor>, Arc<str>)], cx: &App) -> HighlightedText {
+pub(crate) fn edit_prediction_fallback_text(
+    edits: &[(Range<Anchor>, Arc<str>)],
+    cx: &App,
+) -> HighlightedText {
     // Fallback for providers that don't provide edit_preview (like Copilot)
     // Just show the raw edit text with basic styling
     let mut text = String::new();
@@ -68,7 +71,7 @@ fn edit_prediction_fallback_text(edits: &[(Range<Anchor>, Arc<str>)], cx: &App) 
     }
 }
 
-fn all_edits_insertions_or_deletions(
+pub(crate) fn all_edits_insertions_or_deletions(
     edits: &Vec<(Range<Anchor>, Arc<str>)>,
     snapshot: &MultiBufferSnapshot,
 ) -> bool {

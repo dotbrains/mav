@@ -7,6 +7,7 @@ use crate::{
     movement::TextLayoutDetails,
     scroll::ScrollAmount,
 };
+use ::markdown::{CopyButtonVisibility, Markdown, MarkdownElement, MarkdownStyle};
 use anyhow::Context as _;
 use gpui::{
     AnyElement, App, AsyncWindowContext, Bounds, Context, Entity, Focusable as _, FontWeight, Hsla,
@@ -17,7 +18,6 @@ use gpui::{
 use itertools::Itertools;
 use language::{DiagnosticEntry, Language, LanguageRegistry};
 use lsp::DiagnosticSeverity;
-use markdown::{CopyButtonVisibility, Markdown, MarkdownElement, MarkdownStyle};
 use multi_buffer::{MultiBufferOffset, ToOffset, ToPoint};
 use project::{HoverBlock, HoverBlockKind, InlayHintLabelPart};
 use settings::Settings;

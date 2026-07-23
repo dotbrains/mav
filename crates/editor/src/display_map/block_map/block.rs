@@ -50,7 +50,7 @@ impl Block {
         }
     }
 
-    pub(super) fn place_above(&self) -> bool {
+    pub(crate) fn place_above(&self) -> bool {
         match self {
             Block::Custom(block) => matches!(block.placement, BlockPlacement::Above(_)),
             Block::FoldedBuffer { .. } => false,
@@ -70,7 +70,7 @@ impl Block {
         }
     }
 
-    pub(super) fn place_below(&self) -> bool {
+    pub(crate) fn place_below(&self) -> bool {
         match self {
             Block::Custom(block) => matches!(
                 block.placement,
@@ -83,7 +83,7 @@ impl Block {
         }
     }
 
-    pub(super) fn is_replacement(&self) -> bool {
+    pub(crate) fn is_replacement(&self) -> bool {
         match self {
             Block::Custom(block) => matches!(block.placement, BlockPlacement::Replace(_)),
             Block::FoldedBuffer { .. } => true,
@@ -93,7 +93,7 @@ impl Block {
         }
     }
 
-    pub(super) fn is_header(&self) -> bool {
+    pub(crate) fn is_header(&self) -> bool {
         match self {
             Block::Custom(_) => false,
             Block::FoldedBuffer { .. } => true,

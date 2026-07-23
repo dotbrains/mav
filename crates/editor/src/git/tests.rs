@@ -4,7 +4,7 @@ use super::*;
 impl Editor {
     /// Returns the line range for the first diff review overlay, if one is active.
     /// Returns (start_row, end_row) as physical line numbers in the underlying file.
-    pub(super) fn diff_review_line_range(&self, cx: &App) -> Option<(u32, u32)> {
+    pub(crate) fn diff_review_line_range(&self, cx: &App) -> Option<(u32, u32)> {
         let overlay = self.diff_review_overlays.first()?;
         let snapshot = self.buffer.read(cx).snapshot(cx);
         let start_point = overlay.anchor_range.start.to_point(&snapshot);
@@ -21,7 +21,7 @@ impl Editor {
     }
     /// Takes all stored comments from all hunks, clearing the storage.
     /// Returns a Vec of (hunk_key, comments) pairs.
-    pub(super) fn take_all_review_comments(
+    pub(crate) fn take_all_review_comments(
         &mut self,
         cx: &mut Context<Self>,
     ) -> Vec<(DiffHunkKey, Vec<StoredReviewComment>)> {

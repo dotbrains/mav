@@ -1,7 +1,7 @@
 use super::*;
 
 #[derive(Clone)]
-pub(super) struct ErasedEditorImpl(pub(super) Entity<Editor>);
+pub(crate) struct ErasedEditorImpl(pub(crate) Entity<Editor>);
 
 impl ui_input::ErasedEditor for ErasedEditorImpl {
     fn text(&self, cx: &App) -> String {

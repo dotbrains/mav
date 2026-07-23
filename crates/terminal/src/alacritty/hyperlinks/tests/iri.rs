@@ -1,4 +1,3 @@
-
 /// [**`c₀, c₁, …, cₙ;`**]ₒₚₜ := use specified terminal widths of `c₀, c₁, …, cₙ` **columns**
 /// (defaults to `3, longest_line_cells / 2, longest_line_cells + 1;`)
 ///

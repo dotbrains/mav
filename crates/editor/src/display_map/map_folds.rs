@@ -234,7 +234,7 @@ impl DisplayMap {
     /// Replaces the LSP folding-range creases for a single buffer.
     /// Converts the supplied buffer-anchor ranges into multi-buffer creases
     /// by mapping them through the appropriate excerpts.
-    pub(super) fn set_lsp_folding_ranges(
+    pub(crate) fn set_lsp_folding_ranges(
         &mut self,
         buffer_id: BufferId,
         ranges: Vec<LspFoldingRange>,
@@ -287,7 +287,7 @@ impl DisplayMap {
     }
 
     /// Removes all LSP folding-range creases for a single buffer.
-    pub(super) fn clear_lsp_folding_ranges(&mut self, buffer_id: BufferId, cx: &mut Context<Self>) {
+    pub(crate) fn clear_lsp_folding_ranges(&mut self, buffer_id: BufferId, cx: &mut Context<Self>) {
         if let Some(old_ids) = self.lsp_folding_crease_ids.remove(&buffer_id) {
             let snapshot = self.buffer.read(cx).snapshot(cx);
             self.crease_map.remove(old_ids, &snapshot);
@@ -295,7 +295,7 @@ impl DisplayMap {
     }
 
     /// Returns `true` when at least one buffer has LSP folding-range creases.
-    pub(super) fn has_lsp_folding_ranges(&self) -> bool {
+    pub(crate) fn has_lsp_folding_ranges(&self) -> bool {
         !self.lsp_folding_crease_ids.is_empty()
     }
 }

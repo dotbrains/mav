@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn go_to_next_hunk(
+    pub(crate) fn go_to_next_hunk(
         &mut self,
         _: &GoToHunk,
         window: &mut Window,
@@ -18,7 +18,7 @@ impl Editor {
             cx,
         );
     }
-    pub(super) fn collapse_all_diff_hunks(
+    pub(crate) fn collapse_all_diff_hunks(
         &mut self,
         _: &CollapseAllDiffHunks,
         _window: &mut Window,
@@ -42,7 +42,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn toggle_selected_diff_hunks(
+    pub(crate) fn toggle_selected_diff_hunks(
         &mut self,
         _: &ToggleSelectedDiffHunks,
         _window: &mut Window,
@@ -57,7 +57,7 @@ impl Editor {
         self.toggle_diff_hunks_in_ranges(ranges, cx);
     }
 
-    pub(super) fn go_to_prev_hunk(
+    pub(crate) fn go_to_prev_hunk(
         &mut self,
         _: &GoToPreviousHunk,
         window: &mut Window,

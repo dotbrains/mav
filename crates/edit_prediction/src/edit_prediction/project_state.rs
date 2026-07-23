@@ -14,7 +14,7 @@ impl ProjectState {
             .collect()
     }
 
-    fn cancel_pending_prediction(
+    pub(crate) fn cancel_pending_prediction(
         &mut self,
         pending_prediction: PendingPrediction,
         cx: &mut Context<EditPredictionStore>,
@@ -45,7 +45,7 @@ impl ProjectState {
         }
     }
 
-    fn active_buffer(
+    pub(crate) fn active_buffer(
         &self,
         project: &Entity<Project>,
         cx: &App,
@@ -57,7 +57,7 @@ impl ProjectState {
         Some((active_buffer, registered_buffer.last_position))
     }
 
-    fn file_context_for_path(
+    pub(crate) fn file_context_for_path(
         &mut self,
         path: ProjectPath,
         cx: &mut Context<EditPredictionStore>,
@@ -79,7 +79,7 @@ impl ProjectState {
         }
     }
 
-    fn update_recent_file_cursor(&mut self, path: &Path, cursor_position: usize) {
+    pub(crate) fn update_recent_file_cursor(&mut self, path: &Path, cursor_position: usize) {
         for file in &mut self.recently_opened_files {
             if file.path.as_ref() == path && file.cursor_position.is_none() {
                 file.cursor_position = Some(cursor_position);
@@ -92,7 +92,7 @@ impl ProjectState {
         }
     }
 
-    fn finalize_last_event(&mut self, cx: &mut Context<EditPredictionStore>) {
+    pub(crate) fn finalize_last_event(&mut self, cx: &mut Context<EditPredictionStore>) {
         let Some(last_event) = self.last_event.take() else {
             return;
         };
@@ -116,7 +116,7 @@ impl ProjectState {
         self.events.push_back(event);
     }
 
-    fn clear_history(&mut self) {
+    pub(crate) fn clear_history(&mut self) {
         self.events.clear();
         self.last_event.take();
         for capture in &mut self.pending_prediction_captures {

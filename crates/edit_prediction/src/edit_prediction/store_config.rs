@@ -106,7 +106,7 @@ impl EditPredictionStore {
         this
     }
 
-    fn zeta2_raw_config_from_env() -> Option<Zeta2RawConfig> {
+    pub(crate) fn zeta2_raw_config_from_env() -> Option<Zeta2RawConfig> {
         let version_str = env::var("MAV_ZETA_FORMAT").ok()?;
         let format = ZetaFormat::parse(&version_str).ok()?;
         let model_id = env::var("MAV_ZETA_MODEL").ok();
@@ -138,7 +138,7 @@ impl EditPredictionStore {
         );
     }
 
-    fn request_backoff_active(&mut self, cx: &App) -> bool {
+    pub(crate) fn request_backoff_active(&mut self, cx: &App) -> bool {
         let Some(backoff_until) = self.request_backoff_until else {
             return false;
         };

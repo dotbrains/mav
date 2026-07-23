@@ -394,7 +394,7 @@ impl CompletionsMenu {
         )
     }
 
-    fn render_markdown(
+    pub(crate) fn render_markdown(
         markdown: Entity<Markdown>,
         window: &mut Window,
         cx: &mut Context<Editor>,

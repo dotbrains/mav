@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn open_git_blame_commit(
+    pub(crate) fn open_git_blame_commit(
         &mut self,
         _: &OpenGitBlameCommit,
         window: &mut Window,
@@ -9,7 +9,7 @@ impl Editor {
     ) {
         self.open_git_blame_commit_internal(window, cx);
     }
-    pub(super) fn toggle_git_blame_inline_internal(
+    pub(crate) fn toggle_git_blame_inline_internal(
         &mut self,
         user_triggered: bool,
         window: &mut Window,
@@ -27,7 +27,7 @@ impl Editor {
         cx.notify();
     }
 
-    pub(super) fn start_git_blame_inline(
+    pub(crate) fn start_git_blame_inline(
         &mut self,
         user_triggered: bool,
         window: &mut Window,
@@ -46,11 +46,11 @@ impl Editor {
         }
     }
 
-    pub(super) fn render_git_blame_gutter(&self, cx: &App) -> bool {
+    pub(crate) fn render_git_blame_gutter(&self, cx: &App) -> bool {
         !self.mode().is_minimap() && self.show_git_blame_gutter && self.has_blame_entries(cx)
     }
 
-    pub(super) fn render_git_blame_inline(&self, window: &Window, cx: &App) -> bool {
+    pub(crate) fn render_git_blame_inline(&self, window: &Window, cx: &App) -> bool {
         ProjectSettings::get_global(cx).git.inline_blame.location
             == project::project_settings::InlineBlameLocation::Inline
             && self.show_git_blame_inline
@@ -59,7 +59,7 @@ impl Editor {
             && self.has_blame_entries(cx)
     }
 
-    pub(super) fn start_inline_blame_timer(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn start_inline_blame_timer(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if let Some(delay) = ProjectSettings::get_global(cx).git.inline_blame_delay() {
             self.show_git_blame_inline = false;
 
@@ -76,7 +76,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn show_blame_popover(
+    pub(crate) fn show_blame_popover(
         &mut self,
         buffer: BufferId,
         blame_entry: &BlameEntry,

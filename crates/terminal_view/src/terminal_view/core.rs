@@ -120,7 +120,7 @@ impl TerminalView {
         cx.notify();
     }
 
-    fn shows_workspace_actions(&self) -> bool {
+    pub(crate) fn shows_workspace_actions(&self) -> bool {
         self.show_workspace_actions
             .unwrap_or_else(|| !matches!(self.mode, TerminalMode::Embedded { .. }))
     }
@@ -227,7 +227,12 @@ impl TerminalView {
             .is_some_and(|editor| editor.focus_handle(cx).is_focused(window))
     }
 
-    fn finish_renaming(&mut self, save: bool, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn finish_renaming(
+        &mut self,
+        save: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let Some(editor) = self.rename_editor.take() else {
             return;
         };

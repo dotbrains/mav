@@ -32,7 +32,7 @@ impl CompletionsMenu {
         // When navigating to the very beginning or end of completions, `last_rendered_range` may
         // have no overlap with the completions that will be displayed, so instead use a range based
         // on the last rendered count.
-        const APPROXIMATE_VISIBLE_COUNT: usize = 12;
+        pub(crate) const APPROXIMATE_VISIBLE_COUNT: usize = 12;
         let last_rendered_range = self.last_rendered_range.borrow().clone();
         let visible_count = last_rendered_range
             .clone()
@@ -126,7 +126,7 @@ impl CompletionsMenu {
         }
     }
 
-    fn get_or_create_entry_markdown(
+    pub(crate) fn get_or_create_entry_markdown(
         &self,
         index: usize,
         cx: &mut Context<Editor>,

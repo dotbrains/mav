@@ -2,7 +2,7 @@ use super::*;
 
 impl Editor {
     #[ztracing::instrument(skip_all)]
-    pub(super) fn refresh_outline_symbols_at_cursor(&mut self, cx: &mut Context<Editor>) {
+    pub(crate) fn refresh_outline_symbols_at_cursor(&mut self, cx: &mut Context<Editor>) {
         if !self.lsp_data_enabled() {
             return;
         }

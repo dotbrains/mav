@@ -1,7 +1,7 @@
 use super::*;
 
 impl TerminalPanel {
-    fn serialization_key(workspace: &Workspace) -> Option<String> {
+    pub(crate) fn serialization_key(workspace: &Workspace) -> Option<String> {
         workspace
             .database_id()
             .map(|id| i64::from(id).to_string())

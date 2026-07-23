@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn render_edit_prediction_popover(
+    pub(crate) fn render_edit_prediction_popover(
         &mut self,
         text_bounds: &Bounds<Pixels>,
         content_origin: gpui::Point<Pixels>,
@@ -132,11 +132,11 @@ impl Editor {
         }
     }
 
-    pub(super) fn edit_prediction_cursor_popover_height(&self) -> Pixels {
+    pub(crate) fn edit_prediction_cursor_popover_height(&self) -> Pixels {
         px(30.)
     }
 
-    pub(super) fn render_edit_prediction_cursor_popover(
+    pub(crate) fn render_edit_prediction_cursor_popover(
         &self,
         min_width: Pixels,
         max_width: Pixels,
@@ -150,15 +150,15 @@ impl Editor {
 
         let is_refreshing = provider.provider.is_refreshing(cx);
 
-        fn pending_completion_container(icon: IconName) -> Div {
+        pub(crate) fn pending_completion_container(icon: IconName) -> Div {
             h_flex().h_full().flex_1().gap_2().child(Icon::new(icon))
         }
 
         let completion = match &self.active_edit_prediction {
             Some(prediction) => {
                 if !self.has_visible_completions_menu() {
-                    const RADIUS: Pixels = px(6.);
-                    const BORDER_WIDTH: Pixels = px(1.);
+                    pub(crate) const RADIUS: Pixels = px(6.);
+                    pub(crate) const BORDER_WIDTH: Pixels = px(1.);
                     let keybind_display = self.edit_prediction_keybind_display(
                         EditPredictionKeybindSurface::CursorPopoverCompact,
                         window,

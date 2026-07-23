@@ -12,7 +12,7 @@ pub(crate) fn buffer_path_with_id_fallback(
     }
 }
 
-fn predict_edits_request_trigger_from_editor_trigger(
+pub(crate) fn predict_edits_request_trigger_from_editor_trigger(
     trigger: EditPredictionRequestTrigger,
 ) -> PredictEditsRequestTrigger {
     match trigger {

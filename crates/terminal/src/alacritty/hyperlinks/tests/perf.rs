@@ -1,4 +1,3 @@
-
 use super::*;
 use crate::TerminalSettings;
 use alacritty_terminal::{

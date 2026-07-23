@@ -1,8 +1,8 @@
 use super::*;
 
-struct FailedToSpawnTerminal {
-    error: String,
-    focus_handle: FocusHandle,
+pub(crate) struct FailedToSpawnTerminal {
+    pub(crate) error: String,
+    pub(crate) focus_handle: FocusHandle,
 }
 
 impl Focusable for FailedToSpawnTerminal {

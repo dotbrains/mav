@@ -1,7 +1,7 @@
 use super::*;
 
 impl EditPredictionStore {
-    fn report_changes_for_buffer(
+    pub(crate) fn report_changes_for_buffer(
         &mut self,
         buffer: &Entity<Buffer>,
         project: &Entity<Project>,
@@ -144,7 +144,7 @@ impl EditPredictionStore {
         });
     }
 
-    fn prediction_at(
+    pub(crate) fn prediction_at(
         &mut self,
         buffer: &Entity<Buffer>,
         position: Option<language::Anchor>,
@@ -181,7 +181,11 @@ impl EditPredictionStore {
         }
     }
 
-    fn accept_current_prediction(&mut self, project: &Entity<Project>, cx: &mut Context<Self>) {
+    pub(crate) fn accept_current_prediction(
+        &mut self,
+        project: &Entity<Project>,
+        cx: &mut Context<Self>,
+    ) {
         let Some(current_prediction) = self
             .projects
             .get_mut(&project.entity_id())

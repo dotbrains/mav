@@ -44,7 +44,7 @@ impl TerminalPanel {
         });
     }
 
-    fn replace_terminal(
+    pub(crate) fn replace_terminal(
         &self,
         spawn_task: SpawnInTerminal,
         task_pane: Entity<Pane>,
@@ -149,7 +149,7 @@ impl TerminalPanel {
         })
     }
 
-    fn has_no_terminals(&self, cx: &App) -> bool {
+    pub(crate) fn has_no_terminals(&self, cx: &App) -> bool {
         self.active_pane.read(cx).items_len() == 0 && self.pending_terminals_to_add == 0
     }
 

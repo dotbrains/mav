@@ -1,7 +1,8 @@
 use super::*;
 
-struct EditorRestorationData {
-    entries: HashMap<PathBuf, RestorationData>,
+#[derive(Default)]
+pub(crate) struct EditorRestorationData {
+    pub(crate) entries: HashMap<PathBuf, RestorationData>,
 }
 
 #[derive(Default, Debug)]

@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn project_subscriptions(
+    pub(crate) fn project_subscriptions(
         full_mode: bool,
         project: Option<&Entity<Project>>,
         window: &mut Window,

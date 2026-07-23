@@ -1,6 +1,6 @@
 use super::*;
 
-fn collaborator_edit_overlaps_locality_region(
+pub(crate) fn collaborator_edit_overlaps_locality_region(
     project_state: &ProjectState,
     project: &Entity<Project>,
     buffer: &Entity<Buffer>,
@@ -26,7 +26,7 @@ fn collaborator_edit_overlaps_locality_region(
     edit_range.overlaps(&locality_anchor_range, snapshot)
 }
 
-fn merge_trailing_events_if_needed(
+pub(crate) fn merge_trailing_events_if_needed(
     events: &mut VecDeque<StoredEvent>,
     end_snapshot: &TextBufferSnapshot,
     latest_snapshot: &TextBufferSnapshot,
@@ -117,16 +117,16 @@ fn merge_trailing_events_if_needed(
     "You must update to Mav version {minimum_version} or higher to continue using edit predictions."
 )]
 pub struct MavUpdateRequiredError {
-    minimum_version: Version,
+    pub(crate) minimum_version: Version,
 }
 
 #[derive(Error, Debug)]
 #[error("Cloud request timed out")]
 pub(crate) struct CloudRequestTimeoutError;
 
-struct MavPredictUpsell;
+pub(crate) struct MavPredictUpsell;
 
-fn is_upsell_dismissed(cx: &App) -> bool {
+pub(crate) fn is_upsell_dismissed(cx: &App) -> bool {
     // To make this backwards compatible with older versions of Mav, we
     // check if the user has seen the previous Edit Prediction Onboarding
     // before, by checking the data collection choice which was written to
@@ -181,7 +181,10 @@ pub fn init(cx: &mut App) {
                     .provider = Some(EditPredictionProvider::None)
             });
         });
-        fn copilot_for_project(project: &Entity<Project>, cx: &mut App) -> Option<Entity<Copilot>> {
+        pub(crate) fn copilot_for_project(
+            project: &Entity<Project>,
+            cx: &mut App,
+        ) -> Option<Entity<Copilot>> {
             EditPredictionStore::try_global(cx).and_then(|store| {
                 store.update(cx, |this, cx| this.start_copilot_for_project(project, cx))
             })
@@ -206,7 +209,7 @@ pub fn init(cx: &mut App) {
     .detach();
 }
 
-fn is_mav_industries_repo(url: &str) -> bool {
+pub(crate) fn is_mav_industries_repo(url: &str) -> bool {
     url.strip_prefix("https://github.com/mav-industries/")
         .or_else(|| url.strip_prefix("http://github.com/mav-industries/"))
         .or_else(|| url.strip_prefix("git@github.com:mav-industries/"))

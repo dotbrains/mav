@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn dismiss_overlays_without_comments(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn dismiss_overlays_without_comments(&mut self, cx: &mut Context<Self>) {
         let snapshot = self.buffer.read(cx).snapshot(cx);
         // First, compute which overlays have comments (to avoid borrow issues with retain)
         let overlays_with_comments: Vec<bool> = self
@@ -30,7 +30,7 @@ impl Editor {
 
     /// Refreshes the diff review overlay block to update its height and render function.
     /// Uses resize_blocks and replace_blocks to avoid visual flicker from remove+insert.
-    pub(super) fn refresh_diff_review_overlay_height(
+    pub(crate) fn refresh_diff_review_overlay_height(
         &mut self,
         hunk_key: &DiffHunkKey,
         _window: &mut Window,
@@ -82,7 +82,7 @@ impl Editor {
     }
 
     /// Compares two DiffHunkKeys for equality by resolving their anchors.
-    pub(super) fn hunk_keys_match(
+    pub(crate) fn hunk_keys_match(
         a: &DiffHunkKey,
         b: &DiffHunkKey,
         snapshot: &MultiBufferSnapshot,
@@ -91,13 +91,13 @@ impl Editor {
             && a.hunk_start_anchor.to_point(snapshot) == b.hunk_start_anchor.to_point(snapshot)
     }
 
-    pub(super) fn render_diff_review_overlay(
+    pub(crate) fn render_diff_review_overlay(
         prompt_editor: &Entity<Editor>,
         hunk_key: &DiffHunkKey,
         editor_handle: &WeakEntity<Editor>,
         cx: &mut BlockContext,
     ) -> AnyElement {
-        fn format_line_ranges(ranges: &[(u32, u32)]) -> Option<String> {
+        pub(crate) fn format_line_ranges(ranges: &[(u32, u32)]) -> Option<String> {
             if ranges.is_empty() {
                 return None;
             }
@@ -273,7 +273,7 @@ impl Editor {
             .into_any_element()
     }
 
-    pub(super) fn render_comments_section(
+    pub(crate) fn render_comments_section(
         comments: Vec<StoredReviewComment>,
         expanded: bool,
         inline_editors: HashMap<usize, Entity<Editor>>,
@@ -340,7 +340,7 @@ impl Editor {
             })
     }
 
-    pub(super) fn render_comment_row(
+    pub(crate) fn render_comment_row(
         comment: StoredReviewComment,
         inline_editor: Option<Entity<Editor>>,
         user_avatar_uri: Option<SharedUri>,

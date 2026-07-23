@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn finish_initialization(
+    pub(crate) fn finish_initialization(
         mut editor: Self,
         full_mode: bool,
         is_minimap: bool,

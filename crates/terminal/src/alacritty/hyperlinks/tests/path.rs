@@ -1,4 +1,3 @@
-
 /// 👉 := **hovered** on following char
 ///
 /// 👈 := **hovered** on wide char spacer of previous full width char

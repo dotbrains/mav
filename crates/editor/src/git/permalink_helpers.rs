@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn get_permalink_to_line(&self, cx: &mut Context<Self>) -> Task<Result<url::Url>> {
+    pub(crate) fn get_permalink_to_line(&self, cx: &mut Context<Self>) -> Task<Result<url::Url>> {
         let buffer_and_selection = maybe!({
             let selection = self.selections.newest::<Point>(&self.display_snapshot(cx));
             let selection_range = selection.range();

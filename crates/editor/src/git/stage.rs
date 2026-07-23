@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn toggle_staged_selected_diff_hunks(
+    pub(crate) fn toggle_staged_selected_diff_hunks(
         &mut self,
         _: &::git::ToggleStaged,
         _: &mut Window,
@@ -17,7 +17,7 @@ impl Editor {
         let stage = self.has_stageable_diff_hunks_in_ranges(&ranges, &snapshot);
         self.stage_or_unstage_diff_hunks(stage, ranges, cx);
     }
-    pub(super) fn stage_and_next(
+    pub(crate) fn stage_and_next(
         &mut self,
         _: &::git::StageAndNext,
         window: &mut Window,
@@ -26,7 +26,7 @@ impl Editor {
         self.do_stage_or_unstage_and_next(true, window, cx);
     }
 
-    pub(super) fn unstage_and_next(
+    pub(crate) fn unstage_and_next(
         &mut self,
         _: &::git::UnstageAndNext,
         window: &mut Window,
@@ -35,7 +35,7 @@ impl Editor {
         self.do_stage_or_unstage_and_next(false, window, cx);
     }
 
-    pub(super) fn do_stage_or_unstage(
+    pub(crate) fn do_stage_or_unstage(
         &self,
         stage: bool,
         buffer_id: BufferId,
@@ -73,7 +73,7 @@ impl Editor {
         None
     }
 
-    pub(super) fn clear_expanded_diff_hunks(&mut self, cx: &mut Context<Self>) -> bool {
+    pub(crate) fn clear_expanded_diff_hunks(&mut self, cx: &mut Context<Self>) -> bool {
         self.buffer.update(cx, |buffer, cx| {
             let ranges = vec![Anchor::Min..Anchor::Max];
             if !buffer.all_diff_hunks_expanded()
@@ -87,7 +87,7 @@ impl Editor {
         })
     }
 
-    pub(super) fn has_any_expanded_diff_hunks(&self, cx: &App) -> bool {
+    pub(crate) fn has_any_expanded_diff_hunks(&self, cx: &App) -> bool {
         if self.buffer.read(cx).all_diff_hunks_expanded() {
             return true;
         }
@@ -97,7 +97,7 @@ impl Editor {
             .has_expanded_diff_hunks_in_ranges(&ranges, cx)
     }
 
-    pub(super) fn toggle_single_diff_hunk(&mut self, range: Range<Anchor>, cx: &mut Context<Self>) {
+    pub(crate) fn toggle_single_diff_hunk(&mut self, range: Range<Anchor>, cx: &mut Context<Self>) {
         self.buffer.update(cx, |buffer, cx| {
             buffer.toggle_single_diff_hunk(range, cx);
         })

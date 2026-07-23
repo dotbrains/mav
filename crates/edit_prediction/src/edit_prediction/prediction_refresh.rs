@@ -1,7 +1,7 @@
 use super::*;
 
 impl EditPredictionStore {
-    fn queue_prediction_refresh(
+    pub(crate) fn queue_prediction_refresh(
         &mut self,
         project: Entity<Project>,
         throttle_entity: EntityId,

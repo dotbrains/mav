@@ -76,12 +76,6 @@ impl PyLspAdapter {
     }
 }
 
-const BINARY_DIR: &str = if cfg!(target_os = "windows") {
-    "Scripts"
-} else {
-    "bin"
-};
-
 #[async_trait(?Send)]
 impl LspAdapter for PyLspAdapter {
     fn name(&self) -> LanguageServerName {

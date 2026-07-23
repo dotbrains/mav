@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn apply_all_diff_hunks(
+    pub(crate) fn apply_all_diff_hunks(
         &mut self,
         _: &ApplyAllDiffHunks,
         window: &mut Window,
@@ -32,7 +32,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn apply_selected_diff_hunks(
+    pub(crate) fn apply_selected_diff_hunks(
         &mut self,
         _: &ApplyDiffHunk,
         window: &mut Window,

@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn base_subscriptions(
+    pub(crate) fn base_subscriptions(
         is_minimap: bool,
         multi_buffer: &Entity<MultiBuffer>,
         display_map: &Entity<DisplayMap>,

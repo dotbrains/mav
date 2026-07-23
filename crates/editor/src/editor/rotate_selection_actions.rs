@@ -19,7 +19,12 @@ impl Editor {
         self.rotate_selections(window, cx, true)
     }
 
-    fn rotate_selections(&mut self, window: &mut Window, cx: &mut Context<Self>, reverse: bool) {
+    pub(crate) fn rotate_selections(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+        reverse: bool,
+    ) {
         if self.read_only(cx) {
             return;
         }

@@ -1,9 +1,9 @@
 use super::*;
 
-pub(super) type PersistedFold = (usize, usize, Option<String>, Option<String>);
-pub(super) type MigratedFold = (usize, usize, String, String);
+pub(crate) type PersistedFold = (usize, usize, Option<String>, Option<String>);
+pub(crate) type MigratedFold = (usize, usize, String, String);
 
-pub(super) fn resolve_persisted_folds(
+pub(crate) fn resolve_persisted_folds(
     folds: Vec<PersistedFold>,
     snapshot: &MultiBufferSnapshot,
     collect_migration_data: bool,
@@ -60,7 +60,7 @@ pub(super) fn resolve_persisted_folds(
     (valid_folds, migrated_folds)
 }
 
-fn find_fingerprint(
+pub(crate) fn find_fingerprint(
     snapshot: &MultiBufferSnapshot,
     fingerprint: &str,
     search_start: usize,

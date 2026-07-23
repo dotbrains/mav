@@ -1,6 +1,6 @@
 use super::*;
 
-pub(super) fn is_list_prefix_row(
+pub(crate) fn is_list_prefix_row(
     row: MultiBufferRow,
     buffer: &MultiBufferSnapshot,
     language: &LanguageScope,
@@ -67,7 +67,7 @@ pub(super) fn is_list_prefix_row(
 }
 
 #[derive(Debug)]
-enum NewlineConfig {
+pub(crate) enum NewlineConfig {
     /// Insert newline with optional additional indent and optional extra blank line
     Newline {
         additional_indent: IndentSize,
@@ -81,7 +81,7 @@ enum NewlineConfig {
 }
 
 impl NewlineConfig {
-    fn has_extra_line(&self) -> bool {
+    pub(crate) fn has_extra_line(&self) -> bool {
         matches!(
             self,
             Self::Newline {
@@ -91,7 +91,7 @@ impl NewlineConfig {
         )
     }
 
-    fn insert_extra_newline_brackets(
+    pub(crate) fn insert_extra_newline_brackets(
         buffer: &MultiBufferSnapshot,
         range: Range<MultiBufferOffset>,
         language: &language::LanguageScope,
@@ -122,7 +122,7 @@ impl NewlineConfig {
         })
     }
 
-    fn insert_extra_newline_tree_sitter(
+    pub(crate) fn insert_extra_newline_tree_sitter(
         buffer: &MultiBufferSnapshot,
         range: Range<MultiBufferOffset>,
     ) -> bool {
@@ -167,7 +167,7 @@ impl NewlineConfig {
     }
 }
 
-fn comment_delimiter_for_newline(
+pub(crate) fn comment_delimiter_for_newline(
     start_point: &Point,
     buffer: &MultiBufferSnapshot,
     language: &LanguageScope,
@@ -243,7 +243,7 @@ fn comment_delimiter_for_newline(
     }
 }
 
-fn documentation_delimiter_for_newline(
+pub(crate) fn documentation_delimiter_for_newline(
     start_point: &Point,
     buffer: &MultiBufferSnapshot,
     language: &LanguageScope,
@@ -356,7 +356,7 @@ fn documentation_delimiter_for_newline(
     }
 }
 
-fn list_delimiter_for_newline(
+pub(crate) fn list_delimiter_for_newline(
     start_point: &Point,
     buffer: &MultiBufferSnapshot,
     language: &LanguageScope,

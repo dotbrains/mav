@@ -43,8 +43,11 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
+pub(crate) use input_handler::TerminalInputHandler;
+pub(crate) use layout::{BackgroundRegion, DisplayCursor, merge_background_regions};
 pub use layout::{BatchedTextRun, LayoutPoint, LayoutRect, LayoutState, TerminalLayoutCell};
 pub use utils::{convert_color, is_blank};
+pub(crate) use utils::{terminal_content_reaches_bottom, to_highlighted_range_lines};
 
 pub struct TerminalElement {
     terminal: Entity<Terminal>,
@@ -65,32 +68,6 @@ impl InteractiveElement for TerminalElement {
 }
 
 impl StatefulInteractiveElement for TerminalElement {}
-
-impl TerminalElement {
-    pub fn new(
-        terminal: Entity<Terminal>,
-        terminal_view: Entity<TerminalView>,
-        workspace: WeakEntity<Workspace>,
-        focus: FocusHandle,
-        focused: bool,
-        cursor_visible: bool,
-        block_below_cursor: Option<Rc<BlockProperties>>,
-        mode: TerminalMode,
-    ) -> TerminalElement {
-        TerminalElement {
-            terminal,
-            terminal_view,
-            workspace,
-            focused,
-            focus: focus.clone(),
-            cursor_visible,
-            block_below_cursor,
-            mode,
-            interactivity: Default::default(),
-        }
-        .track_focus(&focus)
-    }
-}
 
 impl IntoElement for TerminalElement {
     type Element = Self;

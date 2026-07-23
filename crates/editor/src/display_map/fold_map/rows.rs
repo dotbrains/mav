@@ -2,9 +2,9 @@ use super::*;
 
 #[derive(Clone)]
 pub struct FoldRows<'a> {
-    cursor: Cursor<'a, 'static, Transform, Dimensions<FoldPoint, InlayPoint>>,
-    input_rows: InlayBufferRows<'a>,
-    fold_point: FoldPoint,
+    pub(crate) cursor: Cursor<'a, 'static, Transform, Dimensions<FoldPoint, InlayPoint>>,
+    pub(crate) input_rows: InlayBufferRows<'a>,
+    pub(crate) fold_point: FoldPoint,
 }
 
 impl FoldRows<'_> {

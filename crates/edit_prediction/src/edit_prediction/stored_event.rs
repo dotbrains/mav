@@ -1,7 +1,7 @@
 use super::*;
 
 impl StoredEvent {
-    fn can_merge(
+    pub(crate) fn can_merge(
         &self,
         next_old_event: &StoredEvent,
         latest_snapshot: &TextBufferSnapshot,

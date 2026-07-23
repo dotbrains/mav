@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn open_git_blame_commit_internal(
+    pub(crate) fn open_git_blame_commit_internal(
         &mut self,
         window: &mut Window,
         cx: &mut Context<Self>,
@@ -33,12 +33,12 @@ impl Editor {
         renderer.open_blame_commit(blame_entry, repo, workspace, window, cx);
         None
     }
-    pub(super) fn has_blame_entries(&self, cx: &App) -> bool {
+    pub(crate) fn has_blame_entries(&self, cx: &App) -> bool {
         self.blame()
             .is_some_and(|blame| blame.read(cx).has_generated_entries())
     }
 
-    pub(super) fn newest_selection_head_on_empty_line(&self, cx: &App) -> bool {
+    pub(crate) fn newest_selection_head_on_empty_line(&self, cx: &App) -> bool {
         let cursor_anchor = self.selections.newest_anchor().head();
 
         let snapshot = self.buffer.read(cx).snapshot(cx);

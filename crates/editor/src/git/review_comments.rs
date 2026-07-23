@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn dismiss_all_diff_review_overlays(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn dismiss_all_diff_review_overlays(&mut self, cx: &mut Context<Self>) {
         if self.diff_review_overlays.is_empty() {
             return;
         }
@@ -14,7 +14,7 @@ impl Editor {
         cx.notify();
     }
     /// Action handler for SubmitDiffReviewComment.
-    pub(super) fn submit_diff_review_comment_action(
+    pub(crate) fn submit_diff_review_comment_action(
         &mut self,
         _: &SubmitDiffReviewComment,
         window: &mut Window,
@@ -24,7 +24,7 @@ impl Editor {
     }
 
     /// Returns comments for a specific hunk, ordered by creation time.
-    pub(super) fn comments_for_hunk<'a>(
+    pub(crate) fn comments_for_hunk<'a>(
         &'a self,
         key: &DiffHunkKey,
         snapshot: &MultiBufferSnapshot,
@@ -40,7 +40,7 @@ impl Editor {
     }
 
     /// Returns the count of comments for a specific hunk.
-    pub(super) fn hunk_comment_count(
+    pub(crate) fn hunk_comment_count(
         &self,
         key: &DiffHunkKey,
         snapshot: &MultiBufferSnapshot,
@@ -56,7 +56,7 @@ impl Editor {
     }
 
     /// Removes a review comment by ID from any hunk.
-    pub(super) fn remove_review_comment(&mut self, id: usize, cx: &mut Context<Self>) -> bool {
+    pub(crate) fn remove_review_comment(&mut self, id: usize, cx: &mut Context<Self>) -> bool {
         for (_, comments) in self.stored_review_comments.iter_mut() {
             if let Some(index) = comments.iter().position(|c| c.id == id) {
                 comments.remove(index);
@@ -71,7 +71,7 @@ impl Editor {
     }
 
     /// Updates a review comment's text by ID.
-    pub(super) fn update_review_comment(
+    pub(crate) fn update_review_comment(
         &mut self,
         id: usize,
         new_comment: String,
@@ -92,7 +92,7 @@ impl Editor {
     }
 
     /// Sets a comment's editing state.
-    pub(super) fn set_comment_editing(
+    pub(crate) fn set_comment_editing(
         &mut self,
         id: usize,
         is_editing: bool,
@@ -112,7 +112,7 @@ impl Editor {
     ///
     /// This should be called when the buffer changes to prevent orphaned comments
     /// from accumulating.
-    pub(super) fn cleanup_orphaned_review_comments(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn cleanup_orphaned_review_comments(&mut self, cx: &mut Context<Self>) {
         let snapshot = self.buffer.read(cx).snapshot(cx);
         let original_count = self.total_review_comment_count();
 
@@ -141,7 +141,7 @@ impl Editor {
     }
 
     /// Toggles the expanded state of the comments section in the overlay.
-    pub(super) fn toggle_review_comments_expanded(
+    pub(crate) fn toggle_review_comments_expanded(
         &mut self,
         _: &ToggleReviewCommentsExpanded,
         window: &mut Window,
@@ -172,7 +172,7 @@ impl Editor {
     }
 
     /// Handles the EditReviewComment action - sets a comment into editing mode.
-    pub(super) fn edit_review_comment(
+    pub(crate) fn edit_review_comment(
         &mut self,
         action: &EditReviewComment,
         window: &mut Window,
@@ -257,7 +257,7 @@ impl Editor {
     }
 
     /// Confirms an inline edit of a review comment.
-    pub(super) fn confirm_edit_review_comment(
+    pub(crate) fn confirm_edit_review_comment(
         &mut self,
         comment_id: usize,
         _window: &mut Window,
@@ -311,7 +311,7 @@ impl Editor {
     }
 
     /// Cancels an inline edit of a review comment.
-    pub(super) fn cancel_edit_review_comment(
+    pub(crate) fn cancel_edit_review_comment(
         &mut self,
         comment_id: usize,
         _window: &mut Window,
@@ -347,7 +347,7 @@ impl Editor {
     }
 
     /// Action handler for ConfirmEditReviewComment.
-    pub(super) fn confirm_edit_review_comment_action(
+    pub(crate) fn confirm_edit_review_comment_action(
         &mut self,
         action: &ConfirmEditReviewComment,
         window: &mut Window,
@@ -357,7 +357,7 @@ impl Editor {
     }
 
     /// Action handler for CancelEditReviewComment.
-    pub(super) fn cancel_edit_review_comment_action(
+    pub(crate) fn cancel_edit_review_comment_action(
         &mut self,
         action: &CancelEditReviewComment,
         window: &mut Window,
@@ -367,7 +367,7 @@ impl Editor {
     }
 
     /// Handles the DeleteReviewComment action - removes a comment.
-    pub(super) fn delete_review_comment(
+    pub(crate) fn delete_review_comment(
         &mut self,
         action: &DeleteReviewComment,
         window: &mut Window,

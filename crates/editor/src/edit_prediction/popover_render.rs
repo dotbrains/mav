@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    fn render_edit_prediction_modifier_jump_popover(
+    pub(crate) fn render_edit_prediction_modifier_jump_popover(
         &mut self,
         text_bounds: &Bounds<Pixels>,
         content_origin: gpui::Point<Pixels>,
@@ -17,7 +17,7 @@ impl Editor {
         let scrolled_content_origin =
             content_origin - gpui::Point::new(scroll_pixel_position.x.into(), Pixels::ZERO);
 
-        const SCROLL_PADDING_Y: Pixels = px(12.);
+        pub(crate) const SCROLL_PADDING_Y: Pixels = px(12.);
 
         if target_display_point.row() < visible_row_range.start {
             return self.render_edit_prediction_scroll_popover(
@@ -43,7 +43,7 @@ impl Editor {
             );
         }
 
-        const POLE_WIDTH: Pixels = px(2.);
+        pub(crate) const POLE_WIDTH: Pixels = px(2.);
 
         let line_layout =
             line_layouts.get(target_display_point.row().minus(visible_row_range.start) as usize)?;
@@ -96,7 +96,7 @@ impl Editor {
         Some((element, origin))
     }
 
-    fn render_edit_prediction_scroll_popover(
+    pub(crate) fn render_edit_prediction_scroll_popover(
         &mut self,
         to_y: &dyn Fn(Size<Pixels>) -> Pixels,
         scroll_icon: IconName,
@@ -126,7 +126,7 @@ impl Editor {
         Some((element, origin))
     }
 
-    fn render_edit_prediction_eager_jump_popover(
+    pub(crate) fn render_edit_prediction_eager_jump_popover(
         &mut self,
         text_bounds: &Bounds<Pixels>,
         content_origin: gpui::Point<Pixels>,
@@ -195,7 +195,7 @@ impl Editor {
         }
     }
 
-    fn render_edit_prediction_end_of_line_popover(
+    pub(crate) fn render_edit_prediction_end_of_line_popover(
         self: &mut Editor,
         label: &'static str,
         editor_snapshot: &EditorSnapshot,
@@ -254,7 +254,7 @@ impl Editor {
         Some((element, origin))
     }
 
-    fn render_edit_prediction_diff_popover(
+    pub(crate) fn render_edit_prediction_diff_popover(
         self: &Editor,
         text_bounds: &Bounds<Pixels>,
         content_origin: gpui::Point<Pixels>,
@@ -307,7 +307,7 @@ impl Editor {
         let styled_text = highlighted_edits.to_styled_text(&style.text);
         let line_count = highlighted_edits.text.lines().count();
 
-        const BORDER_WIDTH: Pixels = px(1.);
+        pub(crate) const BORDER_WIDTH: Pixels = px(1.);
 
         let keybind = self.render_edit_prediction_keybind(window, cx);
         let has_keybind = keybind.is_some();

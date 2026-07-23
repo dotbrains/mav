@@ -58,6 +58,7 @@ pub use fetch_events::{
     fetch_captured_examples_after, fetch_rated_examples_after, fetch_requested_examples_after,
     fetch_settled_examples_after,
 };
+pub(crate) use fetch_outcomes::format_limit;
 pub use fetch_outcomes::{fetch_accepted_examples_after, fetch_rejected_examples_after};
 pub use input::{
     parse_accepted_after_input, parse_captured_after_input, parse_rated_after_input,
@@ -67,14 +68,20 @@ pub(crate) use snowflake::{
     SnowflakeResultSetMetaData, SnowflakeStatementResponse, fetch_partition, run_sql,
 };
 
-use builders::{build_captured_example, build_output_patch, build_settled_example};
-use rated::rated_examples_from_response;
-use rejected_accepted::{accepted_examples_from_response, rejected_examples_from_response};
-use requested_settled_captured::{
-    captured_examples_from_response, requested_examples_from_response,
-    settled_examples_from_response,
+pub(crate) use builders::{build_example_from_snowflake, build_output_patch};
+pub(crate) use rated::rated_examples_from_response;
+pub(crate) use rejected_accepted::{
+    accepted_examples_from_response, rejected_examples_from_response,
 };
-use snowflake::{QueryRetryState, fetch_examples_with_query};
+pub(crate) use requested_settled_captured::{
+    build_captured_example, build_settled_example, captured_examples_from_response,
+    requested_examples_from_response, settled_examples_from_response,
+};
+pub(crate) use snowflake::{QueryRetryState, fetch_examples_with_query};
+pub(crate) use status::{
+    get_column_indices, is_snowflake_timeout_error, is_timeout_response,
+    last_continuation_timestamp_from_response,
+};
 
 struct RejectionInfo {
     reason: String,

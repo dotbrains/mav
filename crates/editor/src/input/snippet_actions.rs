@@ -1,11 +1,11 @@
 use super::*;
 
 impl Editor {
-    fn set_use_auto_surround(&mut self, auto_surround: bool) {
+    pub(crate) fn set_use_auto_surround(&mut self, auto_surround: bool) {
         self.use_auto_surround = auto_surround;
     }
 
-    fn find_possible_emoji_shortcode_at_position(
+    pub(crate) fn find_possible_emoji_shortcode_at_position(
         snapshot: &MultiBufferSnapshot,
         position: Point,
     ) -> Option<String> {
@@ -55,7 +55,7 @@ impl Editor {
     /// Iterate the given selections, and for each one, find the smallest surrounding
     /// autoclose region. This uses the ordering of the selections and the autoclose
     /// regions to avoid repeated comparisons.
-    fn selections_with_autoclose_regions<'a, D: ToOffset + Clone>(
+    pub(crate) fn selections_with_autoclose_regions<'a, D: ToOffset + Clone>(
         &'a self,
         selections: impl IntoIterator<Item = Selection<D>>,
         buffer: &'a MultiBufferSnapshot,
@@ -84,7 +84,7 @@ impl Editor {
         })
     }
 
-    fn try_insert_snippet_at_selections(
+    pub(crate) fn try_insert_snippet_at_selections(
         &mut self,
         action: &InsertSnippet,
         window: &mut Window,

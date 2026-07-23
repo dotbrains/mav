@@ -1,14 +1,14 @@
 use super::*;
 
-pub(super) struct InitialProjectHandles {
-    pub(super) bookmark_store: Option<Entity<BookmarkStore>>,
-    pub(super) breakpoint_store: Option<Entity<BreakpointStore>>,
-    pub(super) code_action_providers: Vec<Rc<dyn CodeActionProvider>>,
-    pub(super) load_uncommitted_diff: Option<Shared<Task<()>>>,
+pub(crate) struct InitialProjectHandles {
+    pub(crate) bookmark_store: Option<Entity<BookmarkStore>>,
+    pub(crate) breakpoint_store: Option<Entity<BreakpointStore>>,
+    pub(crate) code_action_providers: Vec<Rc<dyn CodeActionProvider>>,
+    pub(crate) load_uncommitted_diff: Option<Shared<Task<()>>>,
 }
 
 impl Editor {
-    pub(super) fn initial_project_handles(
+    pub(crate) fn initial_project_handles(
         mode: &EditorMode,
         project: &Option<Entity<Project>>,
         multi_buffer: &Entity<MultiBuffer>,

@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn build_tasks_context(
+    pub(crate) fn build_tasks_context(
         project: &Entity<Project>,
         buffer: &Entity<Buffer>,
         buffer_row: u32,

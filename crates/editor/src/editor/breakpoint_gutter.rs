@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn active_breakpoints(
+    pub(crate) fn active_breakpoints(
         &self,
         range: Range<DisplayRow>,
         window: &mut Window,
@@ -54,7 +54,7 @@ impl Editor {
         breakpoint_display_points
     }
 
-    pub(super) fn render_breakpoint(
+    pub(crate) fn render_breakpoint(
         &self,
         position: Anchor,
         row: DisplayRow,

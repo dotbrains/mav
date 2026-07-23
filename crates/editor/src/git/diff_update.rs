@@ -1,6 +1,6 @@
 use super::*;
 
-pub(super) fn update_uncommitted_diff_for_buffer(
+pub(crate) fn update_uncommitted_diff_for_buffer(
     editor: Entity<Editor>,
     project: &Entity<Project>,
     buffers: impl IntoIterator<Item = Entity<Buffer>>,

@@ -15,7 +15,7 @@ impl Editor {
         self.focus_handle.is_focused(window)
     }
 
-    pub(super) fn handle_focus(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn handle_focus(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         cx.emit(EditorEvent::Focused);
 
         if let Some(descendant) = self
@@ -62,11 +62,11 @@ impl Editor {
         }
     }
 
-    pub(super) fn handle_focus_in(&mut self, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn handle_focus_in(&mut self, _: &mut Window, cx: &mut Context<Self>) {
         cx.emit(EditorEvent::FocusedIn)
     }
 
-    pub(super) fn handle_focus_out(
+    pub(crate) fn handle_focus_out(
         &mut self,
         event: FocusOutEvent,
         _window: &mut Window,
@@ -79,7 +79,7 @@ impl Editor {
         self.refresh_inlay_hints(InlayHintRefreshReason::ModifiersChanged(false), cx);
     }
 
-    pub(super) fn handle_blur(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn handle_blur(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.blink_manager.update(cx, BlinkManager::disable);
         self.buffer
             .update(cx, |buffer, cx| buffer.remove_active_selections(cx));

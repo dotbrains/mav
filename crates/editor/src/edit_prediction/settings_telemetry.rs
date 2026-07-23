@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    fn accept_edit_prediction_keystroke(
+    pub(crate) fn accept_edit_prediction_keystroke(
         &self,
         granularity: EditPredictionGranularity,
         window: &mut Window,
@@ -29,7 +29,7 @@ impl Editor {
             })
     }
 
-    fn edit_prediction_preview_modifiers_held(
+    pub(crate) fn edit_prediction_preview_modifiers_held(
         &self,
         modifiers: &Modifiers,
         window: &mut Window,
@@ -64,7 +64,7 @@ impl Editor {
         })
     }
 
-    fn edit_prediction_cursor_popover_prefers_preview(
+    pub(crate) fn edit_prediction_cursor_popover_prefers_preview(
         &self,
         completion: &EditPredictionState,
         cx: &App,
@@ -111,7 +111,7 @@ impl Editor {
         }
     }
 
-    fn edit_predictions_disabled_in_scope(
+    pub(crate) fn edit_predictions_disabled_in_scope(
         &self,
         buffer: &Entity<Buffer>,
         buffer_position: language::Anchor,
@@ -132,7 +132,7 @@ impl Editor {
         })
     }
 
-    fn edit_prediction_settings_at_position(
+    pub(crate) fn edit_prediction_settings_at_position(
         &self,
         buffer: &Entity<Buffer>,
         buffer_position: language::Anchor,
@@ -170,11 +170,11 @@ impl Editor {
         }
     }
 
-    fn should_show_edit_predictions(&self) -> bool {
+    pub(crate) fn should_show_edit_predictions(&self) -> bool {
         self.snippet_stack.is_empty() && self.edit_predictions_enabled()
     }
 
-    fn edit_predictions_enabled_in_buffer(
+    pub(crate) fn edit_predictions_enabled_in_buffer(
         &self,
         buffer: &Entity<Buffer>,
         buffer_position: language::Anchor,
@@ -198,7 +198,12 @@ impl Editor {
         .unwrap_or(false)
     }
 
-    fn report_edit_prediction_event(&self, id: Option<SharedString>, accepted: bool, cx: &App) {
+    pub(crate) fn report_edit_prediction_event(
+        &self,
+        id: Option<SharedString>,
+        accepted: bool,
+        cx: &App,
+    ) {
         let Some(provider) = self.edit_prediction_provider() else {
             return;
         };
@@ -231,7 +236,7 @@ impl Editor {
         );
     }
 
-    fn open_editor_at_anchor(
+    pub(crate) fn open_editor_at_anchor(
         snapshot: &language::BufferSnapshot,
         target: language::Anchor,
         workspace: &Entity<Workspace>,
@@ -261,7 +266,7 @@ impl Editor {
         })
     }
 
-    const EDIT_PREDICTION_POPOVER_PADDING_X: Pixels = px(24.);
+    pub(crate) const EDIT_PREDICTION_POPOVER_PADDING_X: Pixels = px(24.);
 
-    const EDIT_PREDICTION_POPOVER_PADDING_Y: Pixels = px(2.);
+    pub(crate) const EDIT_PREDICTION_POPOVER_PADDING_Y: Pixels = px(2.);
 }

@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn restore_file(
+    pub(crate) fn restore_file(
         &mut self,
         _: &::git::RestoreFile,
         window: &mut Window,
@@ -29,7 +29,7 @@ impl Editor {
     /// Restores the diff hunks in the editor's selections and moves the cursor
     /// to the next diff hunk. Wraps around to the beginning of the buffer if
     /// not all diff hunks are expanded.
-    pub(super) fn restore_and_next(
+    pub(crate) fn restore_and_next(
         &mut self,
         _: &::git::RestoreAndNext,
         window: &mut Window,
@@ -65,7 +65,7 @@ impl Editor {
         );
     }
 
-    pub(super) fn restore_diff_hunks(&self, hunks: Vec<MultiBufferDiffHunk>, cx: &mut App) {
+    pub(crate) fn restore_diff_hunks(&self, hunks: Vec<MultiBufferDiffHunk>, cx: &mut App) {
         let mut revert_changes = HashMap::default();
         let chunk_by = hunks.into_iter().chunk_by(|hunk| hunk.buffer_id);
         for (buffer_id, hunks) in &chunk_by {

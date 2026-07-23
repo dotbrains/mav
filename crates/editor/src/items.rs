@@ -75,9 +75,14 @@ mod serialization;
 mod tests;
 
 use helpers::*;
+pub(crate) use helpers::{
+    chunk_search_range, deserialize_path_key, path_for_buffer, restore_serialized_buffer_contents,
+    serialize_path_key,
+};
 pub use helpers::{
     entry_diagnostic_aware_icon_decoration_and_color, entry_diagnostic_aware_icon_name_and_color,
     entry_git_aware_label_color, entry_label_color,
 };
+pub(crate) use project_item::{EditorRestorationData, RestorationData};
 use protocol::*;
 pub use search::active_match_index;

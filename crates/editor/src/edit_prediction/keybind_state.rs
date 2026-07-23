@@ -5,7 +5,7 @@ impl Editor {
         Some(self.edit_prediction_provider.as_ref()?.provider.clone())
     }
 
-    pub(super) fn preview_edit_prediction_keystroke(
+    pub(crate) fn preview_edit_prediction_keystroke(
         &self,
         window: &mut Window,
         cx: &mut App,
@@ -21,7 +21,7 @@ impl Editor {
             })
     }
 
-    pub(super) fn edit_prediction_keybind_display(
+    pub(crate) fn edit_prediction_keybind_display(
         &self,
         surface: EditPredictionKeybindSurface,
         window: &mut Window,
@@ -84,14 +84,14 @@ impl Editor {
         }
     }
 
-    pub(super) fn show_edit_predictions_in_menu(&self) -> bool {
+    pub(crate) fn show_edit_predictions_in_menu(&self) -> bool {
         match self.edit_prediction_settings {
             EditPredictionSettings::Disabled => false,
             EditPredictionSettings::Enabled { show_in_menu, .. } => show_in_menu,
         }
     }
 
-    pub(super) fn edit_prediction_requires_modifier(&self) -> bool {
+    pub(crate) fn edit_prediction_requires_modifier(&self) -> bool {
         match self.edit_prediction_settings {
             EditPredictionSettings::Disabled => false,
             EditPredictionSettings::Enabled {
@@ -101,7 +101,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn discard_edit_prediction(
+    pub(crate) fn discard_edit_prediction(
         &mut self,
         reason: EditPredictionDiscardReason,
         cx: &mut Context<Self>,
@@ -122,7 +122,7 @@ impl Editor {
         self.take_active_edit_prediction(reason == EditPredictionDiscardReason::Ignored, cx)
     }
 
-    pub(super) fn take_active_edit_prediction(
+    pub(crate) fn take_active_edit_prediction(
         &mut self,
         preserve_stale_in_menu: bool,
         cx: &mut Context<Self>,
@@ -141,7 +141,7 @@ impl Editor {
         true
     }
 
-    pub(super) fn update_edit_prediction_preview(
+    pub(crate) fn update_edit_prediction_preview(
         &mut self,
         modifiers: &Modifiers,
         window: &mut Window,

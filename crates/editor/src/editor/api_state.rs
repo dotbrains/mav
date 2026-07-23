@@ -74,7 +74,7 @@ impl Editor {
     }
 
     /// Returns the workspace serialization ID if this editor should be serialized.
-    pub(super) fn workspace_serialization_id(&self, _cx: &App) -> Option<WorkspaceId> {
+    pub(crate) fn workspace_serialization_id(&self, _cx: &App) -> Option<WorkspaceId> {
         self.workspace
             .as_ref()
             .filter(|_| self.should_serialize_buffer())
@@ -299,7 +299,7 @@ impl Editor {
         })
     }
 
-    pub(super) fn should_serialize_buffer(&self) -> bool {
+    pub(crate) fn should_serialize_buffer(&self) -> bool {
         self.buffer_serialization.is_some()
     }
 

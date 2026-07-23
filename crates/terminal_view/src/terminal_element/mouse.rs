@@ -21,7 +21,7 @@ impl TerminalElement {
         }
     }
 
-    fn register_mouse_listeners(
+    pub(crate) fn register_mouse_listeners(
         &mut self,
         mode: Modes,
         hitbox: &Hitbox,
@@ -166,7 +166,7 @@ impl TerminalElement {
         }
     }
 
-    fn rem_size(&self, cx: &mut App) -> Option<Pixels> {
+    pub(crate) fn rem_size(&self, cx: &mut App) -> Option<Pixels> {
         let settings = ThemeSettings::get_global(cx).clone();
         let buffer_font_size = settings.buffer_font_size(cx);
         let rem_size_scale = {

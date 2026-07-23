@@ -1,4 +1,3 @@
-
 use anyhow::Context as _;
 use db::{
     sqlez::{domain::Domain, thread_safe_connection::ThreadSafeConnection},

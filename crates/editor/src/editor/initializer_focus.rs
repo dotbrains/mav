@@ -1,12 +1,12 @@
 use super::*;
 
-pub(super) struct InitialFocusState {
-    pub(super) focus_handle: FocusHandle,
-    pub(super) blink_manager: Entity<BlinkManager>,
+pub(crate) struct InitialFocusState {
+    pub(crate) focus_handle: FocusHandle,
+    pub(crate) blink_manager: Entity<BlinkManager>,
 }
 
 impl Editor {
-    pub(super) fn initial_focus_state(
+    pub(crate) fn initial_focus_state(
         is_minimap: bool,
         window: &mut Window,
         cx: &mut Context<Self>,

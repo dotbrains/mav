@@ -4,8 +4,8 @@ use super::*;
 ///
 /// See the [`display_map` module documentation](crate::display_map) for more information.
 pub struct FoldMap {
-    snapshot: FoldSnapshot,
-    next_fold_id: FoldId,
+    pub(crate) snapshot: FoldSnapshot,
+    pub(crate) next_fold_id: FoldId,
 }
 
 impl FoldMap {
@@ -56,7 +56,7 @@ impl FoldMap {
     }
 
     #[ztracing::instrument(skip_all)]
-    fn check_invariants(&self) {
+    pub(crate) fn check_invariants(&self) {
         if cfg!(test) {
             assert_eq!(
                 self.snapshot.transforms.summary().input.len,
@@ -86,7 +86,7 @@ impl FoldMap {
     }
 
     #[ztracing::instrument(skip_all)]
-    fn sync(
+    pub(crate) fn sync(
         &mut self,
         inlay_snapshot: InlaySnapshot,
         inlay_edits: Vec<InlayEdit>,
@@ -206,7 +206,7 @@ impl FoldMap {
                     }
 
                     if fold_range.end > fold_range.start {
-                        const ELLIPSIS: &str = "⋯";
+                        pub(crate) const ELLIPSIS: &str = "⋯";
 
                         let placeholder_text: SharedString = fold
                             .placeholder

@@ -119,7 +119,7 @@ impl Editor {
         dismissed
     }
 
-    pub(super) fn open_transaction_for_hidden_buffers(
+    pub(crate) fn open_transaction_for_hidden_buffers(
         workspace: Entity<Workspace>,
         transaction: ProjectTransaction,
         title: String,

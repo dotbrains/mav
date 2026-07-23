@@ -192,7 +192,7 @@ impl Editor {
     }
 
     /// Returns the total count of stored review comments across all hunks.
-    pub(super) fn total_review_comment_count(&self) -> usize {
+    pub(crate) fn total_review_comment_count(&self) -> usize {
         self.stored_review_comments
             .iter()
             .map(|(_, v)| v.len())
@@ -200,7 +200,7 @@ impl Editor {
     }
 
     /// Adds a new review comment to a specific hunk.
-    pub(super) fn add_review_comment(
+    pub(crate) fn add_review_comment(
         &mut self,
         hunk_key: DiffHunkKey,
         comment: String,

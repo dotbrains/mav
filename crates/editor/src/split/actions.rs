@@ -23,7 +23,7 @@ impl SplittableEditor {
         }
     }
 
-    fn intercept_toggle_breakpoint(
+    pub(crate) fn intercept_toggle_breakpoint(
         &mut self,
         _: &ToggleBreakpoint,
         _window: &mut Window,
@@ -41,7 +41,7 @@ impl SplittableEditor {
         }
     }
 
-    fn intercept_enable_breakpoint(
+    pub(crate) fn intercept_enable_breakpoint(
         &mut self,
         _: &EnableBreakpoint,
         _window: &mut Window,
@@ -59,7 +59,7 @@ impl SplittableEditor {
         }
     }
 
-    fn intercept_disable_breakpoint(
+    pub(crate) fn intercept_disable_breakpoint(
         &mut self,
         _: &DisableBreakpoint,
         _window: &mut Window,
@@ -77,7 +77,7 @@ impl SplittableEditor {
         }
     }
 
-    fn intercept_edit_log_breakpoint(
+    pub(crate) fn intercept_edit_log_breakpoint(
         &mut self,
         _: &EditLogBreakpoint,
         _window: &mut Window,
@@ -95,7 +95,7 @@ impl SplittableEditor {
         }
     }
 
-    fn intercept_inline_assist(
+    pub(crate) fn intercept_inline_assist(
         &mut self,
         _: &InlineAssist,
         _window: &mut Window,
@@ -108,7 +108,7 @@ impl SplittableEditor {
         }
     }
 
-    fn toggle_soft_wrap(
+    pub(crate) fn toggle_soft_wrap(
         &mut self,
         _: &ToggleSoftWrap,
         window: &mut Window,
@@ -140,7 +140,7 @@ impl SplittableEditor {
         }
     }
 
-    fn unsplit(&mut self, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn unsplit(&mut self, _: &mut Window, cx: &mut Context<Self>) {
         let Some(lhs) = self.lhs.take() else {
             return;
         };

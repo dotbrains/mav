@@ -1,6 +1,6 @@
 use super::*;
 
-async fn send_settled_batches(
+pub(crate) async fn send_settled_batches(
     client: Arc<Client>,
     llm_token: LlmApiToken,
     app_version: Version,
@@ -131,7 +131,7 @@ async fn send_settled_batches(
     }
 }
 
-fn currently_following(project: &Entity<Project>, cx: &App) -> bool {
+pub(crate) fn currently_following(project: &Entity<Project>, cx: &App) -> bool {
     let Some(app_state) = AppState::try_global(cx) else {
         return false;
     };
@@ -150,7 +150,7 @@ fn currently_following(project: &Entity<Project>, cx: &App) -> bool {
         })
 }
 
-fn is_ep_store_provider(provider: EditPredictionProvider) -> bool {
+pub(crate) fn is_ep_store_provider(provider: EditPredictionProvider) -> bool {
     match provider {
         EditPredictionProvider::Mav
         | EditPredictionProvider::Mercury

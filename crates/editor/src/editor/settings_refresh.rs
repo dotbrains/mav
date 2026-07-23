@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn fetch_accent_data(&self, cx: &App) -> Option<AccentData> {
+    pub(crate) fn fetch_accent_data(&self, cx: &App) -> Option<AccentData> {
         if !self.mode.is_full() {
             return None;
         }
@@ -33,7 +33,7 @@ impl Editor {
         })
     }
 
-    pub(super) fn fetch_applicable_language_settings(
+    pub(crate) fn fetch_applicable_language_settings(
         &self,
         cx: &App,
     ) -> HashMap<Option<LanguageName>, LanguageSettings> {
@@ -54,7 +54,7 @@ impl Editor {
         )
     }
 
-    pub(super) fn settings_changed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn settings_changed(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let new_language_settings = self.fetch_applicable_language_settings(cx);
         let language_settings_changed = new_language_settings != self.applicable_language_settings;
         self.applicable_language_settings = new_language_settings;
@@ -197,7 +197,7 @@ impl Editor {
         cx.notify();
     }
 
-    pub(super) fn theme_changed(&mut self, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn theme_changed(&mut self, _: &mut Window, cx: &mut Context<Self>) {
         if !self.mode.is_full() {
             return;
         }

@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    fn render_edit_prediction_inline_keystroke(
+    pub(crate) fn render_edit_prediction_inline_keystroke(
         &self,
         keystroke: &gpui::KeybindingKeystroke,
         modifiers_color: Color,
@@ -37,7 +37,7 @@ impl Editor {
             .into_any()
     }
 
-    fn render_edit_prediction_popover_keystroke(
+    pub(crate) fn render_edit_prediction_popover_keystroke(
         &self,
         keystroke: &gpui::KeybindingKeystroke,
         color: Color,
@@ -68,7 +68,7 @@ impl Editor {
         }
     }
 
-    fn render_edit_prediction_keybind(
+    pub(crate) fn render_edit_prediction_keybind(
         &self,
         window: &mut Window,
         cx: &mut App,
@@ -86,7 +86,7 @@ impl Editor {
         Some(self.render_edit_prediction_inline_keystroke(keystroke, modifiers_color, cx))
     }
 
-    fn render_edit_prediction_line_popover(
+    pub(crate) fn render_edit_prediction_line_popover(
         &self,
         label: impl Into<SharedString>,
         icon: Option<IconName>,
@@ -148,7 +148,7 @@ impl Editor {
             })
     }
 
-    fn render_edit_prediction_jump_outside_popover(
+    pub(crate) fn render_edit_prediction_jump_outside_popover(
         &self,
         snapshot: &BufferSnapshot,
         window: &mut Window,
@@ -210,19 +210,19 @@ impl Editor {
             )
     }
 
-    fn edit_prediction_line_popover_bg_color(cx: &App) -> Hsla {
+    pub(crate) fn edit_prediction_line_popover_bg_color(cx: &App) -> Hsla {
         let accent_color = cx.theme().colors().text_accent;
         let editor_bg_color = cx.theme().colors().editor_background;
         editor_bg_color.blend(accent_color.opacity(0.1))
     }
 
-    fn edit_prediction_callout_popover_border_color(cx: &App) -> Hsla {
+    pub(crate) fn edit_prediction_callout_popover_border_color(cx: &App) -> Hsla {
         let accent_color = cx.theme().colors().text_accent;
         let editor_bg_color = cx.theme().colors().editor_background;
         editor_bg_color.blend(accent_color.opacity(0.6))
     }
 
-    fn get_prediction_provider_icons(
+    pub(crate) fn get_prediction_provider_icons(
         provider: &Option<RegisteredEditPredictionDelegate>,
         cx: &App,
     ) -> edit_prediction_types::EditPredictionIconSet {
@@ -232,7 +232,7 @@ impl Editor {
         }
     }
 
-    fn render_edit_prediction_cursor_popover_preview(
+    pub(crate) fn render_edit_prediction_cursor_popover_preview(
         &self,
         completion: &EditPredictionState,
         cursor_point: Point,
@@ -241,7 +241,7 @@ impl Editor {
     ) -> Option<Div> {
         use text::ToPoint as _;
 
-        fn render_relative_row_jump(
+        pub(crate) fn render_relative_row_jump(
             prefix: impl Into<String>,
             current_row: u32,
             target_row: u32,

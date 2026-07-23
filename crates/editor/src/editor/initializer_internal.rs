@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn new_internal(
+    pub(crate) fn new_internal(
         mode: EditorMode,
         multi_buffer: Entity<MultiBuffer>,
         project: Option<Entity<Project>>,

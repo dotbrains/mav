@@ -1,14 +1,14 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn target_file<'a>(&self, cx: &'a App) -> Option<&'a dyn language::LocalFile> {
+    pub(crate) fn target_file<'a>(&self, cx: &'a App) -> Option<&'a dyn language::LocalFile> {
         self.active_buffer(cx)?
             .read(cx)
             .file()
             .and_then(|f| f.as_local())
     }
 
-    pub(super) fn reveal_in_finder(
+    pub(crate) fn reveal_in_finder(
         &mut self,
         _: &RevealInFileManager,
         _window: &mut Window,
@@ -23,7 +23,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn copy_path(
+    pub(crate) fn copy_path(
         &mut self,
         _: &mav_actions::workspace::CopyPath,
         _window: &mut Window,
@@ -38,7 +38,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn copy_relative_path(
+    pub(crate) fn copy_relative_path(
         &mut self,
         _: &mav_actions::workspace::CopyRelativePath,
         _window: &mut Window,
@@ -130,7 +130,12 @@ impl Editor {
         self.insert_uuid(UuidVersion::V7, window, cx);
     }
 
-    fn insert_uuid(&mut self, version: UuidVersion, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn insert_uuid(
+        &mut self,
+        version: UuidVersion,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.read_only(cx) {
             return;
         }

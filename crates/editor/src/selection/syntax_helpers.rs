@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn find_syntax_node_boundary(
+    pub(crate) fn find_syntax_node_boundary(
         &self,
         selection_pos: MultiBufferOffset,
         move_to_end: bool,
@@ -57,7 +57,7 @@ impl Editor {
         new_pos
     }
 
-    pub(super) fn move_cursors_to_syntax_nodes(
+    pub(crate) fn move_cursors_to_syntax_nodes(
         &mut self,
         window: &mut Window,
         cx: &mut Context<Self>,
@@ -105,7 +105,7 @@ impl Editor {
         self.request_autoscroll(Autoscroll::newest(), cx);
     }
 
-    pub(super) fn select_to_syntax_nodes(
+    pub(crate) fn select_to_syntax_nodes(
         &mut self,
         window: &mut Window,
         cx: &mut Context<Self>,

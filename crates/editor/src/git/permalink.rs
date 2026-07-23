@@ -1,7 +1,7 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn copy_permalink_to_line(
+    pub(crate) fn copy_permalink_to_line(
         &mut self,
         _: &CopyPermalinkToLine,
         window: &mut Window,
@@ -41,7 +41,7 @@ impl Editor {
         .detach();
     }
 
-    pub(super) fn open_permalink_to_line(
+    pub(crate) fn open_permalink_to_line(
         &mut self,
         _: &OpenPermalinkToLine,
         window: &mut Window,

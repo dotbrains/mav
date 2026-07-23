@@ -3,7 +3,7 @@ use super::*;
 impl BlockChunks<'_> {
     /// Go to the next transform
     #[ztracing::instrument(skip_all)]
-    fn advance(&mut self) {
+    pub(crate) fn advance(&mut self) {
         self.input_chunk = Chunk::default();
         self.transforms.next();
         while let Some(transform) = self.transforms.item() {

@@ -1,16 +1,16 @@
 use super::*;
 
 #[derive(Copy, Clone, Debug)]
-pub(super) enum BreakpointPromptEditAction {
+pub(crate) enum BreakpointPromptEditAction {
     Log,
     Condition,
     HitCondition,
 }
 
-pub(super) type PromptEditorCallback =
+pub(crate) type PromptEditorCallback =
     Box<dyn FnOnce(String, &mut Editor, &mut Context<Editor>) + 'static>;
 
-pub(super) struct PromptEditor {
+pub(crate) struct PromptEditor {
     pub(crate) prompt: Entity<Editor>,
     editor: WeakEntity<Editor>,
     confirm_callback: Option<PromptEditorCallback>,
@@ -21,9 +21,9 @@ pub(super) struct PromptEditor {
 }
 
 impl PromptEditor {
-    const MAX_LINES: u8 = 4;
+    pub(crate) const MAX_LINES: u8 = 4;
 
-    pub(super) fn new(
+    pub(crate) fn new(
         editor: WeakEntity<Editor>,
         placeholder_text: &str,
         base_text: &str,
@@ -62,12 +62,12 @@ impl PromptEditor {
         }
     }
 
-    pub(super) fn on_confirm(mut self, confirm: PromptEditorCallback) -> Self {
+    pub(crate) fn on_confirm(mut self, confirm: PromptEditorCallback) -> Self {
         self.confirm_callback = Some(confirm);
         self
     }
 
-    pub(super) fn on_cancel(mut self, cancel: PromptEditorCallback) -> Self {
+    pub(crate) fn on_cancel(mut self, cancel: PromptEditorCallback) -> Self {
         self.cancel_callback = Some(cancel);
         self
     }
@@ -76,7 +76,12 @@ impl PromptEditor {
         self.block_ids.extend(block_ids)
     }
 
-    fn confirm(&mut self, _: &menu::Confirm, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn confirm(
+        &mut self,
+        _: &menu::Confirm,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if let Some(editor) = self.editor.upgrade() {
             let message = self.message(cx);
 
@@ -91,7 +96,7 @@ impl PromptEditor {
         }
     }
 
-    fn cancel(&mut self, _: &menu::Cancel, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn cancel(&mut self, _: &menu::Cancel, window: &mut Window, cx: &mut Context<Self>) {
         let message = self.message(cx);
         self.editor
             .update(cx, |editor, cx| {
@@ -105,7 +110,7 @@ impl PromptEditor {
             .log_err();
     }
 
-    fn message(&self, cx: &App) -> String {
+    pub(crate) fn message(&self, cx: &App) -> String {
         self.prompt
             .read(cx)
             .buffer
@@ -117,7 +122,7 @@ impl PromptEditor {
             .to_string()
     }
 
-    fn render_prompt_editor(&self, cx: &mut Context<Self>) -> impl IntoElement {
+    pub(crate) fn render_prompt_editor(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let settings = ThemeSettings::get_global(cx);
         let text_style = TextStyle {
             color: if self.prompt.read(cx).read_only(cx) {
@@ -143,7 +148,7 @@ impl PromptEditor {
         )
     }
 
-    fn render_close_button(&self, cx: &mut Context<Self>) -> impl IntoElement {
+    pub(crate) fn render_close_button(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let focus_handle = self.prompt.focus_handle(cx);
         IconButton::new("cancel", IconName::Close)
             .icon_color(Color::Muted)
@@ -156,7 +161,7 @@ impl PromptEditor {
             }))
     }
 
-    fn render_confirm_button(&self, cx: &mut Context<Self>) -> impl IntoElement {
+    pub(crate) fn render_confirm_button(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let focus_handle = self.prompt.focus_handle(cx);
         IconButton::new("confirm", IconName::Return)
             .icon_color(Color::Muted)

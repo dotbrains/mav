@@ -2,7 +2,7 @@ use super::*;
 
 #[cfg(test)]
 impl SplittableEditor {
-    fn check_invariants(&self, quiesced: bool, cx: &mut App) {
+    pub(crate) fn check_invariants(&self, quiesced: bool, cx: &mut App) {
         use text::Bias;
 
         use crate::display_map::Block;
@@ -184,7 +184,7 @@ impl SplittableEditor {
             }
         }
     }
-    fn check_excerpt_invariants(&self, quiesced: bool, cx: &gpui::App) {
+    pub(crate) fn check_excerpt_invariants(&self, quiesced: bool, cx: &gpui::App) {
         let lhs = self.lhs.as_ref().expect("should have lhs editor");
 
         let rhs_snapshot = self.rhs_multibuffer.read(cx).snapshot(cx);

@@ -194,3 +194,4 @@ mod sync;
 #[cfg(test)]
 mod tests;
 mod tree;
+pub(crate) use tree::build_blame_entry_sum_tree;

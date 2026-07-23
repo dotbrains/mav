@@ -213,7 +213,7 @@ impl Editor {
             let mut suffixes_inserted = Vec::new();
             let ignore_indent = action.ignore_indent;
 
-            fn comment_prefix_range(
+            pub(crate) fn comment_prefix_range(
                 snapshot: &MultiBufferSnapshot,
                 row: MultiBufferRow,
                 comment_prefix: &str,
@@ -255,7 +255,7 @@ impl Editor {
                 }
             }
 
-            fn comment_suffix_range(
+            pub(crate) fn comment_suffix_range(
                 snapshot: &MultiBufferSnapshot,
                 row: MultiBufferRow,
                 comment_suffix: &str,

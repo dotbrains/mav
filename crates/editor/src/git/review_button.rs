@@ -1,10 +1,10 @@
 use super::*;
 
 impl Editor {
-    pub(super) fn show_diff_review_button(&self) -> bool {
+    pub(crate) fn show_diff_review_button(&self) -> bool {
         self.show_diff_review_button
     }
-    pub(super) fn render_diff_review_button(
+    pub(crate) fn render_diff_review_button(
         &self,
         display_row: DisplayRow,
         width: Pixels,
@@ -37,7 +37,7 @@ impl Editor {
             )
     }
 
-    pub(super) fn start_diff_review_drag(
+    pub(crate) fn start_diff_review_drag(
         &mut self,
         display_row: DisplayRow,
         window: &mut Window,
@@ -55,7 +55,7 @@ impl Editor {
         cx.notify();
     }
 
-    pub(super) fn update_diff_review_drag(
+    pub(crate) fn update_diff_review_drag(
         &mut self,
         display_row: DisplayRow,
         window: &mut Window,
@@ -75,7 +75,7 @@ impl Editor {
         }
     }
 
-    pub(super) fn end_diff_review_drag(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn end_diff_review_drag(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if let Some(drag_state) = self.diff_review_drag_state.take() {
             let snapshot = self.snapshot(window, cx);
             let range = drag_state.row_range(&snapshot.display_snapshot);
@@ -84,7 +84,7 @@ impl Editor {
         cx.notify();
     }
 
-    pub(super) fn cancel_diff_review_drag(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn cancel_diff_review_drag(&mut self, cx: &mut Context<Self>) {
         self.diff_review_drag_state = None;
         cx.notify();
     }

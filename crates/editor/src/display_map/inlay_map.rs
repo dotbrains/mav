@@ -41,8 +41,9 @@ mod types;
 pub use cursors::{BufferOffsetToInlayPointCursor, InlayPointCursor};
 pub use types::{InlayBufferRows, InlayEdit, InlayOffset, InlayPoint};
 pub use types::{InlayChunk, InlayChunks, InlayMap, InlaySnapshot};
+pub(crate) use types::{Transform, TransformSummary};
 
-use helpers::push_isomorphic;
+pub(crate) use helpers::push_isomorphic;
 
 #[cfg(test)]
 #[cfg(test)]

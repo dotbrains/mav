@@ -81,12 +81,13 @@ impl DerefMut for ChunkRendererContext<'_, '_> {
 }
 
 pub struct FoldChunks<'a> {
-    transform_cursor: Cursor<'a, 'static, Transform, Dimensions<FoldOffset, InlayOffset>>,
-    inlay_chunks: InlayChunks<'a>,
-    inlay_chunk: Option<(InlayOffset, InlayChunk<'a>)>,
-    inlay_offset: InlayOffset,
-    output_offset: FoldOffset,
-    max_output_offset: FoldOffset,
+    pub(crate) transform_cursor:
+        Cursor<'a, 'static, Transform, Dimensions<FoldOffset, InlayOffset>>,
+    pub(crate) inlay_chunks: InlayChunks<'a>,
+    pub(crate) inlay_chunk: Option<(InlayOffset, InlayChunk<'a>)>,
+    pub(crate) inlay_offset: InlayOffset,
+    pub(crate) output_offset: FoldOffset,
+    pub(crate) max_output_offset: FoldOffset,
 }
 
 impl FoldChunks<'_> {

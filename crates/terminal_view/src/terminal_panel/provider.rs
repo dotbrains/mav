@@ -1,6 +1,6 @@
 use super::*;
 
-struct TerminalProvider(Entity<TerminalPanel>);
+pub(crate) struct TerminalProvider(pub(crate) Entity<TerminalPanel>);
 
 impl workspace::TerminalProvider for TerminalProvider {
     fn spawn(
@@ -31,8 +31,8 @@ impl workspace::TerminalProvider for TerminalProvider {
     }
 }
 
-struct InlineAssistTabBarButton {
-    focus_handle: FocusHandle,
+pub(crate) struct InlineAssistTabBarButton {
+    pub(crate) focus_handle: FocusHandle,
 }
 
 impl Render for InlineAssistTabBarButton {

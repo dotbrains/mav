@@ -241,7 +241,7 @@ impl Editor {
         Self::new_file_in_direction(workspace, action.0, window, cx)
     }
 
-    fn new_file_in_direction(
+    pub(crate) fn new_file_in_direction(
         workspace: &mut Workspace,
         direction: SplitDirection,
         window: &mut Window,

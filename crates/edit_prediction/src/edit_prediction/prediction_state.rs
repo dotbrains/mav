@@ -10,7 +10,7 @@ pub(crate) struct CurrentEditPrediction {
 }
 
 impl CurrentEditPrediction {
-    fn should_replace_prediction(&self, old_prediction: &Self, cx: &App) -> bool {
+    pub(crate) fn should_replace_prediction(&self, old_prediction: &Self, cx: &App) -> bool {
         let Some(new_edits) = self
             .prediction
             .interpolate(&self.prediction.buffer.read(cx))
@@ -46,15 +46,15 @@ impl CurrentEditPrediction {
     }
 }
 
-pub(super) const DIAGNOSTIC_LINES_RANGE: u32 = 20;
+pub(crate) const DIAGNOSTIC_LINES_RANGE: u32 = 20;
 
 #[derive(Debug)]
-pub(super) struct PendingPrediction {
-    id: usize,
-    task: Task<Option<(EditPredictionId, Option<String>)>>,
+pub(crate) struct PendingPrediction {
+    pub(crate) id: usize,
+    pub(crate) task: Task<Option<(EditPredictionId, Option<String>)>>,
     /// If true, the task is dropped immediately on cancel (cancelling the HTTP request).
     /// If false, the task is awaited to completion so rejection can be reported.
-    drop_on_cancel: bool,
+    pub(crate) drop_on_cancel: bool,
 }
 
 /// A prediction from the perspective of a buffer.
@@ -76,54 +76,54 @@ impl std::ops::Deref for BufferEditPrediction<'_> {
     }
 }
 
-pub(super) struct PendingPredictionCapture {
-    request_id: EditPredictionId,
-    edited_buffer_id: EntityId,
-    editable_anchor_range: Range<Anchor>,
-    editable_region_before_prediction: String,
-    predicted_editable_region: String,
-    ts_error_count_before_prediction: usize,
-    ts_error_count_after_prediction: usize,
-    organization_id: Option<OrganizationId>,
-    can_collect_data: bool,
-    is_in_open_source_repo: bool,
-    sample_data: Option<PendingPredictionCaptureSampleData>,
-    model_version: Option<String>,
-    enqueued_at: Instant,
-    last_edit_at: Instant,
-    e2e_latency: std::time::Duration,
+pub(crate) struct PendingPredictionCapture {
+    pub(crate) request_id: EditPredictionId,
+    pub(crate) edited_buffer_id: EntityId,
+    pub(crate) editable_anchor_range: Range<Anchor>,
+    pub(crate) editable_region_before_prediction: String,
+    pub(crate) predicted_editable_region: String,
+    pub(crate) ts_error_count_before_prediction: usize,
+    pub(crate) ts_error_count_after_prediction: usize,
+    pub(crate) organization_id: Option<OrganizationId>,
+    pub(crate) can_collect_data: bool,
+    pub(crate) is_in_open_source_repo: bool,
+    pub(crate) sample_data: Option<PendingPredictionCaptureSampleData>,
+    pub(crate) model_version: Option<String>,
+    pub(crate) enqueued_at: Instant,
+    pub(crate) last_edit_at: Instant,
+    pub(crate) e2e_latency: std::time::Duration,
 }
 
-pub(super) struct PendingPredictionCaptureSampleData {
-    context_task: Task<Result<CapturedPredictionContext>>,
-    editable_path: Arc<Path>,
-    editable_offset_range: Range<usize>,
-    next_edit_cursor_offset: Option<usize>,
-    future_edit_history_events: Vec<Arc<zeta_prompt::Event>>,
-    navigation_history: VecDeque<RecentFile>,
-    edit_events_before_quiescence: u32,
-    prompt_history_boundary: Option<PromptHistoryBoundary>,
+pub(crate) struct PendingPredictionCaptureSampleData {
+    pub(crate) context_task: Task<Result<CapturedPredictionContext>>,
+    pub(crate) editable_path: Arc<Path>,
+    pub(crate) editable_offset_range: Range<usize>,
+    pub(crate) next_edit_cursor_offset: Option<usize>,
+    pub(crate) future_edit_history_events: Vec<Arc<zeta_prompt::Event>>,
+    pub(crate) navigation_history: VecDeque<RecentFile>,
+    pub(crate) edit_events_before_quiescence: u32,
+    pub(crate) prompt_history_boundary: Option<PromptHistoryBoundary>,
 }
 
 /// Marks where the prompt's edit history ended. Sample data may only include
 /// content the user produced after this point.
-struct PromptHistoryBoundary {
+pub(crate) struct PromptHistoryBoundary {
     /// The seq of the first event this capture is expected to observe: the
     /// event that was pending when the prediction was requested, or the next
     /// event to be created if none was pending. Observing a later seq first
     /// means events were lost while the prediction request was in flight.
-    first_event_seq: u64,
+    pub(crate) first_event_seq: u64,
     /// The prompt's end snapshot within the event that was pending when the
     /// prediction was requested, if any. The first observed event is trimmed
     /// to its suffix after this snapshot.
-    snapshot: Option<TextBufferSnapshot>,
+    pub(crate) snapshot: Option<TextBufferSnapshot>,
 }
 
 impl PendingPredictionCapture {
     /// Records the project's last event (pending or finalizing) into this
     /// sample's future edit history. Returns false if the sample must be
     /// dropped because its future history can't be captured accurately.
-    fn try_record_future_event(
+    pub(crate) fn try_record_future_event(
         &mut self,
         last_event: &LastEvent,
         finalized_event: Option<&StoredEvent>,

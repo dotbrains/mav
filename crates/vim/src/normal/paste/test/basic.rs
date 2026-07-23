@@ -1,4 +1,3 @@
-
 use crate::{
     state::{Mode, Register},
     test::{NeovimBackedTestContext, VimTestContext},

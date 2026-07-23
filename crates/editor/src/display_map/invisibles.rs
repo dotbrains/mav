@@ -58,18 +58,18 @@ pub fn replacement(c: char) -> Option<&'static str> {
     }
 }
 
-const FIXED_WIDTH_SPACE: &str = "\u{2007}";
+pub(crate) const FIXED_WIDTH_SPACE: &str = "\u{2007}";
 
 // IDEOGRAPHIC SPACE is common alongside Chinese and other wide character sets.
 // We don't highlight this for now (as it already shows up wide in the editor),
 // but could if we tracked state in the classifier.
-const IDEOGRAPHIC_SPACE: char = '\u{3000}';
+pub(crate) const IDEOGRAPHIC_SPACE: char = '\u{3000}';
 
-const C0_SYMBOLS: &[&str] = &[
+pub(crate) const C0_SYMBOLS: &[&str] = &[
     "␀", "␁", "␂", "␃", "␄", "␅", "␆", "␇", "␈", "␉", "␊", "␋", "␌", "␍", "␎", "␏", "␐", "␑", "␒",
     "␓", "␔", "␕", "␖", "␗", "␘", "␙", "␚", "␛", "␜", "␝", "␞", "␟",
 ];
-const DEL: &str = "␡";
+pub(crate) const DEL: &str = "␡";
 
 // generated using ucd-generate: ucd-generate general-category --include Format --chars ucd-16.0.0
 pub const FORMAT: &[(char, char)] = &[
@@ -111,7 +111,7 @@ pub const OTHER: &[(char, char)] = &[
 ];
 
 // a subset of FORMAT/OTHER that may appear within glyphs
-const PRESERVE: &[(char, char)] = &[
+pub(crate) const PRESERVE: &[(char, char)] = &[
     ('\u{034f}', '\u{034f}'),
     ('\u{200d}', '\u{200d}'),
     ('\u{17b4}', '\u{17b5}'),
@@ -120,7 +120,7 @@ const PRESERVE: &[(char, char)] = &[
     ('\u{e007f}', '\u{e007f}'),
 ];
 
-fn contains(c: char, list: &[(char, char)]) -> bool {
+pub(crate) fn contains(c: char, list: &[(char, char)]) -> bool {
     for &(start, end) in list {
         if c < start {
             return false;

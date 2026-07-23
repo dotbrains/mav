@@ -41,7 +41,7 @@ pub fn entry_git_aware_label_color(git_status: GitSummary, ignored: bool, select
     }
 }
 
-fn path_for_buffer<'a>(
+pub(crate) fn path_for_buffer<'a>(
     buffer: &Entity<MultiBuffer>,
     height: usize,
     include_filename: bool,
@@ -97,7 +97,7 @@ fn path_for_file<'a>(
 /// This is somewhat wasteful since we load the whole buffer from disk then overwrite it,
 /// but keeps implementation simple as we don't need to persist all metadata from loading
 /// (git diff base, etc.).
-fn restore_serialized_buffer_contents(
+pub(crate) fn restore_serialized_buffer_contents(
     buffer: &mut Buffer,
     contents: String,
     mtime: Option<MTime>,
@@ -114,21 +114,21 @@ fn restore_serialized_buffer_contents(
     }
 }
 
-fn serialize_path_key(path_key: &PathKey) -> proto::PathKey {
+pub(crate) fn serialize_path_key(path_key: &PathKey) -> proto::PathKey {
     proto::PathKey {
         sort_prefix: path_key.sort_prefix,
         path: path_key.path.to_proto(),
     }
 }
 
-fn deserialize_path_key(path_key: proto::PathKey) -> Option<PathKey> {
+pub(crate) fn deserialize_path_key(path_key: proto::PathKey) -> Option<PathKey> {
     Some(PathKey {
         sort_prefix: path_key.sort_prefix,
         path: RelPath::from_proto(&path_key.path).ok()?,
     })
 }
 
-fn chunk_search_range(
+pub(crate) fn chunk_search_range(
     buffer: BufferSnapshot,
     query: &SearchQuery,
     num_cpus: u32,
