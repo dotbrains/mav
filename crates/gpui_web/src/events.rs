@@ -16,39 +16,17 @@ pub struct WebEventListeners {
     closures: Vec<Closure<dyn FnMut(JsValue)>>,
 }
 
-pub(crate) struct ClickState {
-    last_position: Point<Pixels>,
-    last_time: f64,
-    current_count: usize,
-}
+mod click_state;
+mod dom;
 
-impl Default for ClickState {
-    fn default() -> Self {
-        Self {
-            last_position: Point::default(),
-            last_time: 0.0,
-            current_count: 0,
-        }
-    }
-}
-
-impl ClickState {
-    fn register_click(&mut self, position: Point<Pixels>, time: f64) -> usize {
-        let distance = ((f32::from(position.x) - f32::from(self.last_position.x)).powi(2)
-            + (f32::from(position.y) - f32::from(self.last_position.y)).powi(2))
-        .sqrt();
-
-        if (time - self.last_time) < 400.0 && distance < 5.0 {
-            self.current_count += 1;
-        } else {
-            self.current_count = 1;
-        }
-
-        self.last_position = position;
-        self.last_time = time;
-        self.current_count
-    }
-}
+pub(crate) use click_state::ClickState;
+pub(crate) use dom::is_mac_platform;
+use dom::{
+    capslock_from_keyboard_event, compute_key_char, dom_key_to_gpui_key, dom_mouse_button_to_gpui,
+    extract_file_paths_from_drag, is_modifier_only_key, modifiers_from_keyboard_event,
+    modifiers_from_mouse_event, modifiers_from_wheel_event, mouse_position_in_element,
+    pointer_position_in_element,
+};
 
 impl WebWindowInner {
     pub fn register_event_listeners(self: &Rc<Self>) -> WebEventListeners {
@@ -515,168 +493,4 @@ impl WebWindowInner {
             }
         })
     }
-}
-
-fn dom_key_to_gpui_key(event: &web_sys::KeyboardEvent) -> String {
-    let key = event.key();
-    match key.as_str() {
-        "Enter" => "enter".to_string(),
-        "Backspace" => "backspace".to_string(),
-        "Tab" => "tab".to_string(),
-        "Escape" => "escape".to_string(),
-        "Delete" => "delete".to_string(),
-        " " => "space".to_string(),
-        "ArrowLeft" => "left".to_string(),
-        "ArrowRight" => "right".to_string(),
-        "ArrowUp" => "up".to_string(),
-        "ArrowDown" => "down".to_string(),
-        "Home" => "home".to_string(),
-        "End" => "end".to_string(),
-        "PageUp" => "pageup".to_string(),
-        "PageDown" => "pagedown".to_string(),
-        "Insert" => "insert".to_string(),
-        "Control" => "control".to_string(),
-        "Alt" => "alt".to_string(),
-        "Shift" => "shift".to_string(),
-        "Meta" => "platform".to_string(),
-        "CapsLock" => "capslock".to_string(),
-        other => {
-            if let Some(rest) = other.strip_prefix('F') {
-                if let Ok(number) = rest.parse::<u8>() {
-                    if (1..=35).contains(&number) {
-                        return format!("f{number}");
-                    }
-                }
-            }
-            other.to_lowercase()
-        }
-    }
-}
-
-fn dom_mouse_button_to_gpui(button: i16) -> MouseButton {
-    match button {
-        0 => MouseButton::Left,
-        1 => MouseButton::Middle,
-        2 => MouseButton::Right,
-        3 => MouseButton::Navigate(NavigationDirection::Back),
-        4 => MouseButton::Navigate(NavigationDirection::Forward),
-        _ => MouseButton::Left,
-    }
-}
-
-fn modifiers_from_keyboard_event(event: &web_sys::KeyboardEvent, _is_mac: bool) -> Modifiers {
-    Modifiers {
-        control: event.ctrl_key(),
-        alt: event.alt_key(),
-        shift: event.shift_key(),
-        platform: event.meta_key(),
-        function: false,
-    }
-}
-
-fn modifiers_from_mouse_event(event: &web_sys::PointerEvent, _is_mac: bool) -> Modifiers {
-    let mouse_event: &web_sys::MouseEvent = event.as_ref();
-    Modifiers {
-        control: mouse_event.ctrl_key(),
-        alt: mouse_event.alt_key(),
-        shift: mouse_event.shift_key(),
-        platform: mouse_event.meta_key(),
-        function: false,
-    }
-}
-
-fn modifiers_from_wheel_event(event: &web_sys::MouseEvent, _is_mac: bool) -> Modifiers {
-    Modifiers {
-        control: event.ctrl_key(),
-        alt: event.alt_key(),
-        shift: event.shift_key(),
-        platform: event.meta_key(),
-        function: false,
-    }
-}
-
-fn capslock_from_keyboard_event(event: &web_sys::KeyboardEvent) -> Capslock {
-    Capslock {
-        on: event.get_modifier_state("CapsLock"),
-    }
-}
-
-pub(crate) fn is_mac_platform(browser_window: &web_sys::Window) -> bool {
-    let navigator = browser_window.navigator();
-
-    #[allow(deprecated)]
-    // navigator.platform() is deprecated but navigator.userAgentData is not widely available yet
-    if let Ok(platform) = navigator.platform() {
-        if platform.contains("Mac") {
-            return true;
-        }
-    }
-
-    if let Ok(user_agent) = navigator.user_agent() {
-        return user_agent.contains("Mac");
-    }
-
-    false
-}
-
-fn is_modifier_only_key(key: &str) -> bool {
-    matches!(
-        key,
-        "control" | "alt" | "shift" | "platform" | "capslock" | "compose" | "process"
-    )
-}
-
-fn compute_key_char(
-    event: &web_sys::KeyboardEvent,
-    gpui_key: &str,
-    modifiers: &Modifiers,
-) -> Option<String> {
-    if modifiers.platform || modifiers.control {
-        return None;
-    }
-
-    if is_modifier_only_key(gpui_key) {
-        return None;
-    }
-
-    if gpui_key == "space" {
-        return Some(" ".to_string());
-    }
-
-    let raw_key = event.key();
-
-    if raw_key.len() == 1 {
-        return Some(raw_key);
-    }
-
-    None
-}
-
-fn pointer_position_in_element(event: &web_sys::PointerEvent) -> Point<Pixels> {
-    let mouse_event: &web_sys::MouseEvent = event.as_ref();
-    mouse_position_in_element(mouse_event)
-}
-
-fn mouse_position_in_element(event: &web_sys::MouseEvent) -> Point<Pixels> {
-    // offset_x/offset_y give position relative to the target element's padding edge
-    point(px(event.offset_x() as f32), px(event.offset_y() as f32))
-}
-
-fn extract_file_paths_from_drag(
-    event: &web_sys::DragEvent,
-) -> smallvec::SmallVec<[std::path::PathBuf; 2]> {
-    let mut paths = smallvec![];
-    let Some(data_transfer) = event.data_transfer() else {
-        return paths;
-    };
-    let file_list = data_transfer.files();
-    let Some(files) = file_list else {
-        return paths;
-    };
-    for index in 0..files.length() {
-        if let Some(file) = files.get(index) {
-            paths.push(std::path::PathBuf::from(file.name()));
-        }
-    }
-    paths
 }
