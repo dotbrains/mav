@@ -1,4 +1,3 @@
-
 use util::rel_path::{RelPath, rel_path};
 
 use crate::{PathMatch, PathMatchCandidate};
