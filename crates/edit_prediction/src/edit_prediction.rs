@@ -147,6 +147,7 @@ use crate::prediction_state::*;
 pub(crate) use crate::settled_helpers::{
     currently_following, is_ep_store_provider, send_settled_batches,
 };
+pub use crate::store_helpers::should_show_upsell_modal;
 pub(crate) use crate::store_helpers::{
     CloudRequestTimeoutError, MavPredictUpsell, MavUpdateRequiredError,
     collaborator_edit_overlaps_locality_region, is_mav_industries_repo,
