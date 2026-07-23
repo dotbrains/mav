@@ -3,13 +3,6 @@ use std::path::{Path, PathBuf};
 use anyhow::Context as _;
 use chrono::{DateTime, Utc};
 use collections::{HashMap, HashSet};
-use db::{
-    sqlez::{
-        bindable::Column, domain::Domain, statement::Statement,
-        thread_safe_connection::ThreadSafeConnection,
-    },
-    sqlez_macros::sql,
-};
 use futures::{FutureExt, future::Shared};
 use gpui::{AppContext as _, Entity, Global, Task};
 use remote::{RemoteConnectionOptions, same_remote_connection_identity};
@@ -18,6 +11,13 @@ use util::ResultExt as _;
 use workspace::PathList;
 
 use crate::{TerminalId, thread_metadata_store::WorktreePaths};
+
+mod db;
+use db::TerminalThreadMetadataDb;
+
+#[cfg(test)]
+#[path = "terminal_thread_metadata_store/tests.rs"]
+mod tests;
 
 pub fn init(cx: &mut App) {
     TerminalThreadMetadataStore::init_global(cx);
@@ -175,7 +175,7 @@ impl TerminalThreadMetadataStore {
     #[cfg(any(test, feature = "test-support"))]
     pub fn init_global(cx: &mut App) {
         let db_name = TestTerminalMetadataDbName::global(cx);
-        let db = gpui::block_on(db::open_test_db::<TerminalThreadMetadataDb>(&db_name));
+        let db = gpui::block_on(::db::open_test_db::<TerminalThreadMetadataDb>(&db_name));
         let terminal_store = cx.new(|cx| Self::new(TerminalThreadMetadataDb(db), cx));
         cx.set_global(GlobalTerminalThreadMetadataStore(terminal_store));
     }
@@ -437,288 +437,5 @@ impl TerminalThreadMetadataStore {
             })
             .shared(),
         );
-    }
-}
-
-struct TerminalThreadMetadataDb(ThreadSafeConnection);
-
-impl Domain for TerminalThreadMetadataDb {
-    const NAME: &str = stringify!(TerminalThreadMetadataDb);
-
-    const MIGRATIONS: &[&str] = &[sql!(
-        CREATE TABLE IF NOT EXISTS sidebar_terminal_threads(
-            terminal_id TEXT PRIMARY KEY,
-            title TEXT NOT NULL,
-            custom_title TEXT,
-            created_at TEXT NOT NULL,
-            working_directory TEXT,
-            folder_paths TEXT,
-            folder_paths_order TEXT,
-            main_worktree_paths TEXT,
-            main_worktree_paths_order TEXT,
-            remote_connection TEXT
-        ) STRICT;
-    )];
-}
-
-db::static_connection!(TerminalThreadMetadataDb, []);
-
-impl TerminalThreadMetadataDb {
-    pub fn list(&self) -> anyhow::Result<Vec<TerminalThreadMetadata>> {
-        self.select::<TerminalThreadMetadata>(
-            "SELECT terminal_id, title, custom_title, created_at, \
-            working_directory, folder_paths, folder_paths_order, main_worktree_paths, \
-            main_worktree_paths_order, remote_connection \
-            FROM sidebar_terminal_threads \
-            ORDER BY created_at DESC",
-        )?()
-    }
-
-    pub async fn save(&self, row: TerminalThreadMetadata) -> anyhow::Result<()> {
-        let terminal_id = row.terminal_id.to_key_string();
-        let title = row.title.to_string();
-        let custom_title = row.custom_title.as_ref().map(ToString::to_string);
-        let created_at = row.created_at.to_rfc3339();
-        let working_directory = row
-            .working_directory
-            .as_ref()
-            .map(|path| path.to_string_lossy().into_owned());
-        let serialized = row.folder_paths().serialize();
-        let (folder_paths, folder_paths_order) = if row.folder_paths().is_empty() {
-            (None, None)
-        } else {
-            (Some(serialized.paths), Some(serialized.order))
-        };
-        let main_serialized = row.main_worktree_paths().serialize();
-        let (main_worktree_paths, main_worktree_paths_order) =
-            if row.main_worktree_paths().is_empty() {
-                (None, None)
-            } else {
-                (Some(main_serialized.paths), Some(main_serialized.order))
-            };
-        let remote_connection = row
-            .remote_connection
-            .as_ref()
-            .map(serde_json::to_string)
-            .transpose()
-            .context("serialize terminal thread remote connection")?;
-
-        self.write(move |conn| {
-            let sql = "INSERT INTO sidebar_terminal_threads(terminal_id, title, custom_title, created_at, working_directory, folder_paths, folder_paths_order, main_worktree_paths, main_worktree_paths_order, remote_connection) \
-                       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10) \
-                       ON CONFLICT(terminal_id) DO UPDATE SET \
-                           title = excluded.title, \
-                           custom_title = excluded.custom_title, \
-                           created_at = excluded.created_at, \
-                           working_directory = excluded.working_directory, \
-                           folder_paths = excluded.folder_paths, \
-                           folder_paths_order = excluded.folder_paths_order, \
-                           main_worktree_paths = excluded.main_worktree_paths, \
-                           main_worktree_paths_order = excluded.main_worktree_paths_order, \
-                           remote_connection = excluded.remote_connection";
-            let mut stmt = Statement::prepare(conn, sql)?;
-            let mut i = stmt.bind(&terminal_id, 1)?;
-            i = stmt.bind(&title, i)?;
-            i = stmt.bind(&custom_title, i)?;
-            i = stmt.bind(&created_at, i)?;
-            i = stmt.bind(&working_directory, i)?;
-            i = stmt.bind(&folder_paths, i)?;
-            i = stmt.bind(&folder_paths_order, i)?;
-            i = stmt.bind(&main_worktree_paths, i)?;
-            i = stmt.bind(&main_worktree_paths_order, i)?;
-            stmt.bind(&remote_connection, i)?;
-            stmt.exec()
-        })
-        .await
-    }
-
-    pub async fn delete(&self, terminal_id: TerminalId) -> anyhow::Result<()> {
-        let terminal_id = terminal_id.to_key_string();
-        self.write(move |conn| {
-            let mut stmt = Statement::prepare(
-                conn,
-                "DELETE FROM sidebar_terminal_threads WHERE terminal_id = ?",
-            )?;
-            stmt.bind(&terminal_id, 1)?;
-            stmt.exec()
-        })
-        .await
-    }
-}
-
-impl Column for TerminalThreadMetadata {
-    fn column(statement: &mut Statement, start_index: i32) -> anyhow::Result<(Self, i32)> {
-        let (terminal_id, next): (String, i32) = Column::column(statement, start_index)?;
-        let (title, next): (String, i32) = Column::column(statement, next)?;
-        let (custom_title, next): (Option<String>, i32) = Column::column(statement, next)?;
-        let (created_at, next): (String, i32) = Column::column(statement, next)?;
-        let (working_directory, next): (Option<String>, i32) = Column::column(statement, next)?;
-        let (folder_paths_str, next): (Option<String>, i32) = Column::column(statement, next)?;
-        let (folder_paths_order_str, next): (Option<String>, i32) =
-            Column::column(statement, next)?;
-        let (main_worktree_paths_str, next): (Option<String>, i32) =
-            Column::column(statement, next)?;
-        let (main_worktree_paths_order_str, next): (Option<String>, i32) =
-            Column::column(statement, next)?;
-        let (remote_connection_json, next): (Option<String>, i32) =
-            Column::column(statement, next)?;
-
-        let folder_paths = folder_paths_str
-            .map(|paths| {
-                PathList::deserialize(&util::path_list::SerializedPathList {
-                    paths,
-                    order: folder_paths_order_str.unwrap_or_default(),
-                })
-            })
-            .unwrap_or_default();
-
-        let main_worktree_paths = main_worktree_paths_str
-            .map(|paths| {
-                PathList::deserialize(&util::path_list::SerializedPathList {
-                    paths,
-                    order: main_worktree_paths_order_str.unwrap_or_default(),
-                })
-            })
-            .unwrap_or_default();
-
-        let remote_connection = remote_connection_json
-            .as_deref()
-            .map(serde_json::from_str::<RemoteConnectionOptions>)
-            .transpose()
-            .context("deserialize terminal thread remote connection")?;
-
-        let worktree_paths = WorktreePaths::from_path_lists(main_worktree_paths, folder_paths)
-            .unwrap_or_else(|_| WorktreePaths::default());
-
-        Ok((
-            TerminalThreadMetadata {
-                terminal_id: TerminalId::from_key_string(&terminal_id)?,
-                title: SharedString::from(title),
-                custom_title: custom_title
-                    .filter(|title| !title.trim().is_empty())
-                    .map(SharedString::from),
-                created_at: DateTime::parse_from_rfc3339(&created_at)?.with_timezone(&Utc),
-                worktree_paths,
-                remote_connection,
-                working_directory: working_directory.map(PathBuf::from),
-            },
-            next,
-        ))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use gpui::TestAppContext;
-    use std::path::Path;
-
-    fn init_test(cx: &mut TestAppContext) {
-        cx.update(|cx| {
-            TerminalThreadMetadataStore::init_global(cx);
-        });
-        cx.run_until_parked();
-    }
-
-    fn metadata(title: &str, worktree_paths: WorktreePaths) -> TerminalThreadMetadata {
-        let now = Utc::now();
-        TerminalThreadMetadata {
-            terminal_id: TerminalId::new(),
-            title: SharedString::from(title.to_string()),
-            custom_title: None,
-            created_at: now,
-            worktree_paths,
-            remote_connection: None,
-            working_directory: None,
-        }
-    }
-
-    #[test]
-    fn test_terminal_title_prefix_preserves_non_alphanumeric_prefixes() {
-        assert_eq!(terminal_title_prefix("✳ Thinking"), Some("✳ "));
-        assert_eq!(terminal_title_prefix(">>>   Thinking"), Some(">>>   "));
-        assert_eq!(terminal_title_prefix("⠋ Running"), Some("⠋ "));
-        assert_eq!(terminal_title_prefix("* Claude"), Some("* "));
-        assert_eq!(terminal_title_prefix("✳Thinking"), None);
-        assert_eq!(terminal_title_prefix("Thinking"), None);
-        assert_eq!(terminal_title_prefix(" Thinking"), None);
-        assert_eq!(terminal_title_prefix("✳"), None);
-        assert_eq!(terminal_title_prefix("v1 Running"), None);
-    }
-
-    #[test]
-    fn test_terminal_thread_display_title_combines_raw_and_custom_titles() {
-        let mut metadata = metadata(
-            "⠋ Thinking",
-            WorktreePaths::from_folder_paths(&PathList::default()),
-        );
-        metadata.custom_title = Some("Fix bug".into());
-        assert_eq!(metadata.display_title().as_ref(), "⠋ Fix bug");
-
-        metadata.title = "Thinking".into();
-        assert_eq!(metadata.display_title().as_ref(), "Fix bug");
-    }
-
-    #[gpui::test]
-    async fn test_change_worktree_paths_reindexes_terminal_metadata(cx: &mut TestAppContext) {
-        init_test(cx);
-
-        let old_main_paths = PathList::new(&[Path::new("/repo")]);
-        let old_folder_paths = PathList::new(&[Path::new("/repo-feature")]);
-        let new_main_path = Path::new("/repo");
-        let new_folder_path = Path::new("/repo-feature-renamed");
-        let new_folder_paths = PathList::new(&[new_folder_path]);
-        let metadata = metadata(
-            "Dev Server",
-            WorktreePaths::from_path_lists(old_main_paths.clone(), old_folder_paths.clone())
-                .unwrap(),
-        );
-        let terminal_id = metadata.terminal_id;
-
-        cx.update(|cx| {
-            TerminalThreadMetadataStore::global(cx).update(cx, |store, cx| {
-                store.save(metadata, cx);
-            });
-        });
-
-        cx.update(|cx| {
-            TerminalThreadMetadataStore::global(cx).update(cx, |store, cx| {
-                store.change_worktree_paths(
-                    &old_folder_paths,
-                    None,
-                    |paths| {
-                        paths.add_path(new_main_path, new_folder_path);
-                        paths.remove_folder_path(Path::new("/repo-feature"));
-                    },
-                    cx,
-                );
-            });
-        });
-
-        cx.update(|cx| {
-            let store = TerminalThreadMetadataStore::global(cx);
-            let store = store.read(cx);
-            assert!(
-                store
-                    .entries_for_path(&old_folder_paths, None)
-                    .next()
-                    .is_none()
-            );
-            assert_eq!(
-                store
-                    .entries_for_path(&new_folder_paths, None)
-                    .map(|entry| entry.terminal_id)
-                    .collect::<Vec<_>>(),
-                vec![terminal_id]
-            );
-            assert_eq!(
-                store
-                    .entry(terminal_id)
-                    .unwrap()
-                    .main_worktree_paths()
-                    .paths(),
-                old_main_paths.paths()
-            );
-        });
     }
 }
